@@ -58,7 +58,7 @@
         installments: 'ou 6x de R$ 21,50 sem juros',
         image: '',
         imageAlt: 'Foto em breve do brinco gota esmeralda.',
-        url: 'produto.html',
+        url: 'brincos.html',
         featured: false,
         related: true,
         realImage: false,

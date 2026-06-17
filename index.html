@@ -75,9 +75,110 @@
       <!-- NAV desktop -->
       <nav class="main-nav" aria-label="Navegação principal">
         <ul>
-          <li><a href="produto.html#prod-title">Anéis</a></li>
-          <li><a href="#novidades">Pulseiras</a></li>
-          <li><a href="#colecoes">Coleções</a></li>
+          <li class="main-nav__item">
+            <a class="main-nav__link" href="produto.html#prod-title">Anéis</a>
+            <div class="mega-menu" aria-label="Opções de anéis">
+              <div class="container mega-menu__inner">
+                <div class="mega-menu__col">
+                  <strong>Anéis</strong>
+                  <a href="produto.html#prod-title">Anel coração</a>
+                  <a href="produto.html#look-title">Anel Paraíba</a>
+                  <a href="produto.html#faq-title">Tamanhos de exemplo</a>
+                </div>
+                <div class="mega-menu__col">
+                  <strong>Pedras</strong>
+                  <a href="produto.html#desc-title">Esmeralda</a>
+                  <a href="produto.html#look-title">Paraíba</a>
+                  <a href="#categorias">Prata cravejada</a>
+                </div>
+                <a class="mega-menu__feature" href="produto.html#prod-title">
+                  <span class="ph ph--1x1" role="img" aria-label="Placeholder de anel em destaque.">
+                    <strong class="ph__title">Foto em breve</strong>
+                    <span class="ph__tag">placeholder</span>
+                  </span>
+                  <span>Escolha de presente</span>
+                </a>
+              </div>
+            </div>
+          </li>
+          <li class="main-nav__item">
+            <a class="main-nav__link" href="brincos.html">Brincos</a>
+            <div class="mega-menu" aria-label="Opções de brincos">
+              <div class="container mega-menu__inner">
+                <div class="mega-menu__col">
+                  <strong>Brincos</strong>
+                  <a href="brincos.html#brincos-title">Gotas</a>
+                  <a href="brincos.html#brincos-title">Argolinhas</a>
+                  <a href="brincos.html#brincos-title">Ponto de luz</a>
+                </div>
+                <div class="mega-menu__col">
+                  <strong>Estilo</strong>
+                  <a href="brincos.html#brincos-title">Para o dia</a>
+                  <a href="brincos.html#editorial-brincos">Para noite</a>
+                  <a href="brincos.html#brincos-title">Conjuntos</a>
+                </div>
+                <a class="mega-menu__feature" href="brincos.html">
+                  <span class="ph ph--1x1" role="img" aria-label="Placeholder de brinco em destaque.">
+                    <strong class="ph__title">Foto em breve</strong>
+                    <span class="ph__tag">placeholder</span>
+                  </span>
+                  <span>Brincos de exemplo</span>
+                </a>
+              </div>
+            </div>
+          </li>
+          <li class="main-nav__item">
+            <a class="main-nav__link" href="#novidades">Pulseiras</a>
+            <div class="mega-menu" aria-label="Opções de pulseiras">
+              <div class="container mega-menu__inner">
+                <div class="mega-menu__col">
+                  <strong>Pulseiras</strong>
+                  <a href="#novidades">Riviera</a>
+                  <a href="#novidades">Braceletes</a>
+                  <a href="#novidades">Delicadas</a>
+                </div>
+                <div class="mega-menu__col">
+                  <strong>Acabamento</strong>
+                  <a href="#cuidados">Prata 925</a>
+                  <a href="#novidades">Pedras verdes</a>
+                  <a href="#presentes">Para presentear</a>
+                </div>
+                <a class="mega-menu__feature" href="#novidades">
+                  <span class="ph ph--1x1" role="img" aria-label="Placeholder de pulseira em destaque.">
+                    <strong class="ph__title">Foto em breve</strong>
+                    <span class="ph__tag">placeholder</span>
+                  </span>
+                  <span>Pulseiras de exemplo</span>
+                </a>
+              </div>
+            </div>
+          </li>
+          <li class="main-nav__item">
+            <a class="main-nav__link" href="#colecoes">Coleções</a>
+            <div class="mega-menu" aria-label="Opções de coleções">
+              <div class="container mega-menu__inner">
+                <div class="mega-menu__col">
+                  <strong>Coleções</strong>
+                  <a href="#colecoes">Pedras verdes</a>
+                  <a href="#novidades">Favoritas da casa</a>
+                  <a href="#presentes">Presentes</a>
+                </div>
+                <div class="mega-menu__col">
+                  <strong>Por momento</strong>
+                  <a href="#mundo-title">Dia a dia</a>
+                  <a href="#nova-title">Nova coleção</a>
+                  <a href="#cuidados">Cuidados</a>
+                </div>
+                <a class="mega-menu__feature" href="#colecoes">
+                  <span class="ph ph--1x1" role="img" aria-label="Placeholder de coleção em destaque.">
+                    <strong class="ph__title">Foto em breve</strong>
+                    <span class="ph__tag">placeholder</span>
+                  </span>
+                  <span>Coleção de exemplo</span>
+                </a>
+              </div>
+            </div>
+          </li>
           <li><a href="#presentes">Presentes</a></li>
           <li><a href="#sobre">Sobre</a></li>
         </ul>
@@ -145,12 +246,17 @@
             </a>
           </li>
           <li class="category-card">
-            <a class="category-card__link" href="produto.html#prod-title">
+            <a class="category-card__link" href="brincos.html">
               <span class="category-card__media">
-                <img src="img/anel-coracao.jpg" width="900" height="900" loading="lazy" decoding="async"
-                     alt="Anel de prata com pedra esmeralda em formato coração." style="object-position: center 58%;" />
+                <span class="ph ph--1x1" role="img" aria-label="Placeholder de brincos de prata com pedra verde.">
+                  <span class="ph__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M8 11v7M16 11v7"/><path d="M6.5 18h3M14.5 18h3" stroke-linecap="round"/></svg>
+                  </span>
+                  <strong class="ph__title">Foto em breve</strong>
+                  <span class="ph__tag">placeholder</span>
+                </span>
               </span>
-              <span class="category-card__label">Pedras verdes</span>
+              <span class="category-card__label">Brincos</span>
             </a>
           </li>
           <li class="category-card">
@@ -160,7 +266,7 @@
                 <img src="img/pulseiras-riviera.jpg" width="900" height="900" loading="lazy" decoding="async"
                      alt="Seleção de semi joias para presentear." style="object-position: left center;" />
               </span>
-              <span class="category-card__label">Presentes <span class="badge-demo">crop</span></span>
+              <span class="category-card__label">Presentes</span>
             </a>
           </li>
         </ul>
@@ -183,7 +289,6 @@
     <section id="novidades" class="section" aria-labelledby="best-title">
       <div class="container">
         <div class="section-head">
-          <p class="eyebrow">Mais desejados</p>
           <h2 id="best-title">As favoritas da casa</h2>
           <p><span class="badge-demo">Exemplo</span> Nomes e preços abaixo são fictícios (placeholder).</p>
         </div>
@@ -224,7 +329,7 @@
 
     <!-- ====================== NOVA COLEÇÃO — banner de campanha full-bleed ====================== -->
     <section class="campaign" aria-labelledby="nova-title">
-      <img class="campaign__bg" src="img/anel-paraiba.jpg" alt="" aria-hidden="true" loading="lazy" decoding="async" />
+      <img class="campaign__bg" src="img/anel-paraiba.jpg" width="1045" height="1308" alt="" aria-hidden="true" loading="lazy" decoding="async" />
       <div class="campaign__scrim" aria-hidden="true"></div>
       <div class="container campaign__content reveal">
         <p class="eyebrow campaign__eyebrow">Nova coleção</p>
@@ -281,7 +386,6 @@
     <!-- ====================== PRESENTE (Fase 2c) ====================== -->
     <section id="presentes" class="section" aria-labelledby="gift-title">
       <div class="container container--narrow">
-        <p class="eyebrow">Para presentear</p>
         <h2 id="gift-title">Chega pronta para entregar</h2>
         <!-- PLACEHOLDER: embalagem real + CTA "Montar presente" -->
         <div class="ph ph--16x9 ph--blush" role="img" aria-label="Foto em breve da embalagem premium da Druza para presente.">
@@ -298,7 +402,6 @@
     <!-- ====================== PROVA SOCIAL (Fase 2c) ====================== -->
     <section class="section" aria-labelledby="rev-title">
       <div class="container">
-        <p class="eyebrow">Quem usa</p>
         <h2 id="rev-title">Histórias reais</h2>
         <p><span class="badge-demo">Exemplo</span> Avaliações e fotos abaixo serão de clientes reais.</p>
         <!-- PLACEHOLDER: depoimentos + fotos de clientes -->
@@ -316,7 +419,6 @@
     <!-- ====================== CUIDADOS (Fase 2c) ====================== -->
     <section id="cuidados" class="section section--warm" aria-labelledby="care-title">
       <div class="container container--narrow">
-        <p class="eyebrow">Cuidados</p>
         <h2 id="care-title">Para durar bonito</h2>
         <ol class="care-list">
           <li>
@@ -411,9 +513,9 @@
         <span class="logo__name">Druza</span>
         <p>Semi joias femininas em prata. <!-- PLACEHOLDER: descrição/redes --></p>
       </div>
-      <div class="footer__col"><h4>Loja</h4><ul><li><a href="produto.html#prod-title">Anéis</a></li><li><a href="#novidades">Pulseiras</a></li><li><a href="#colecoes">Coleções</a></li></ul></div>
-      <div class="footer__col"><h4>Ajuda</h4><ul><li><a href="trocas.html">Trocas e devoluções</a></li><li><a href="produto.html#faq-title">Perguntas frequentes</a></li><li><a href="contato.html">Contato</a></li></ul></div>
-      <div class="footer__col"><h4>Atendimento</h4><ul><li><a href="https://wa.me/" rel="noopener noreferrer">WhatsApp <span class="badge-demo">placeholder</span></a></li><li><a href="cuidados.html">Cuidados com as peças</a></li></ul></div>
+      <div class="footer__col"><h3>Loja</h3><ul><li><a href="produto.html#prod-title">Anéis</a></li><li><a href="brincos.html">Brincos</a></li><li><a href="#novidades">Pulseiras</a></li><li><a href="#colecoes">Coleções</a></li></ul></div>
+      <div class="footer__col"><h3>Ajuda</h3><ul><li><a href="trocas.html">Trocas e devoluções</a></li><li><a href="produto.html#faq-title">Perguntas frequentes</a></li><li><a href="contato.html">Contato</a></li></ul></div>
+      <div class="footer__col"><h3>Atendimento</h3><ul><li><a href="https://wa.me/" rel="noopener noreferrer">WhatsApp <span class="badge-demo">placeholder</span></a></li><li><a href="cuidados.html">Cuidados com as peças</a></li></ul></div>
     </div>
   </footer>
 
@@ -495,6 +597,7 @@
     </div>
     <nav aria-label="Menu móvel">
       <a href="produto.html#prod-title">Anéis</a>
+      <a href="brincos.html">Brincos</a>
       <a href="#novidades">Pulseiras</a>
       <a href="#colecoes">Coleções</a>
       <a href="#presentes">Presentes</a>
