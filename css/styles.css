@@ -606,7 +606,28 @@ summary + p { margin-top: var(--space-3); color: var(--muted); }
 .cart-drawer.is-open { transform: none; }
 .mobile-menu { left: 0; transform: translateX(-100%); }
 .mobile-menu.is-open { transform: none; }
-.mobile-menu nav a { display: block; padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--line); font-size: 1.05rem; }
+.mobile-menu nav a,
+.mobile-menu__toggle {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--line);
+  color: var(--text); font-size: 1.05rem; letter-spacing: 0.03em; text-align: left;
+}
+.mobile-menu__toggle { background: transparent; border-top: 0; border-left: 0; border-right: 0; cursor: pointer; }
+.mobile-menu__toggle:hover,
+.mobile-menu__toggle:focus-visible,
+.mobile-menu nav a:hover,
+.mobile-menu nav a:focus-visible { color: var(--rose-strong); }
+.mobile-menu__toggle svg { flex: none; transition: transform var(--dur-fast) var(--ease); }
+.mobile-menu__toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.mobile-menu__panel {
+  display: grid; padding: var(--space-2) 0; border-bottom: 1px solid var(--line);
+  background: var(--white-warm);
+}
+.mobile-menu__panel[hidden] { display: none; }
+.mobile-menu__panel a {
+  padding: 0.72rem var(--space-6) 0.72rem calc(var(--space-6) + var(--space-4));
+  border-bottom: 0; color: var(--muted); font-size: 0.95rem;
+}
 
 /* ============================ SACOLA + CHECKOUT =================== */
 .cart-panel { display: grid; gap: var(--space-4); }
@@ -618,9 +639,14 @@ summary + p { margin-top: var(--space-3); color: var(--muted); }
   display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: var(--space-3);
   padding-bottom: var(--space-4); border-bottom: 1px solid var(--line);
 }
-.cart-item img {
+.cart-item img,
+.cart-item__placeholder {
   width: 72px; height: 90px; object-fit: cover; border-radius: var(--radius-sm);
   border: 1px solid var(--line); background: var(--white-warm);
+}
+.cart-item__placeholder {
+  display: grid; place-items: center; padding: 0.4rem;
+  color: var(--muted); font-size: 0.68rem; line-height: 1.15; text-align: center;
 }
 .cart-item__body { min-width: 0; display: grid; gap: 4px; }
 .cart-item__name { color: var(--ink); line-height: 1.25; }

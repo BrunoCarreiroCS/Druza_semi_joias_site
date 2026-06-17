@@ -33,7 +33,76 @@
       { prefixes: ['20', '21', '22', '23', '24'], label: 'Rio de Janeiro e região', days: '3 a 5 dias úteis', priceCents: 1890 }
     ],
     shippingFallback: { label: 'Demais regiões', days: '4 a 7 dias úteis', priceCents: 2190 },
-    whatsappPlaceholder: 'https://wa.me/'
+    whatsappPlaceholder: 'https://wa.me/5511966074268'
+  };
+
+  function getRouteBase() {
+    if (window.DRUZA_ROUTE_BASE !== undefined) return window.DRUZA_ROUTE_BASE;
+    return window.location.pathname.includes('/produtos/') ? '../' : '';
+  }
+
+  function renderMobileDropdownMenu() {
+    const nav = $('.mobile-menu nav');
+    if (!nav) return;
+    const base = getRouteBase();
+    nav.innerHTML = `
+      <a class="mobile-menu__link" href="${base}index.html">Início</a>
+      <div class="mobile-menu__section">
+        <button class="mobile-menu__toggle" type="button" aria-expanded="false" aria-controls="mobile-submenu-aneis" data-mobile-menu-toggle>
+          <span>Anéis</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="mobile-menu__panel" id="mobile-submenu-aneis" hidden>
+          <a href="${base}produtos/anel-coracao-esmeralda.html">Anel coração</a>
+          <a href="${base}produtos/anel-paraiba-quadrado.html">Anel Paraíba</a>
+          <a href="${base}produtos/anel-coracao-esmeralda.html#faq-title">Tamanhos de exemplo</a>
+        </div>
+      </div>
+      <div class="mobile-menu__section">
+        <button class="mobile-menu__toggle" type="button" aria-expanded="false" aria-controls="mobile-submenu-brincos" data-mobile-menu-toggle>
+          <span>Brincos</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="mobile-menu__panel" id="mobile-submenu-brincos" hidden>
+          <a href="${base}produtos/brinco-gota-esmeralda.html">Gotas</a>
+          <a href="${base}produtos/argolinha-paraiba.html">Argolinhas</a>
+          <a href="${base}produtos/brinco-ponto-luz.html">Ponto de luz</a>
+          <a href="${base}brincos.html">Ver todos os brincos</a>
+        </div>
+      </div>
+      <div class="mobile-menu__section">
+        <button class="mobile-menu__toggle" type="button" aria-expanded="false" aria-controls="mobile-submenu-pulseiras" data-mobile-menu-toggle>
+          <span>Pulseiras</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="mobile-menu__panel" id="mobile-submenu-pulseiras" hidden>
+          <a href="${base}produtos/pulseira-riviera-prata.html">Riviera</a>
+          <a href="${base}index.html#novidades">Braceletes</a>
+          <a href="${base}index.html#novidades">Delicadas</a>
+        </div>
+      </div>
+      <div class="mobile-menu__section">
+        <button class="mobile-menu__toggle" type="button" aria-expanded="false" aria-controls="mobile-submenu-colecoes" data-mobile-menu-toggle>
+          <span>Coleções</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="mobile-menu__panel" id="mobile-submenu-colecoes" hidden>
+          <a href="${base}index.html#colecoes">Pedras verdes</a>
+          <a href="${base}index.html#novidades">Favoritas da casa</a>
+          <a href="${base}index.html#presentes">Presentes</a>
+        </div>
+      </div>
+      <a class="mobile-menu__link" href="${base}index.html#presentes">Presentes</a>
+      <a class="mobile-menu__link" href="${base}index.html#sobre">Sobre</a>
+    `;
+    $$('[data-mobile-menu-toggle]', nav).forEach((button) => {
+      button.addEventListener('click', () => {
+        const panel = document.getElementById(button.getAttribute('aria-controls'));
+        const isOpen = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', String(!isOpen));
+        if (panel) panel.hidden = isOpen;
+      });
+    });
   };
 
   /* ----------------------- Barra de anúncio ----------------------- */
@@ -41,6 +110,7 @@
   $('[data-close-announce]')?.addEventListener('click', () => announce?.remove());
 
   /* ----------------------- Drawers (menu + sacola) ----------------- */
+  renderMobileDropdownMenu();
   const overlay = $('[data-overlay]');
   const pageChrome = ['.announce', '.site-header', 'main', '.site-footer']
     .map((selector) => $(selector))
@@ -205,12 +275,21 @@
     return element;
   }
 
+  function resolveResourceUrl(value) {
+    if (!value) return '';
+    try {
+      return new URL(value, document.baseURI).href;
+    } catch (error) {
+      return value;
+    }
+  }
+
   function getCatalogProduct(id) {
     return UI_CONTRACT.products.find((product) => product.id === id);
   }
 
   function getPrimaryProduct() {
-    return getCatalogProduct('anel-coracao-esmeralda') || UI_CONTRACT.products[0];
+    return getCatalogProduct(window.DRUZA_PRODUCT_ID) || getCatalogProduct('anel-coracao-esmeralda') || UI_CONTRACT.products[0];
   }
 
   function renderProductPlaceholder(product) {
@@ -385,11 +464,17 @@
 
   function renderCartItem(item) {
     const row = makeEl('article', 'cart-item');
-    const image = makeEl('img');
-    image.src = item.image;
-    image.alt = item.name;
-    image.width = 72;
-    image.height = 90;
+    const media = item.image ? makeEl('img') : makeEl('span', 'cart-item__placeholder');
+    if (item.image) {
+      media.src = item.image;
+      media.alt = item.name;
+      media.width = 72;
+      media.height = 90;
+    } else {
+      media.setAttribute('role', 'img');
+      media.setAttribute('aria-label', item.imageAlt || 'Foto em breve do produto.');
+      media.textContent = 'Foto em breve';
+    }
 
     const body = makeEl('div', 'cart-item__body');
     const title = makeEl('strong', 'cart-item__name', item.name);
@@ -421,7 +506,7 @@
     qty.append(dec, quantity, inc);
     controls.append(qty, remove, total);
     body.append(title, meta, controls);
-    row.append(image, body);
+    row.append(media, body);
     return row;
   }
 
@@ -435,7 +520,7 @@
         makeEl('p', '', 'Escolha uma peça para simular subtotal, frete e checkout.')
       );
       const link = makeEl('a', 'btn btn--secondary', 'Ver coleção');
-      link.href = 'produto.html#prod-title';
+      link.href = `${window.DRUZA_ROUTE_BASE || ''}index.html#categorias`;
       empty.append(link);
       panel.append(empty);
       return;
@@ -609,7 +694,7 @@
     const key = `${product.id}-${size}`;
     const existing = cartState.items.find((item) => item.key === key);
     if (existing) existing.quantity += 1;
-    else cartState.items.push({ ...product, key, size, quantity: 1 });
+    else cartState.items.push({ ...product, image: resolveResourceUrl(product.image), key, size, quantity: 1 });
     saveCart();
     renderCart(`${product.name}, tamanho ${size}, adicionado à sacola.`);
     openDrawer('cart-drawer', trigger);

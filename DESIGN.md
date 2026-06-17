@@ -29,9 +29,9 @@ domina, rosa assina, pedras em foco. Sempre texto escuro sobre fundo claro.
 | `--line` | `#E9E4E5` | Hairline padrão |
 | `--ink` | `#2B2B2D` | Títulos · botão primário |
 | `--text` | `#4C4849` | Corpo |
-| `--muted` | `#8A8589` | Secundário (atenção: contraste no limite em alguns fundos — auditar) |
+| `--muted` | `#6B6669` | Secundário — AA ≥ 4.5:1 sobre branco |
 
-**Contraste:** corpo `--text` sobre `--white` ≈ 8.4:1 ✓. `--muted` sobre `--white` ≈ 4.0:1
+**Contraste:** corpo `--text` sobre `--white` ≈ 8.4:1 ✓. `--muted` sobre `--white` ≈ 5.0:1 ✓ (AA)
 — **abaixo de 4.5:1 para corpo** (passa só como large text); usar `--text` para parágrafos
 de leitura. Em fundos `--blush`/`--rose-inst`, texto deve ser `--rose-deep`.
 
