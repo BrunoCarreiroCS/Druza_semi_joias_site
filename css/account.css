@@ -1,0 +1,224 @@
+/* =====================================================================
+   DRUZA — account.css
+   Estilos das páginas de autenticação e da área da conta.
+   Usa os tokens de css/styles.css (carregue styles.css ANTES deste).
+   ===================================================================== */
+
+/* ----------------------- Layout de auth (card centrado) ----------------------- */
+.auth-wrap {
+  min-height: calc(100vh - var(--header-h));
+  display: grid;
+  place-items: center;
+  padding: var(--space-12) var(--space-4);
+  /* fundo blush mais presente: o card branco precisa saltar */
+  background:
+    radial-gradient(120% 70% at 50% -10%, var(--rose-inst) 0%, var(--blush) 45%, var(--white-warm) 100%);
+}
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-12) var(--space-8);
+}
+.auth-card__head { text-align: center; margin-bottom: var(--space-8); }
+.auth-card__head .eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--rose-strong);
+  display: block;
+  margin-bottom: var(--space-2);
+}
+.auth-card__head h1 { font-size: clamp(1.8rem, 4vw, 2.4rem); }
+.auth-card__head p { color: var(--muted); font-size: 0.92rem; margin-top: var(--space-2); margin-inline: auto; }
+
+/* ----------------------- Formulário ----------------------- */
+.auth-form { display: grid; gap: var(--space-4); }
+.field { display: grid; gap: 0.4rem; }
+.field > span { font-size: 0.82rem; color: var(--ink); font-weight: 500; }
+.field input[type="text"],
+.field input[type="email"],
+.field input[type="tel"],
+.field input[type="password"] {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.8rem 1rem;
+  border: 1.5px solid var(--silver);
+  border-radius: var(--radius-sm);
+  background: var(--white-warm);
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.field input::placeholder { color: var(--muted); }
+.field input:hover { border-color: var(--rose); }
+.field input:focus-visible {
+  border-color: var(--rose-strong);
+  background: var(--white);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--blush);
+}
+.field__hint { font-size: 0.76rem; color: var(--muted); }
+
+.field--check { grid-template-columns: auto 1fr; align-items: start; gap: 0.6rem; }
+.field--check input { margin-top: 0.2rem; }
+.field--check span { font-weight: 400; color: var(--text); font-size: 0.84rem; }
+
+.auth-form .btn { width: 100%; margin-top: var(--space-2); }
+
+/* Mostrar/ocultar senha */
+.pw-wrap { position: relative; }
+.pw-wrap input { padding-right: 3.2rem; }
+.pw-toggle {
+  position: absolute; right: 0.4rem; top: 50%; transform: translateY(-50%);
+  font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--rose-strong); padding: 0.4rem 0.6rem;
+}
+.pw-toggle:hover { color: var(--rose-deep); }
+
+/* Feedback (reusa cores do form-feedback do styles.css) */
+.auth-feedback { font-size: 0.85rem; min-height: 1.2em; }
+.auth-feedback.is-error { color: #9A3F48; }
+.auth-feedback.is-success { color: var(--emerald-deep); }
+
+/* Rodapé do card: links entre páginas */
+.auth-alt {
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--muted);
+  display: grid;
+  gap: var(--space-2);
+}
+.auth-alt a { color: var(--rose-strong); }
+.auth-alt a:hover { color: var(--rose-deep); text-decoration: underline; }
+
+/* ----------------------- Área da conta ----------------------- */
+.account-header {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--space-8);
+}
+.account-grid { display: grid; gap: var(--space-8); }
+.account-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-8);
+  background: var(--white);
+}
+.account-card h2 { font-size: 1.5rem; margin-bottom: var(--space-4); }
+.account-card__row {
+  display: flex; justify-content: space-between; gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+.account-card__row:last-child { border-bottom: 0; }
+.account-card__row .label { color: var(--muted); font-size: 0.86rem; }
+.account-card__row .value { color: var(--ink); text-align: right; }
+
+/* Pedidos */
+.order { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: var(--space-4); }
+.order + .order { margin-top: var(--space-4); }
+.order__top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-3); }
+.order__id { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.order__total { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+.order__items { display: grid; gap: 0.3rem; font-size: 0.86rem; color: var(--text); }
+.badge-status {
+  display: inline-block; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0.2rem 0.7rem; border-radius: var(--radius-pill);
+  background: var(--blush); color: var(--rose-deep); border: 1px solid var(--rose-inst);
+}
+.badge-status[data-status="paid"]      { background: #E7F2EE; color: var(--emerald-deep); border-color: #CDE6DE; }
+.badge-status[data-status="shipped"],
+.badge-status[data-status="delivered"] { background: #E7F2EE; color: var(--emerald-deep); border-color: #CDE6DE; }
+.badge-status[data-status="canceled"],
+.badge-status[data-status="refunded"]  { background: #F6E9EA; color: #9A3F48; border-color: #ECD3D5; }
+
+.empty-state { text-align: center; color: var(--muted); padding: var(--space-12) var(--space-4); }
+.empty-state p { margin-inline: auto; margin-bottom: var(--space-4); }
+
+@media (min-width: 760px) {
+  .account-grid { grid-template-columns: 1fr 1fr; align-items: start; }
+  .account-grid .account-card--full { grid-column: 1 / -1; }
+}
+
+/* ----------------------- Checkout ----------------------- */
+.checkout-grid { display: grid; gap: var(--space-8); align-items: start; }
+@media (min-width: 900px) {
+  .checkout-grid { grid-template-columns: 1.1fr 1fr; }
+}
+
+.checkout-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-8);
+  background: var(--white);
+}
+.checkout-card + .checkout-card { margin-top: var(--space-6); }
+.checkout-card h2 { font-size: 1.4rem; margin-bottom: var(--space-4); }
+
+.review-line {
+  display: grid; grid-template-columns: 56px 1fr auto;
+  gap: var(--space-3); align-items: center;
+  padding: var(--space-3) 0; border-bottom: 1px solid var(--line);
+}
+.review-line:last-child { border-bottom: 0; }
+.review-line__media {
+  width: 56px; height: 70px; border-radius: var(--radius-sm);
+  background: var(--blush); display: grid; place-items: center;
+  font-size: 0.65rem; color: var(--muted); text-align: center; padding: 0.2rem;
+}
+.review-line__media img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-sm); }
+.review-line__name { font-weight: 500; color: var(--ink); font-size: 0.92rem; }
+.review-line__meta { font-size: 0.78rem; color: var(--muted); }
+.review-line__total { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 500; }
+
+.totals { display: grid; gap: 0.5rem; margin-top: var(--space-4); }
+.totals__row { display: flex; justify-content: space-between; font-size: 0.92rem; color: var(--text); }
+.totals__row--total {
+  margin-top: var(--space-3); padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+  font-size: 1.1rem; color: var(--ink); font-weight: 500;
+}
+.totals__row--total strong { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.address-pick { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }
+.address-option {
+  display: grid; grid-template-columns: auto 1fr; gap: var(--space-3); align-items: start;
+  border: 1.5px solid var(--silver); border-radius: var(--radius-sm);
+  padding: var(--space-4); cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.address-option:hover { border-color: var(--rose); }
+.address-option input { margin-top: 0.2rem; }
+.address-option__title { font-weight: 500; color: var(--ink); }
+.address-option__body { color: var(--text); font-size: 0.86rem; line-height: 1.4; }
+.address-option:has(input:checked) {
+  border-color: var(--rose-strong); background: var(--blush);
+}
+
+.field--inline { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+@media (max-width: 520px) { .field--inline { grid-template-columns: 1fr; } }
+
+.pay-button { width: 100%; }
+.secure-note {
+  margin-top: var(--space-4); font-size: 0.78rem; color: var(--muted);
+  text-align: center; line-height: 1.4;
+}
+
+/* ----------------------- Páginas de retorno (success/pending/failure) ----------------------- */
+.status-badge-lg {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.4rem 1rem; border-radius: var(--radius-pill);
+  font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.status-badge-lg--success { background: #E7F2EE; color: var(--emerald-deep); border: 1px solid #CDE6DE; }
+.status-badge-lg--pending { background: var(--blush); color: var(--rose-deep); border: 1px solid var(--rose-inst); }
+.status-badge-lg--failure { background: #F6E9EA; color: #9A3F48; border: 1px solid #ECD3D5; }
+

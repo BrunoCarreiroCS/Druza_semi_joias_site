@@ -605,7 +605,7 @@
     const continueButton = makeEl('button', 'btn btn--secondary', 'Continuar comprando');
     continueButton.type = 'button';
     continueButton.dataset.cartAction = 'continue';
-    const checkoutButton = makeEl('button', 'btn btn--primary', 'Ir para checkout simulado');
+    const checkoutButton = makeEl('button', 'btn btn--primary', 'Finalizar compra');
     checkoutButton.type = 'button';
     checkoutButton.dataset.cartAction = 'checkout';
     actions.append(continueButton, checkoutButton);
@@ -731,8 +731,14 @@
     if (action === 'decrease') updateItemQuantity(key, -1);
     if (action === 'remove') removeItem(key);
     if (action === 'continue') closeDrawers();
-    if (action === 'checkout') focusCheckout();
+    if (action === 'checkout') goToCheckout();
   });
+
+  function goToCheckout() {
+    if (!cartState.items.length) { focusCheckout(); return; }
+    const base = window.DRUZA_ROUTE_BASE || '';
+    window.location.href = `${base}checkout.html`;
+  }
 
   document.addEventListener('input', (event) => {
     const cepField = event.target.closest('[data-cart-cep], [data-checkout-form] input[name="cep"]');

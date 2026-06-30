@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pagamento aprovado - Druza Semi Joias</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="img/druza-logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500&display=swap" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/account.css" />
+</head>
+<body>
+  <header class="site-header"><div class="container site-header__inner">
+    <a class="logo" href="index.html" aria-label="Druza Semi Joias - pagina inicial">
+      <svg class="logo__seal" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+        <circle cx="24" cy="24" r="23" fill="var(--rose)" />
+        <g transform="translate(24,33) scale(0.42)" fill="#FFFFFF">
+          <path transform="rotate(-52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+          <path transform="rotate(-26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+          <path d="M0,0 C -9,-16 -6,-44 0,-54 C 6,-44 9,-16 0,0 Z" />
+          <path transform="rotate(26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+          <path transform="rotate(52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+        </g>
+      </svg>
+      <span class="logo__word">
+        <span class="logo__name">Druza</span>
+        <span class="logo__sub">Semi Joias · Prata</span>
+      </span>
+    </a>
+  </div></header>
+  <main class="auth-wrap">
+    <div class="auth-card" style="text-align: center;">
+      <span class="status-badge-lg status-badge-lg--success">Pagamento aprovado</span>
+      <h1 style="margin: var(--space-6) 0 var(--space-3);">Obrigada pela compra!</h1>
+      <p style="color: var(--muted); margin-bottom: var(--space-6);">
+        Seu pedido foi confirmado e em breve será preparado com cuidado para envio.
+        Você pode acompanhar o status na sua área de conta.
+      </p>
+      <p id="order-line" style="font-size: 0.85rem; color: var(--muted); margin-bottom: var(--space-6);"></p>
+      <a href="conta.html" class="btn btn--primary" style="width: 100%;">Ver meus pedidos</a>
+      <div class="auth-alt"><a href="index.html">Continuar navegando</a></div>
+    </div>
+  </main>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const id = params.get('order');
+      if (id) document.getElementById('order-line').textContent = 'Pedido #' + id.slice(0, 8);
+      try { localStorage.removeItem('druzaCartV1'); } catch (e) {}
+    })();
+  </script>
+</body>
+</html>

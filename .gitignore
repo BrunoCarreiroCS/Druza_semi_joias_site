@@ -1,1 +1,8 @@
 .claude/
+
+# Config com chaves reais do Supabase (NÃO versionar)
+js/config.js
+
+# Variáveis de ambiente do backend de pagamento (Fase 4d)
+.env
+.env.local

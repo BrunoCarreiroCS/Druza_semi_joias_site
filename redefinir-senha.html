@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Redefinir senha - Druza Semi Joias</title>
+  <meta name="description" content="Defina uma nova senha para sua conta Druza Semi Joias." />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="img/druza-logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500&display=swap" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/account.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Pular para o conteudo</a>
+  <header class="site-header"><div class="container site-header__inner">
+    <a class="logo" href="index.html" aria-label="Druza Semi Joias - pagina inicial">
+      <svg class="logo__seal" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+        <circle cx="24" cy="24" r="23" fill="var(--rose)" />
+        <g transform="translate(24,33) scale(0.42)" fill="#FFFFFF">
+          <path transform="rotate(-52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+          <path transform="rotate(-26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+          <path d="M0,0 C -9,-16 -6,-44 0,-54 C 6,-44 9,-16 0,0 Z" />
+          <path transform="rotate(26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+          <path transform="rotate(52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+        </g>
+      </svg>
+      <span class="logo__word">
+        <span class="logo__name">Druza</span>
+        <span class="logo__sub">Semi Joias · Prata</span>
+      </span>
+    </a>
+  </div></header>
+  <main id="main" class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-card__head">
+        <span class="eyebrow">Sua conta</span>
+        <h1>Nova senha</h1>
+        <p>Crie uma nova senha para acessar sua conta.</p>
+      </div>
+      <form class="auth-form" id="newpw-form" novalidate>
+        <label class="field">
+          <span>Nova senha</span>
+          <span class="pw-wrap">
+            <input type="password" name="password" autocomplete="new-password" minlength="8" required />
+            <button type="button" class="pw-toggle" data-pw-toggle aria-label="Mostrar senha">ver</button>
+          </span>
+          <span class="field__hint">Mínimo de 8 caracteres.</span>
+        </label>
+        <label class="field">
+          <span>Confirmar nova senha</span>
+          <input type="password" name="confirm" autocomplete="new-password" minlength="8" required />
+        </label>
+        <p class="auth-feedback" id="feedback" role="alert" aria-live="polite"></p>
+        <button type="submit" class="btn btn--primary" id="submit-btn">Salvar nova senha</button>
+      </form>
+      <div class="auth-alt">
+        <a href="login.html">Voltar para entrar</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    (function () {
+      const form = document.getElementById('newpw-form');
+      const fb = document.getElementById('feedback');
+      const btn = document.getElementById('submit-btn');
+
+      document.querySelectorAll('[data-pw-toggle]').forEach(function (t) {
+        t.addEventListener('click', function () {
+          const input = t.previousElementSibling;
+          const show = input.type === 'password';
+          input.type = show ? 'text' : 'password';
+          t.textContent = show ? 'ocultar' : 'ver';
+          t.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
+        });
+      });
+
+      // O link do e-mail traz um token que o SDK troca por uma sessão de recuperação.
+      // Damos um instante para o onAuthStateChange processar.
+      let recoveryReady = false;
+      window.DruzaAuth.onAuthChange(function (event) {
+        if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') recoveryReady = true;
+      });
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        fb.className = 'auth-feedback'; fb.textContent = '';
+        const fd = new FormData(form);
+        const password = fd.get('password') || '';
+        const confirm = fd.get('confirm') || '';
+        if (password.length < 8) { fb.classList.add('is-error'); fb.textContent = 'A senha precisa ter no mínimo 8 caracteres.'; return; }
+        if (password !== confirm) { fb.classList.add('is-error'); fb.textContent = 'As senhas não coincidem.'; return; }
+
+        btn.disabled = true; btn.textContent = 'Salvando…';
+        const { error } = await window.DruzaAuth.updatePassword(password);
+        if (error) {
+          fb.classList.add('is-error');
+          fb.textContent = recoveryReady ? error : 'Link inválido ou expirado. Solicite um novo em "Recuperar senha".';
+          btn.disabled = false; btn.textContent = 'Salvar nova senha';
+          return;
+        }
+        fb.classList.add('is-success');
+        fb.textContent = 'Senha alterada com sucesso! Redirecionando para o login…';
+        setTimeout(function () { location.replace('login.html'); }, 1800);
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entrar - Druza Semi Joias</title>
+  <meta name="description" content="Acesse sua conta Druza Semi Joias para ver pedidos, endereços e dados." />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="img/druza-logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500&display=swap" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/account.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Pular para o conteudo</a>
+  <header class="site-header"><div class="container site-header__inner">
+    <a class="logo" href="index.html" aria-label="Druza Semi Joias - pagina inicial">
+      <svg class="logo__seal" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+        <circle cx="24" cy="24" r="23" fill="var(--rose)" />
+        <g transform="translate(24,33) scale(0.42)" fill="#FFFFFF">
+          <path transform="rotate(-52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+          <path transform="rotate(-26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+          <path d="M0,0 C -9,-16 -6,-44 0,-54 C 6,-44 9,-16 0,0 Z" />
+          <path transform="rotate(26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+          <path transform="rotate(52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+        </g>
+      </svg>
+      <span class="logo__word">
+        <span class="logo__name">Druza</span>
+        <span class="logo__sub">Semi Joias · Prata</span>
+      </span>
+    </a>
+  </div></header>
+  <main id="main" class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-card__head">
+        <span class="eyebrow">Sua conta</span>
+        <h1>Entrar</h1>
+        <p>Acesse para ver pedidos, endereços e acompanhar suas compras.</p>
+      </div>
+      <form class="auth-form" id="login-form" novalidate>
+        <label class="field">
+          <span>E-mail</span>
+          <input type="email" name="email" autocomplete="email" required />
+        </label>
+        <label class="field">
+          <span>Senha</span>
+          <span class="pw-wrap">
+            <input type="password" name="password" autocomplete="current-password" required />
+            <button type="button" class="pw-toggle" data-pw-toggle aria-label="Mostrar senha">ver</button>
+          </span>
+        </label>
+        <p class="auth-feedback" id="feedback" role="alert" aria-live="polite"></p>
+        <button type="submit" class="btn btn--primary" id="submit-btn">Entrar</button>
+      </form>
+      <div class="auth-alt">
+        <a href="recuperar-senha.html">Esqueci minha senha</a>
+        <span>Ainda não tem conta? <a href="cadastro.html">Criar conta</a></span>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    (function () {
+      const form = document.getElementById('login-form');
+      const fb = document.getElementById('feedback');
+      const btn = document.getElementById('submit-btn');
+
+      // Mostrar/ocultar senha
+      document.querySelectorAll('[data-pw-toggle]').forEach(function (t) {
+        t.addEventListener('click', function () {
+          const input = t.previousElementSibling;
+          const show = input.type === 'password';
+          input.type = show ? 'text' : 'password';
+          t.textContent = show ? 'ocultar' : 'ver';
+          t.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
+        });
+      });
+
+      // Se já estiver logado, vai para a conta
+      window.DruzaAuth.getSession().then(function (s) { if (s) location.replace('conta.html'); });
+
+      function nextParam() {
+        const n = new URLSearchParams(location.search).get('next');
+        return n && /^[a-z0-9\-]+\.html$/i.test(n) ? n : 'conta.html';
+      }
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        fb.className = 'auth-feedback';
+        fb.textContent = '';
+        const fd = new FormData(form);
+        const email = (fd.get('email') || '').trim();
+        const password = fd.get('password') || '';
+        if (!email || !password) { fb.classList.add('is-error'); fb.textContent = 'Preencha e-mail e senha.'; return; }
+        btn.disabled = true; btn.textContent = 'Entrando…';
+        const { error } = await window.DruzaAuth.signIn({ email, password });
+        if (error) {
+          fb.classList.add('is-error'); fb.textContent = error;
+          btn.disabled = false; btn.textContent = 'Entrar';
+          return;
+        }
+        location.replace(nextParam());
+      });
+    })();
+  </script>
+</body>
+</html>

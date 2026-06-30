@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minha conta - Druza Semi Joias</title>
+  <meta name="description" content="Sua conta Druza: pedidos, endereços e dados pessoais." />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="img/druza-logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500&display=swap" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/account.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Pular para o conteudo</a>
+  <header class="site-header"><div class="container site-header__inner">
+    <a class="logo" href="index.html" aria-label="Druza Semi Joias - pagina inicial">
+      <svg class="logo__seal" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+        <circle cx="24" cy="24" r="23" fill="var(--rose)" />
+        <g transform="translate(24,33) scale(0.42)" fill="#FFFFFF">
+          <path transform="rotate(-52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+          <path transform="rotate(-26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+          <path d="M0,0 C -9,-16 -6,-44 0,-54 C 6,-44 9,-16 0,0 Z" />
+          <path transform="rotate(26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+          <path transform="rotate(52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+        </g>
+      </svg>
+      <span class="logo__word">
+        <span class="logo__name">Druza</span>
+        <span class="logo__sub">Semi Joias · Prata</span>
+      </span>
+    </a>
+    <nav class="content-nav" aria-label="Navegacao principal"><a href="index.html">Inicio</a><a href="produtos/anel-coracao-esmeralda.html">Aneis</a><a href="sobre.html">Sobre</a></nav>
+  </div></header>
+
+  <main id="main" class="section">
+    <div class="container container--narrow">
+      <div class="account-header">
+        <div>
+          <p class="eyebrow">Sua conta</p>
+          <h1 id="greeting">Minha conta</h1>
+        </div>
+        <button type="button" class="btn btn--ghost" id="logout-btn">Sair</button>
+      </div>
+
+      <div id="loading" class="empty-state"><p>Carregando seus dados…</p></div>
+
+      <div class="account-grid" id="content" hidden>
+        <!-- Dados pessoais -->
+        <section class="account-card">
+          <h2>Dados pessoais</h2>
+          <div class="account-card__row"><span class="label">Nome</span><span class="value" id="p-name">—</span></div>
+          <div class="account-card__row"><span class="label">E-mail</span><span class="value" id="p-email">—</span></div>
+          <div class="account-card__row"><span class="label">Telefone</span><span class="value" id="p-phone">—</span></div>
+          <div class="account-card__row"><span class="label">Promoções por e-mail</span><span class="value" id="p-consent">—</span></div>
+        </section>
+
+        <!-- Endereços -->
+        <section class="account-card">
+          <h2>Endereços</h2>
+          <div id="addresses"><p class="field__hint">Carregando…</p></div>
+        </section>
+
+        <!-- Pedidos -->
+        <section class="account-card account-card--full">
+          <h2>Histórico de pedidos</h2>
+          <div id="orders"><p class="field__hint">Carregando…</p></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer"><div class="container footer-grid"><div class="footer__col"><span class="logo__name">Druza</span><p>Semi joias femininas em prata.</p></div></div></footer>
+
+  <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    (function () {
+      const A = window.DruzaAuth;
+
+      function brl(cents) {
+        return (Number(cents || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      }
+      function dt(iso) {
+        try { return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }); }
+        catch (e) { return iso; }
+      }
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+      const STATUS_PT = { pending: 'Aguardando', paid: 'Pago', shipped: 'Enviado', delivered: 'Entregue', canceled: 'Cancelado', refunded: 'Estornado' };
+
+      document.getElementById('logout-btn').addEventListener('click', async function () {
+        await A.signOut();
+        location.replace('login.html');
+      });
+
+      (async function init() {
+        const session = await A.requireAuth('login.html');
+        if (!session) return; // requireAuth já redirecionou
+
+        const user = await A.getUser();
+
+        // Perfil
+        const { data: profile } = await A.getProfile();
+        const name = (profile && profile.full_name) || (user && user.email) || 'Cliente';
+        document.getElementById('greeting').textContent = 'Olá, ' + name.split(' ')[0];
+        document.getElementById('p-name').textContent = (profile && profile.full_name) || '—';
+        document.getElementById('p-email').textContent = (user && user.email) || '—';
+        document.getElementById('p-phone').textContent = (profile && profile.phone) || '—';
+        document.getElementById('p-consent').textContent = (profile && profile.marketing_consent) ? 'Sim' : 'Não';
+
+        // Endereços
+        const addrEl = document.getElementById('addresses');
+        const { data: addresses } = await A.listAddresses();
+        if (!addresses.length) {
+          addrEl.innerHTML = '<p class="field__hint">Nenhum endereço salvo ainda.</p>';
+        } else {
+          addrEl.innerHTML = addresses.map(function (a) {
+            return '<div class="account-card__row"><span class="value" style="text-align:left">' +
+              (a.is_default ? '<strong>★ </strong>' : '') +
+              esc(a.label || 'Endereço') + ' — ' + esc(a.street) + ', ' + esc(a.number) +
+              (a.complement ? ' (' + esc(a.complement) + ')' : '') + '<br>' +
+              esc(a.city) + '/' + esc(a.state) + ' · CEP ' + esc(a.cep) +
+              '</span></div>';
+          }).join('');
+        }
+
+        // Pedidos
+        const ordersEl = document.getElementById('orders');
+        const { data: orders } = await A.listOrders();
+        if (!orders.length) {
+          ordersEl.innerHTML =
+            '<div class="empty-state"><p>Você ainda não tem pedidos.</p>' +
+            '<a class="btn btn--secondary" href="index.html#categorias">Ver coleção</a></div>';
+        } else {
+          ordersEl.innerHTML = orders.map(function (o) {
+            const items = (o.order_items || []).map(function (it) {
+              return '<div>' + it.qty + '× ' + esc(it.product_name) + ' — ' + brl(it.unit_price_cents) + '</div>';
+            }).join('');
+            return '<article class="order">' +
+              '<div class="order__top">' +
+                '<span class="order__id">Pedido ' + esc(String(o.id).slice(0, 8)) + ' · ' + dt(o.created_at) + '</span>' +
+                '<span class="badge-status" data-status="' + esc(o.status) + '">' + (STATUS_PT[o.status] || o.status) + '</span>' +
+              '</div>' +
+              '<div class="order__items">' + items + '</div>' +
+              '<div class="order__top" style="margin-top:.6rem;margin-bottom:0">' +
+                '<span class="order__id">Frete ' + brl(o.shipping_cents) + (o.discount_cents ? ' · Desconto -' + brl(o.discount_cents) : '') + '</span>' +
+                '<span class="order__total">Total ' + brl(o.total_cents) + '</span>' +
+              '</div>' +
+            '</article>';
+          }).join('');
+        }
+
+        document.getElementById('loading').hidden = true;
+        document.getElementById('content').hidden = false;
+      })();
+    })();
+  </script>
+</body>
+</html>
