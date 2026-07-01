@@ -205,13 +205,11 @@ Deno.serve(async (req: Request) => {
   const prefBody = {
     items: mpItems,
     external_reference: order.id,
-    statement_descriptor: 'DRUZA SEMI JOIAS',
     back_urls: {
       success: `${siteUrl}/pagamento-sucesso.html?order=${order.id}`,
       pending: `${siteUrl}/pagamento-pendente.html?order=${order.id}`,
       failure: `${siteUrl}/pagamento-falha.html?order=${order.id}`,
     },
-    auto_return: 'approved',
     notification_url: `${SUPABASE_URL}/functions/v1/webhook-mp`,
     payer: { email: user.email ?? undefined },
     metadata: { order_id: order.id, user_id: user.id },

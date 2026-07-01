@@ -421,9 +421,19 @@ main > .container > .eyebrow {
 .section-head .eyebrow { display: inline-block; margin-bottom: var(--space-2); }
 .section-head p { max-width: 52ch; margin-inline: auto; margin-top: var(--space-2); color: var(--muted); }
 
-/* Títulos h2 soltos no .container (sem .section-head wrapper) também ganham ilha de respiro */
-.section > .container > h2:not(.section-head h2),
-.section > .container--narrow > h2 {
+/* Ilha warm automática para títulos soltos sobre o monograma.
+   Cobre 4 estruturas comuns:
+   1. .section > .container > h*      (index.html + páginas simples)
+   2. .section > .container--narrow > h*
+   3. .section.container > h*          (elemento único com ambas classes)
+   4. .section.container--narrow > h*
+   Excluído em .section--blush/inst (que já têm cor de fundo). */
+:is(
+  .section:not(.section--blush):not(.section--inst) > .container,
+  .section:not(.section--blush):not(.section--inst) > .container--narrow,
+  .section.container:not(.section--blush):not(.section--inst),
+  .section.container--narrow:not(.section--blush):not(.section--inst)
+) > :is(h1, h2, h3) {
   background: var(--white-warm);
   padding: var(--space-4) var(--space-6);
   border-radius: var(--radius);
@@ -431,6 +441,38 @@ main > .container > .eyebrow {
   position: relative;
   z-index: 1;
 }
+
+/* Halo em parágrafos, eyebrows e details soltos direto no container */
+:is(
+  .section:not(.section--blush):not(.section--inst) > .container,
+  .section:not(.section--blush):not(.section--inst) > .container--narrow,
+  .section.container:not(.section--blush):not(.section--inst),
+  .section.container--narrow:not(.section--blush):not(.section--inst)
+) > :is(p, .eyebrow) {
+  text-shadow:
+    0 0 14px var(--white-warm),
+    0 0 14px var(--white-warm),
+    0 0 28px var(--white-warm);
+}
+
+/* Details/Summary genéricos: ilha própria pra ficarem legíveis
+   (excluído .specs-details que tem tratamento próprio) */
+:is(
+  .section:not(.section--blush):not(.section--inst) > .container,
+  .section:not(.section--blush):not(.section--inst) > .container--narrow,
+  .section.container:not(.section--blush):not(.section--inst),
+  .section.container--narrow:not(.section--blush):not(.section--inst)
+) > details:not(.specs-details) {
+  background: var(--white-warm);
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  margin-block: var(--space-3);
+  position: relative;
+  z-index: 1;
+}
+details summary { cursor: pointer; text-shadow: none; }
+details > p { text-shadow: none; margin-top: var(--space-2); }
 
 /* === Grades de cards === */
 .product-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-6); }
@@ -714,11 +756,93 @@ select[aria-invalid="false"] { border-color: var(--emerald); }
 .cep-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); }
 .product__whatsapp { font-size: 0.9rem; }
 .product__whatsapp a { color: var(--rose-deep); }
-.specs {
-  display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; margin-top: var(--space-3);
+/* Ficha técnica expansível: details + summary + tabela.
+   Sobrescreve a regra global de details (que aplica padding padrão). */
+.specs-details {
+  max-width: 640px;
+  margin-block: var(--space-6);
+  padding: 0;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  z-index: 1;
 }
-.specs dt { font-weight: 500; color: var(--ink); }
-.specs dd { margin: 0; color: var(--text); }
+.specs-details > summary {
+  padding: var(--space-4) var(--space-6);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  user-select: none;
+  transition: background var(--dur-fast) var(--ease);
+}
+.specs-details > summary::-webkit-details-marker { display: none; }
+.specs-details > summary::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-right: 1.5px solid var(--rose-strong);
+  border-bottom: 1.5px solid var(--rose-strong);
+  transform: rotate(45deg);
+  transition: transform var(--dur-fast) var(--ease);
+  margin-bottom: 4px;
+  flex: none;
+}
+.specs-details[open] > summary::after { transform: rotate(-135deg); margin-bottom: -4px; }
+.specs-details > summary:hover { background: var(--white-warm); }
+
+.specs {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  margin: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  max-width: none;
+  box-shadow: none;
+  border: 0;
+}
+.specs dt,
+.specs dd {
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--line);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+.specs dt:first-of-type,
+.specs dt:first-of-type + dd { border-top: 0; }
+
+/* Espaçamento e alinhamento vertical da seção "Sobre a peça" */
+.section.container.container--narrow > * + * { margin-top: var(--space-5); }
+.section.container.container--narrow > p { margin-top: var(--space-4); }
+.specs dt {
+  font-weight: 500;
+  color: var(--ink);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--blush);
+  border-right: 1px solid var(--line);
+}
+.specs dd {
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+}
+@media (max-width: 560px) {
+  .specs { grid-template-columns: 1fr; }
+  .specs dt { border-right: 0; border-bottom: 1px solid var(--line); padding-block: 0.6rem; }
+  .specs dd { border-top: 0; padding-top: 0.8rem; }
+  .specs dd + dt { border-top: 1px solid var(--line); }
+}
 details {
   border-top: 1px solid var(--line);
   padding-block: var(--space-4);
@@ -866,11 +990,24 @@ summary + p { margin-top: var(--space-3); color: var(--muted); }
 }
 
 /* ============================ FOOTER (shell) ====================== */
-.site-footer { background: var(--white-warm); border-top: 1px solid var(--line); padding-block: var(--space-12); margin-top: var(--space-16); }
+.site-footer { background: var(--white-warm); border-top: 1px solid var(--line); padding-block: var(--space-12) 0; margin-top: var(--space-16); }
 .site-footer a { color: var(--text); }
 .site-footer a:hover { color: var(--rose-strong); }
 .footer-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-8); }
 .footer__col h3 { font-family: var(--font-sans); font-size: 0.75rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: var(--space-3); }
+
+/* Copyright — aplicado globalmente via ::after do footer */
+.site-footer::after {
+  content: "© 2026 Druza Semi Joias · CNPJ 19.600.917/0001-55 · Todos os direitos reservados.";
+  display: block;
+  text-align: center;
+  padding: var(--space-6) var(--space-4);
+  margin-top: var(--space-12);
+  color: var(--muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.03em;
+  border-top: 1px solid var(--line);
+}
 
 /* ============================ BREAKPOINTS ========================= */
 @media (min-width: 760px) {

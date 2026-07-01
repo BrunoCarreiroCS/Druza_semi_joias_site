@@ -232,9 +232,9 @@
         <button class="icon-btn" type="button" aria-label="Busca em breve" aria-disabled="true" title="Busca em breve" disabled>
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5" stroke-linecap="round"/></svg>
         </button>
-        <button class="icon-btn" type="button" aria-label="Minha conta em breve" aria-disabled="true" title="Minha conta em breve" disabled>
+        <a class="icon-btn" href="login.html" aria-label="Minha conta" title="Minha conta">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0" stroke-linecap="round"/></svg>
-        </button>
+        </a>
         <button class="icon-btn" type="button" aria-label="Abrir sacola" aria-controls="cart-drawer" aria-expanded="false" data-open="cart-drawer">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8a3 3 0 0 1 6 0" stroke-linecap="round"/></svg>
           <span class="cart-count">0</span>
@@ -333,13 +333,15 @@
       <h2 id="desc-title">Sobre a peça</h2>
       <p>Um coração de pedra verde sobre prata polida — pequeno no tamanho, marcante na presença. <!-- PLACEHOLDER: descrição emocional completa --></p>
 
-      <h3>Ficha técnica</h3>
-      <dl class="specs">
-        <dt>Material</dt><dd>Prata 925 <!-- PLACEHOLDER --></dd>
-        <dt>Pedra</dt><dd>Zircônia verde esmeralda <!-- PLACEHOLDER --></dd>
-        <dt>Acabamento</dt><dd>Ródio <!-- PLACEHOLDER --></dd>
-        <dt>Medidas</dt><dd>— <!-- PLACEHOLDER --></dd>
-      </dl>
+      <details class="specs-details">
+        <summary>Ficha técnica</summary>
+        <dl class="specs">
+          <dt>Material</dt><dd>Prata 925 <!-- PLACEHOLDER --></dd>
+          <dt>Pedra</dt><dd>Zircônia verde esmeralda <!-- PLACEHOLDER --></dd>
+          <dt>Acabamento</dt><dd>Ródio <!-- PLACEHOLDER --></dd>
+          <dt>Medidas</dt><dd>— <!-- PLACEHOLDER --></dd>
+        </dl>
+      </details>
     </section>
 
     <!-- ====================== ACORDEÕES (nativo <details>, acessível) ====================== -->
