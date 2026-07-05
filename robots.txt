@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /checkout.html
+Disallow: /conta.html
+Disallow: /login.html
+Disallow: /cadastro.html
+Disallow: /recuperar-senha.html
+Disallow: /redefinir-senha.html
+Disallow: /pagamento-sucesso.html
+Disallow: /pagamento-pendente.html
+Disallow: /pagamento-falha.html
+
+Sitemap: https://druza.com.br/sitemap.xml

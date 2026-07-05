@@ -326,20 +326,30 @@
       media.append(renderProductPlaceholder(product));
     }
     link.append(media, makeEl('span', 'product-card__name', product.name));
+    const soldOut = product.inStock === false;
+    if (soldOut) article.classList.add('is-soldout');
     article.append(
       link,
       makeEl('span', 'price', formatMoney(product.priceCents)),
-      makeEl('span', 'product-card__parcela', product.installments || '')
+      makeEl('span', 'product-card__parcela', soldOut ? 'Esgotado no momento' : (product.installments || ''))
     );
     return article;
   }
 
+  // Seleciona os produtos de um grid pelo modo: "featured" (destaque da
+  // home), "related" (peças relacionadas), "all" (todas as ativas, usado
+  // no catálogo) ou um nome de categoria (ex.: "brincos").
+  function selectForGrid(mode) {
+    const all = UI_CONTRACT.products;
+    if (mode === 'featured') return all.filter((product) => product.featured);
+    if (mode === 'related') return all.filter((product) => product.related);
+    if (mode === 'all') return all.slice();
+    return all.filter((product) => product.category === mode);
+  }
+
   function renderCatalogGrids() {
     $$('[data-product-grid]').forEach((grid) => {
-      const mode = grid.dataset.productGrid;
-      const products = UI_CONTRACT.products.filter((product) => (
-        mode === 'featured' ? product.featured : product.related
-      ));
+      const products = selectForGrid(grid.dataset.productGrid);
       if (!products.length) return;
       grid.replaceChildren();
       products.forEach((product) => grid.append(renderCatalogCard(product)));
@@ -864,6 +874,15 @@
   loadCart();
   if (cartState.shipping?.cep) syncCepFields(cartState.shipping.cep);
   renderCart();
+
+  // Quando o catálogo ao vivo (preço/estoque/destaque do banco) chegar,
+  // re-renderiza os grids para o preço exibido bater com o cobrado.
+  if (window.DRUZA_CATALOG_READY) {
+    window.DRUZA_CATALOG_READY.then(() => {
+      UI_CONTRACT.products = (window.DRUZA_CATALOG && window.DRUZA_CATALOG.products) || UI_CONTRACT.products;
+      renderCatalogGrids();
+    });
+  }
 
   /* ----------------------- Newsletter (stub) ---------------------- */
   const newsletterForm = $('[data-newsletter]');

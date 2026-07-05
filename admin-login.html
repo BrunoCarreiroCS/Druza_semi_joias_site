@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acesso administrativo - Druza Semi Joias</title>
+  <meta name="description" content="Área administrativa restrita." />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="img/druza-logo.png" />
+  <link rel="stylesheet" href="css/fonts.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/account.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Pular para o conteudo</a>
+  <header class="site-header"><div class="container site-header__inner">
+    <a class="logo" href="index.html" aria-label="Druza Semi Joias - pagina inicial">
+      <svg class="logo__seal" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+        <circle cx="24" cy="24" r="23" fill="var(--rose)" />
+        <g transform="translate(24,33) scale(0.42)" fill="#FFFFFF">
+          <path transform="rotate(-52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+          <path transform="rotate(-26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+          <path d="M0,0 C -9,-16 -6,-44 0,-54 C 6,-44 9,-16 0,0 Z" />
+          <path transform="rotate(26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+          <path transform="rotate(52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
+        </g>
+      </svg>
+      <span class="logo__word">
+        <span class="logo__name">Druza</span>
+        <span class="logo__sub">Semi Joias · Prata</span>
+      </span>
+    </a>
+  </div></header>
+  <main id="main" class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-card__head">
+        <span class="eyebrow">Área restrita</span>
+        <h1>Acesso administrativo</h1>
+        <p>Somente administradores. Requer verificação em duas etapas.</p>
+      </div>
+
+      <!-- Passo 1: e-mail + senha -->
+      <form class="auth-form" id="login-form" novalidate>
+        <label class="field">
+          <span>E-mail</span>
+          <input type="email" name="email" autocomplete="email" required />
+        </label>
+        <label class="field">
+          <span>Senha</span>
+          <span class="pw-wrap">
+            <input type="password" name="password" autocomplete="current-password" required />
+            <button type="button" class="pw-toggle" data-pw-toggle aria-label="Mostrar senha">ver</button>
+          </span>
+        </label>
+        <p class="auth-feedback" id="feedback" role="alert" aria-live="polite"></p>
+        <button type="submit" class="btn btn--primary" id="submit-btn">Continuar</button>
+      </form>
+
+      <!-- Passo 2: código de verificação (2FA) -->
+      <form class="auth-form" id="code-form" novalidate hidden>
+        <label class="field">
+          <span>Código de verificação</span>
+          <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" />
+          <span class="field__hint">Digite o código de 6 dígitos do seu app autenticador.</span>
+        </label>
+        <p class="auth-feedback" id="code-feedback" role="alert" aria-live="polite"></p>
+        <button type="submit" class="btn btn--primary" id="code-btn">Entrar</button>
+        <button type="button" class="btn btn--ghost" id="code-cancel">Voltar</button>
+      </form>
+
+      <div class="auth-alt">
+        <a href="index.html">Voltar para a loja</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js" integrity="sha384-dGnL7r9uccC9TdSdE05clTJ6esxMU42XBQ1/BWLzKQOBi7qR1aCMRIi0LzUmexIg" crossorigin="anonymous"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+  <script>
+    (function () {
+      const A = window.DruzaAuth;
+      const D = window.DruzaAdmin;
+      const loginForm = document.getElementById('login-form');
+      const codeForm = document.getElementById('code-form');
+      const fb = document.getElementById('feedback');
+      const codeFb = document.getElementById('code-feedback');
+      const btn = document.getElementById('submit-btn');
+      const codeBtn = document.getElementById('code-btn');
+      let factorId = null;
+
+      document.querySelectorAll('[data-pw-toggle]').forEach(function (t) {
+        t.addEventListener('click', function () {
+          const input = t.previousElementSibling;
+          const show = input.type === 'password';
+          input.type = show ? 'text' : 'password';
+          t.textContent = show ? 'ocultar' : 'ver';
+        });
+      });
+
+      function goAdmin() { location.replace('admin.html'); }
+
+      // Mostra o passo do código (2FA). factorId já resolvido.
+      function showCodeStep() {
+        loginForm.hidden = true;
+        codeForm.hidden = false;
+        setTimeout(function () { codeForm.elements.code.focus(); }, 50);
+      }
+
+      // Decide o próximo passo depois de autenticado + confirmado admin.
+      async function routeAfterAuth() {
+        const aal = await D.getAAL();
+        if (aal.current === 'aal2') { goAdmin(); return; }
+        if (aal.next === 'aal2') {
+          // Tem fator TOTP: precisa do código.
+          const factors = await D.listFactors();
+          const verified = factors.filter(function (f) { return f.status === 'verified'; });
+          if (verified.length) { factorId = verified[0].id; showCodeStep(); return; }
+        }
+        // Sem fator ainda: enrolamento acontece no admin.html.
+        goAdmin();
+      }
+
+      // Se já houver sessão de admin, roteia direto.
+      (async function () {
+        const s = await A.getSession();
+        if (!s) return;
+        const isAdmin = await D.checkAccess();
+        if (!isAdmin) { await A.signOut(); return; }
+        routeAfterAuth();
+      })();
+
+      loginForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        fb.className = 'auth-feedback'; fb.textContent = '';
+        const fd = new FormData(loginForm);
+        const email = (fd.get('email') || '').trim();
+        const password = fd.get('password') || '';
+        if (!email || !password) { fb.classList.add('is-error'); fb.textContent = 'Preencha e-mail e senha.'; return; }
+        btn.disabled = true; btn.textContent = 'Verificando…';
+
+        const res = await A.signIn({ email: email, password: password });
+        if (res.error) {
+          fb.classList.add('is-error'); fb.textContent = res.error;
+          btn.disabled = false; btn.textContent = 'Continuar';
+          return;
+        }
+        // Só admins passam daqui. Quem não é, é deslogado na hora.
+        const isAdmin = await D.checkAccess();
+        if (!isAdmin) {
+          await A.signOut();
+          fb.classList.add('is-error'); fb.textContent = 'Acesso restrito a administradores.';
+          btn.disabled = false; btn.textContent = 'Continuar';
+          return;
+        }
+        btn.disabled = false; btn.textContent = 'Continuar';
+        routeAfterAuth();
+      });
+
+      document.getElementById('code-cancel').addEventListener('click', async function () {
+        await A.signOut();
+        codeForm.hidden = true;
+        loginForm.hidden = false;
+        loginForm.reset();
+      });
+
+      codeForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        codeFb.className = 'auth-feedback'; codeFb.textContent = '';
+        const code = (codeForm.elements.code.value || '').trim();
+        if (!/^[0-9]{6}$/.test(code)) { codeFb.classList.add('is-error'); codeFb.textContent = 'Digite os 6 dígitos.'; return; }
+        codeBtn.disabled = true; codeBtn.textContent = 'Entrando…';
+        const { error } = await D.verifyFactor(factorId, code);
+        if (error) {
+          codeFb.classList.add('is-error'); codeFb.textContent = 'Código inválido. Tente novamente.';
+          codeBtn.disabled = false; codeBtn.textContent = 'Entrar';
+          return;
+        }
+        goAdmin();
+      });
+    })();
+  </script>
+</body>
+</html>

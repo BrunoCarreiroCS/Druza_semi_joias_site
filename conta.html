@@ -7,9 +7,7 @@
   <meta name="description" content="Sua conta Druza: pedidos, endereços e dados pessoais." />
   <meta name="robots" content="noindex" />
   <link rel="icon" href="img/druza-logo.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500&display=swap" />
+  <link rel="stylesheet" href="css/fonts.css" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/account.css" />
 </head>
@@ -42,7 +40,10 @@
           <p class="eyebrow">Sua conta</p>
           <h1 id="greeting">Minha conta</h1>
         </div>
-        <button type="button" class="btn btn--ghost" id="logout-btn">Sair</button>
+        <div class="account-header__actions">
+          <a class="btn btn--secondary" id="admin-shortcut" href="admin.html" hidden>Painel administrativo</a>
+          <button type="button" class="btn btn--ghost" id="logout-btn">Sair</button>
+        </div>
       </div>
 
       <div id="loading" class="empty-state"><p>Carregando seus dados…</p></div>
@@ -59,8 +60,55 @@
 
         <!-- Endereços -->
         <section class="account-card">
-          <h2>Endereços</h2>
+          <div class="account-card__head">
+            <h2>Endereços</h2>
+            <button type="button" class="btn btn--ghost btn--sm" id="addr-add-btn">+ Novo endereço</button>
+          </div>
           <div id="addresses"><p class="field__hint">Carregando…</p></div>
+
+          <form id="address-form" class="auth-form" hidden novalidate>
+            <input type="hidden" name="id" />
+            <label class="field"><span>Identificação</span>
+              <input type="text" name="label" placeholder="Casa, Trabalho…" />
+            </label>
+            <label class="field"><span>Nome de quem recebe</span>
+              <input type="text" name="recipient" autocomplete="name" required />
+            </label>
+            <label class="field"><span>CEP</span>
+              <input type="text" name="cep" inputmode="numeric" maxlength="9" required />
+            </label>
+            <label class="field"><span>Rua</span>
+              <input type="text" name="street" autocomplete="address-line1" required />
+            </label>
+            <div class="field--inline">
+              <label class="field"><span>Número</span>
+                <input type="text" name="number" required />
+              </label>
+              <label class="field"><span>Complemento</span>
+                <input type="text" name="complement" />
+              </label>
+            </div>
+            <label class="field"><span>Bairro</span>
+              <input type="text" name="neighborhood" />
+            </label>
+            <div class="field--inline">
+              <label class="field"><span>Cidade</span>
+                <input type="text" name="city" autocomplete="address-level2" required />
+              </label>
+              <label class="field"><span>UF</span>
+                <input type="text" name="state" maxlength="2" autocomplete="address-level1" required />
+              </label>
+            </div>
+            <label class="field field--check">
+              <input type="checkbox" name="is_default" />
+              <span>Usar como endereço padrão</span>
+            </label>
+            <p class="auth-feedback" id="addr-feedback"></p>
+            <div style="display:flex; gap: var(--space-3);">
+              <button type="submit" class="btn btn--primary" id="addr-save-btn">Salvar endereço</button>
+              <button type="button" class="btn btn--ghost" id="addr-cancel-btn">Cancelar</button>
+            </div>
+          </form>
         </section>
 
         <!-- Pedidos -->
@@ -75,7 +123,7 @@
   <footer class="site-footer"><div class="container footer-grid"><div class="footer__col"><span class="logo__name">Druza</span><p>Semi joias femininas em prata.</p></div></div></footer>
 
   <script src="js/config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js" integrity="sha384-dGnL7r9uccC9TdSdE05clTJ6esxMU42XBQ1/BWLzKQOBi7qR1aCMRIi0LzUmexIg" crossorigin="anonymous"></script>
   <script src="js/auth.js"></script>
   <script>
     (function () {
@@ -93,7 +141,221 @@
           return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
         });
       }
+      function formatCep(value) {
+        const d = String(value || '').replace(/\D/g, '').slice(0, 8);
+        return d.replace(/^(\d{5})(\d{0,3}).*$/, function (_, a, b) { return b ? a + '-' + b : a; });
+      }
+      function isCorreiosCode(code) {
+        return /^[A-Z]{2}\d{9}BR$/.test(String(code || '').trim().toUpperCase());
+      }
+      function renderTracking(code) {
+        const normalized = String(code || '').trim().toUpperCase();
+        if (!normalized) return '';
+        const codeHtml = isCorreiosCode(normalized)
+          ? '<a href="https://rastreamento.correios.com.br/app/index.php?objetos=' + encodeURIComponent(normalized) + '" target="_blank" rel="noopener">' + esc(normalized) + '</a>'
+          : '<span>' + esc(normalized) + '</span>';
+        return '<div class="order__tracking"><span>Rastreio</span><span class="tracking-inline">' + codeHtml +
+          '<button type="button" class="link-btn" data-copy-tracking="' + esc(normalized) + '">Copiar</button>' +
+          '</span></div>';
+      }
+      async function copyText(text) {
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+            return true;
+          }
+        } catch (_) { /* fallback abaixo */ }
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+      async function revealAdminShortcut(user) {
+        const shortcut = document.getElementById('admin-shortcut');
+        if (!shortcut || !user || !A.client) return;
+        try {
+          const { data, error } = await A.client
+            .from('admins')
+            .select('user_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          shortcut.hidden = !!error || !data;
+        } catch (_) {
+          shortcut.hidden = true;
+        }
+      }
       const STATUS_PT = { pending: 'Aguardando', paid: 'Pago', shipped: 'Enviado', delivered: 'Entregue', canceled: 'Cancelado', refunded: 'Estornado' };
+
+      // -----------------------------------------------------------------
+      // Endereços: estado + CRUD
+      // -----------------------------------------------------------------
+      let addresses = [];
+      const addrEl = document.getElementById('addresses');
+      const addrForm = document.getElementById('address-form');
+      const addrFeedback = document.getElementById('addr-feedback');
+      const addrAddBtn = document.getElementById('addr-add-btn');
+      const addrCancelBtn = document.getElementById('addr-cancel-btn');
+      const addrSaveBtn = document.getElementById('addr-save-btn');
+
+      function setAddrError(msg) {
+        addrFeedback.className = 'auth-feedback is-error';
+        addrFeedback.textContent = msg;
+      }
+      function clearAddrError() {
+        addrFeedback.className = 'auth-feedback';
+        addrFeedback.textContent = '';
+      }
+
+      function renderAddresses() {
+        if (!addresses.length) {
+          addrEl.innerHTML = '<p class="field__hint">Nenhum endereço salvo ainda.</p>';
+          return;
+        }
+        addrEl.innerHTML = addresses.map(function (a) {
+          return '<div class="address-card" data-id="' + esc(a.id) + '">' +
+            '<div class="address-card__body">' +
+              '<div class="address-card__title">' + (a.is_default ? '★ ' : '') + esc(a.label || 'Endereço') + '</div>' +
+              '<div class="address-card__text">' +
+                esc(a.recipient) + '<br>' +
+                esc(a.street) + ', ' + esc(a.number) + (a.complement ? ' — ' + esc(a.complement) : '') + '<br>' +
+                esc(a.city) + '/' + esc(a.state) + ' · CEP ' + esc(a.cep) +
+              '</div>' +
+            '</div>' +
+            '<div class="address-card__actions">' +
+              '<button type="button" class="link-btn" data-action="edit">Editar</button>' +
+              (a.is_default ? '' : '<button type="button" class="link-btn" data-action="default">Tornar padrão</button>') +
+              '<button type="button" class="link-btn link-btn--danger" data-action="delete">Excluir</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      function fillAddressForm(a) {
+        const f = addrForm;
+        f.elements.id.value = a ? a.id : '';
+        f.elements.label.value = a ? (a.label || '') : '';
+        f.elements.recipient.value = a ? a.recipient : '';
+        f.elements.cep.value = a ? a.cep : '';
+        f.elements.street.value = a ? a.street : '';
+        f.elements.number.value = a ? a.number : '';
+        f.elements.complement.value = a ? (a.complement || '') : '';
+        f.elements.neighborhood.value = a ? (a.neighborhood || '') : '';
+        f.elements.city.value = a ? a.city : '';
+        f.elements.state.value = a ? a.state : '';
+        f.elements.is_default.checked = a ? !!a.is_default : false;
+      }
+
+      function openAddressForm(a) {
+        clearAddrError();
+        fillAddressForm(a);
+        addrSaveBtn.textContent = a ? 'Salvar alterações' : 'Salvar endereço';
+        addrForm.hidden = false;
+        addrForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      function closeAddressForm() {
+        addrForm.hidden = true;
+        addrForm.reset();
+        clearAddrError();
+      }
+
+      function buildAddressFromForm() {
+        const f = addrForm;
+        const get = function (n) { return (f.elements[n].value || '').trim(); };
+        const a = {
+          label: get('label') || 'Endereço',
+          recipient: get('recipient'),
+          cep: get('cep'),
+          street: get('street'),
+          number: get('number'),
+          complement: get('complement'),
+          neighborhood: get('neighborhood'),
+          city: get('city'),
+          state: get('state').toUpperCase(),
+        };
+        if (!a.recipient || !a.cep || !a.street || !a.number || !a.city || !a.state) return null;
+        if (a.cep.replace(/\D/g, '').length !== 8) return null;
+        return a;
+      }
+
+      addrForm.addEventListener('input', function (e) {
+        if (e.target.name === 'cep') e.target.value = formatCep(e.target.value);
+      });
+
+      addrAddBtn.addEventListener('click', function () { openAddressForm(null); });
+      addrCancelBtn.addEventListener('click', closeAddressForm);
+
+      addrForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        clearAddrError();
+        const fields = buildAddressFromForm();
+        if (!fields) { setAddrError('Preencha os campos obrigatórios (CEP com 8 dígitos).'); return; }
+        const id = addrForm.elements.id.value;
+        const wantsDefault = addrForm.elements.is_default.checked;
+        const current = id ? addresses.find(function (a) { return a.id === id; }) : null;
+        // Desmarcar "padrão" num endereço que já era o padrão: grava direto
+        // (não precisa mexer nos outros, só este deixa de ser default).
+        if (!wantsDefault && current && current.is_default) fields.is_default = false;
+
+        addrSaveBtn.disabled = true;
+        let result;
+        if (id) {
+          result = await A.updateAddress(id, fields);
+        } else {
+          result = await A.createAddress(fields);
+        }
+        if (result.error) {
+          setAddrError(result.error);
+          addrSaveBtn.disabled = false;
+          return;
+        }
+        if (wantsDefault && result.data) {
+          await A.setDefaultAddress(result.data.id);
+        }
+        const { data: fresh } = await A.listAddresses();
+        addresses = fresh;
+        renderAddresses();
+        addrSaveBtn.disabled = false;
+        closeAddressForm();
+      });
+
+      addrEl.addEventListener('click', async function (e) {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+        const card = btn.closest('.address-card');
+        const id = card.getAttribute('data-id');
+        const action = btn.getAttribute('data-action');
+        const addr = addresses.find(function (a) { return a.id === id; });
+        if (!addr) return;
+
+        if (action === 'edit') {
+          openAddressForm(addr);
+        } else if (action === 'delete') {
+          if (!window.confirm('Excluir este endereço?')) return;
+          btn.disabled = true;
+          const { error } = await A.deleteAddress(id);
+          if (error) { window.alert(error); btn.disabled = false; return; }
+          const { data: fresh } = await A.listAddresses();
+          addresses = fresh;
+          renderAddresses();
+        } else if (action === 'default') {
+          btn.disabled = true;
+          const { error } = await A.setDefaultAddress(id);
+          if (error) { window.alert(error); btn.disabled = false; return; }
+          const { data: fresh } = await A.listAddresses();
+          addresses = fresh;
+          renderAddresses();
+        }
+      });
 
       document.getElementById('logout-btn').addEventListener('click', async function () {
         await A.signOut();
@@ -105,6 +367,7 @@
         if (!session) return; // requireAuth já redirecionou
 
         const user = await A.getUser();
+        await revealAdminShortcut(user);
 
         // Perfil
         const { data: profile } = await A.getProfile();
@@ -116,20 +379,9 @@
         document.getElementById('p-consent').textContent = (profile && profile.marketing_consent) ? 'Sim' : 'Não';
 
         // Endereços
-        const addrEl = document.getElementById('addresses');
-        const { data: addresses } = await A.listAddresses();
-        if (!addresses.length) {
-          addrEl.innerHTML = '<p class="field__hint">Nenhum endereço salvo ainda.</p>';
-        } else {
-          addrEl.innerHTML = addresses.map(function (a) {
-            return '<div class="account-card__row"><span class="value" style="text-align:left">' +
-              (a.is_default ? '<strong>★ </strong>' : '') +
-              esc(a.label || 'Endereço') + ' — ' + esc(a.street) + ', ' + esc(a.number) +
-              (a.complement ? ' (' + esc(a.complement) + ')' : '') + '<br>' +
-              esc(a.city) + '/' + esc(a.state) + ' · CEP ' + esc(a.cep) +
-              '</span></div>';
-          }).join('');
-        }
+        const { data: initialAddresses } = await A.listAddresses();
+        addresses = initialAddresses;
+        renderAddresses();
 
         // Pedidos
         const ordersEl = document.getElementById('orders');
@@ -153,9 +405,15 @@
                 '<span class="order__id">Frete ' + brl(o.shipping_cents) + (o.discount_cents ? ' · Desconto -' + brl(o.discount_cents) : '') + '</span>' +
                 '<span class="order__total">Total ' + brl(o.total_cents) + '</span>' +
               '</div>' +
+              renderTracking(o.tracking_code) +
             '</article>';
           }).join('');
         }
+
+        ordersEl.addEventListener('click', async function (e) {
+          const copyBtn = e.target.closest('button[data-copy-tracking]');
+          if (copyBtn) await copyText(copyBtn.getAttribute('data-copy-tracking') || '');
+        });
 
         document.getElementById('loading').hidden = true;
         document.getElementById('content').hidden = false;

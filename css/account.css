@@ -105,6 +105,11 @@
   border-bottom: 1px solid var(--line);
   margin-bottom: var(--space-8);
 }
+.account-header__actions {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end;
+  gap: var(--space-3);
+}
+.account-header__actions .btn { min-height: 42px; }
 .account-grid { display: grid; gap: var(--space-8); }
 .account-card {
   border: 1px solid var(--line);
@@ -113,6 +118,11 @@
   background: var(--white);
 }
 .account-card h2 { font-size: 1.5rem; margin-bottom: var(--space-4); }
+.account-card__head {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.account-card__head h2 { margin-bottom: 0; }
 .account-card__row {
   display: flex; justify-content: space-between; gap: var(--space-4);
   padding: var(--space-3) 0;
@@ -129,6 +139,16 @@
 .order__id { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .order__total { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
 .order__items { display: grid; gap: 0.3rem; font-size: 0.86rem; color: var(--text); }
+.order__tracking {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2);
+  margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--line);
+  font-size: 0.84rem; color: var(--muted);
+}
+.tracking-inline {
+  display: inline-flex; align-items: center; justify-content: flex-end;
+  gap: var(--space-2); flex-wrap: wrap; color: var(--ink);
+}
+.tracking-inline a { color: var(--rose-strong); text-decoration: underline; text-underline-offset: 0.18em; }
 .badge-status {
   display: inline-block; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
   padding: 0.2rem 0.7rem; border-radius: var(--radius-pill);
@@ -139,9 +159,32 @@
 .badge-status[data-status="delivered"] { background: #E7F2EE; color: var(--emerald-deep); border-color: #CDE6DE; }
 .badge-status[data-status="canceled"],
 .badge-status[data-status="refunded"]  { background: #F6E9EA; color: #9A3F48; border-color: #ECD3D5; }
+.badge-status[data-status="atrasado"]  { background: #FFF1D6; color: #8A4B00; border-color: #F2C36B; }
 
 .empty-state { text-align: center; color: var(--muted); padding: var(--space-12) var(--space-4); }
 .empty-state p { margin-inline: auto; margin-bottom: var(--space-4); }
+
+/* Endereços: cartões com ações de editar/excluir/tornar padrão */
+.address-card {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3);
+  padding: var(--space-4) 0; border-bottom: 1px solid var(--line);
+}
+.address-card:last-child { border-bottom: 0; }
+.address-card__title { font-weight: 500; color: var(--ink); margin-bottom: 0.2rem; }
+.address-card__text { font-size: 0.86rem; color: var(--text); line-height: 1.45; }
+.address-card__actions { display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem; flex-shrink: 0; }
+.link-btn {
+  font-family: var(--font-sans); font-size: 0.78rem; letter-spacing: 0.03em;
+  color: var(--rose-strong); white-space: nowrap;
+}
+.link-btn:hover { color: var(--rose-deep); text-decoration: underline; }
+.link-btn--danger { color: #9A3F48; }
+.link-btn--danger:hover { color: #7a2f37; }
+
+/* Formulário de endereço dentro do card (some/aparece ao editar/adicionar) */
+#address-form { margin-top: var(--space-6); padding-top: var(--space-6); border-top: 1px solid var(--line); }
+
+.btn--sm { padding: 0.5rem 1.1rem; font-size: 0.78rem; }
 
 @media (min-width: 760px) {
   .account-grid { grid-template-columns: 1fr 1fr; align-items: start; }
@@ -221,4 +264,3 @@
 .status-badge-lg--success { background: #E7F2EE; color: var(--emerald-deep); border: 1px solid #CDE6DE; }
 .status-badge-lg--pending { background: var(--blush); color: var(--rose-deep); border: 1px solid var(--rose-inst); }
 .status-badge-lg--failure { background: #F6E9EA; color: #9A3F48; border: 1px solid #ECD3D5; }
-

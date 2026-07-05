@@ -13,27 +13,13 @@
 
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { CORS } from '../_shared/cors.ts';
+import { rateLimit } from '../_shared/rate-limit.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const MP_ACCESS_TOKEN = Deno.env.get('MP_ACCESS_TOKEN')!;
 const PUBLIC_SITE_URL = Deno.env.get('PUBLIC_SITE_URL') ?? '';
-
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
-
-// --------------------------------------------------------------------
-// Catálogo oficial (preços autoritativos lado servidor).
-// IMPORTANTE: jamais aceite preço do browser para evitar manipulação.
-// --------------------------------------------------------------------
-const CATALOG: Record<string, { name: string; price_cents: number }> = {
-  'anel-coracao-esmeralda': { name: 'Anel Coração Esmeralda', price_cents: 18900 },
-  'anel-paraiba-quadrado':  { name: 'Anel Paraíba Quadrado',  price_cents: 21900 },
-  'pulseira-riviera-prata': { name: 'Pulseira Riviera Prata', price_cents: 15900 },
-};
 
 const SHIPPING_RULES: Array<{ prefixes: string[]; price_cents: number }> = [
   { prefixes: ['01', '02', '03', '04'], price_cents: 1490 },
@@ -74,6 +60,11 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
+  // Rate limit conservador: criar preferência dispara chamada ao MP e
+  // escreve pedido — 10/min por IP é folga pra uso real e barra abuso.
+  const limited = rateLimit(req, CORS, { limit: 10 });
+  if (limited) return limited;
+
   // 1) Autenticação do usuário via JWT do header
   const authHeader = req.headers.get('Authorization') ?? '';
   const jwt = authHeader.replace(/^Bearer\s+/i, '');
@@ -96,6 +87,10 @@ Deno.serve(async (req: Request) => {
   if (!Array.isArray(body.items) || body.items.length === 0) {
     return json({ error: 'Carrinho vazio.' }, 400);
   }
+  // Camada de sanidade: caps de tamanho (payloads absurdos são rejeitados
+  // antes de tocar o banco — defesa em profundidade, o front nunca gera isso).
+  if (body.items.length > 30) return json({ error: 'Carrinho grande demais.' }, 400);
+  const clip = (s: unknown, n: number) => String(s ?? '').trim().slice(0, n);
 
   // 3) Resolver endereço de entrega (id salvo OU novo endereço)
   let shippingAddressId: string | null = null;
@@ -116,15 +111,15 @@ Deno.serve(async (req: Request) => {
       .from('addresses')
       .insert({
         user_id: user.id,
-        label: a.label || 'Endereço',
-        recipient: a.recipient,
-        cep: a.cep,
-        street: a.street,
-        number: a.number,
-        complement: a.complement || null,
-        neighborhood: a.neighborhood || null,
-        city: a.city,
-        state: a.state,
+        label: clip(a.label, 40) || 'Endereço',
+        recipient: clip(a.recipient, 120),
+        cep: clip(a.cep, 9),
+        street: clip(a.street, 160),
+        number: clip(a.number, 20),
+        complement: clip(a.complement, 120) || null,
+        neighborhood: clip(a.neighborhood, 80) || null,
+        city: clip(a.city, 80),
+        state: clip(a.state, 2).toUpperCase(),
       })
       .select().single();
     if (error || !newAddr) return json({ error: 'Falha ao salvar endereço.' }, 500);
@@ -134,12 +129,24 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Informe um endereço de entrega.' }, 400);
   }
 
-  // 4) Recalcular totais com base no catálogo oficial (anti-manipulação)
+  // 4) Recalcular totais com base no catálogo oficial (anti-manipulação).
+  // Preço/disponibilidade vêm da tabela products (nunca do browser) — a
+  // mesma fonte de verdade usada pelo painel administrativo. A policy
+  // "products_select_active" só deixa ler produtos com active=true.
+  const slugs = [...new Set(body.items.map((it) => it.slug))];
+  const { data: products, error: productsErr } = await supabase
+    .from('products')
+    .select('slug, name, price_cents, in_stock')
+    .in('slug', slugs);
+  if (productsErr) return json({ error: 'Falha ao consultar catálogo.', detail: productsErr.message }, 500);
+  const catalogBySlug = new Map((products || []).map((p) => [p.slug, p]));
+
   let subtotal = 0;
   const resolvedItems = [] as Array<{ slug: string; name: string; price: number; qty: number }>;
   for (const it of body.items) {
-    const cat = CATALOG[it.slug];
+    const cat = catalogBySlug.get(it.slug);
     if (!cat) return json({ error: `Produto inválido: ${it.slug}` }, 400);
+    if (!cat.in_stock) return json({ error: `Produto fora de estoque: ${cat.name}` }, 400);
     const qty = Math.max(1, Math.min(20, Number(it.qty) || 1));
     subtotal += cat.price_cents * qty;
     resolvedItems.push({ slug: it.slug, name: cat.name, price: cat.price_cents, qty });
@@ -210,7 +217,11 @@ Deno.serve(async (req: Request) => {
       pending: `${siteUrl}/pagamento-pendente.html?order=${order.id}`,
       failure: `${siteUrl}/pagamento-falha.html?order=${order.id}`,
     },
-    notification_url: `${SUPABASE_URL}/functions/v1/webhook-mp`,
+    // NÃO definir notification_url aqui: quando presente na preferência ele
+    // tem precedência sobre o webhook do painel e é assinado com outra chave,
+    // quebrando a validação HMAC. Deixamos as notificações passarem pelo
+    // webhook configurado no painel MP (mesma URL, assinado com o secret do
+    // painel que a função webhook-mp valida).
     payer: { email: user.email ?? undefined },
     metadata: { order_id: order.id, user_id: user.id },
   };

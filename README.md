@@ -1,146 +1,119 @@
-# Druza Semi Joias - prototipo estatico
+# Druza Semi Joias — e-commerce
 
-Prototipo premium mobile-first em HTML, CSS e JS puro para a Druza Semi Joias. O projeto nao tem backend, checkout real, pagamento real, frete real, login ou integracoes de e-mail em producao.
+Loja virtual da Druza Semi Joias (semi joias femininas em prata, pedras esmeralda e
+Paraíba). Front-end estático em **HTML/CSS/JS puro** (sem frameworks, mobile-first),
+backend em **Supabase** (Postgres + Auth + Edge Functions) e pagamento via
+**MercadoPago Checkout Pro**. Checkout validado ponta a ponta em ambiente de teste.
 
-## Status atual
+## Funcionalidades
 
-- Home editorial e pagina de produto navegaveis.
-- Paginas basicas de conteudo/SEO: `sobre.html`, `cuidados.html`, `trocas.html`, `contato.html` e `privacidade.html`.
-- Catalogo local em `js/catalog.js`, usado para renderizar grades de produtos.
-- Drawers de menu e sacola com foco preso, retorno ao gatilho, `Escape`, overlay e live region.
-- Sacola funcional com persistencia em `localStorage`, subtotal, quantidade, remocao, cupom, frete e total.
-- Barra de progresso para frete gratis e botao de continuar comprando.
-- Cupom local `PRIMEIRADRUZA`, com mensagens para cupons expirados/de exemplo.
-- Frete simulado por faixa de CEP e reaproveitamento do CEP entre produto, sacola e checkout.
-- Checkout simulado com revisao do pedido, mascara de telefone, link de resumo por WhatsApp e limpeza da sacola.
-- Produto com seletor de tamanho por botoes, galeria de miniaturas, imagem principal e FAQ.
-- Newsletter com consentimento obrigatorio, feedback acessivel e link para politica de privacidade.
-- SEO tecnico base em home e produto: canonical, Open Graph, Twitter card e JSON-LD.
+- **Loja**: home editorial, catálogo completo (`catalogo.html`), páginas de produto
+  (fixas em `produtos/*.html` e genérica via `produto.html?slug=...`), sacola com
+  persistência local, cupom e frete simulado por CEP.
+- **Contas de cliente**: cadastro, login, recuperação de senha, área da conta
+  (`conta.html`) com histórico de pedidos e CRUD de endereços.
+- **Checkout real**: `checkout.html` → Edge Function `create-preference` (recalcula
+  totais no servidor a partir da tabela `products` — nunca confia no preço do
+  navegador) → MercadoPago → webhook confirma o pagamento → pedido "Pago".
+- **Painel administrativo** (`admin.html`, login dedicado em `admin-login.html`,
+  com **2FA obrigatório**): gestão de pedidos (status, rastreio, detalhe logístico
+  com cliente/endereço/forma de pagamento) e produtos (preço, estoque, destaque).
+  Guia completo em [docs/ADMIN-GUIA.md](docs/ADMIN-GUIA.md).
 
-## Correcoes feitas nesta rodada
-
-- Botao de busca agora esta desabilitado e anunciado como "Busca em breve", evitando uma acao falsa.
-- Checkout fica oculto quando a sacola esta vazia, evitando campos focaveis sem item no pedido.
-- Confirmacao do pedido simulado passou para uma mensagem fora do formulario, entao continua visivel apos a sacola ser limpa.
-- Miniaturas da galeria agora usam botoes reais em vez de `img role="button"`.
-- Seletor visual de tamanho usa `radiogroup`/`radio`; o `select` fica apenas como estado interno.
-- Placeholder de produto gerado por JS usa `div`, corrigindo HTML invalido com `p` dentro de `span`.
-- Breadcrumb visual e JSON-LD do produto apontam para a mesma categoria da home.
-- Paginas auxiliares receberam navegacao simples para nao ficarem isoladas.
-- Drawer recebeu `overscroll-behavior: contain` para reduzir vazamento de scroll.
-- README foi atualizado com o estado real, pendencias e riscos.
-
-## Como rodar
-
-Sem build. Abra `index.html` direto no navegador ou sirva a pasta localmente:
-
-```bash
-python -m http.server 5500
-```
-
-Depois acesse `http://localhost:5500`.
-
-## Arquivos relevantes
+## Estrutura do projeto
 
 ```text
-index.html
-produto.html
-sobre.html
-cuidados.html
-trocas.html
-contato.html
-privacidade.html
-css/styles.css
-js/main.js
-js/catalog.js
-img/
-DIRECAO-DE-ARTE.md
+├── *.html                     Páginas (raiz = URLs públicas do site)
+├── css/
+│   ├── styles.css             Design system (tokens em :root) + componentes
+│   ├── account.css            Auth + área da conta + checkout
+│   └── admin.css              Painel administrativo
+├── js/
+│   ├── config.example.js      Modelo → copie para js/config.js (gitignored)
+│   ├── catalog.js             Catálogo: conteúdo estático + preço/estoque ao vivo do banco
+│   ├── main.js                UI global (drawers, sacola, grids, frete/cupom)
+│   ├── product-page.js        Render da página de produto (por id fixo ou ?slug=)
+│   ├── auth.js                Camada de autenticação (window.DruzaAuth)
+│   ├── checkout.js            Fluxo de pagamento
+│   └── admin.js               Camada do painel (window.DruzaAdmin, MFA)
+├── produtos/                  Páginas fixas dos produtos originais
+├── img/                       Fotos e assets de marca
+├── db/
+│   ├── schema.sql             Tabelas base (profiles, addresses, orders, order_items) + RLS
+│   ├── schema-payments.sql    Colunas de pagamento (MercadoPago)
+│   └── schema-admin.sql       Admin (admins, products, admin_audit_log) + RLS
+├── supabase/functions/
+│   ├── _shared/               require-admin.ts (autorização + 2FA) · cors.ts
+│   ├── create-preference/     Cria pedido + preferência MP (preços server-side)
+│   ├── webhook-mp/            Confirma pagamento (re-consulta autenticada na API MP)
+│   └── admin-*/               6 funções do painel (sempre passam por require-admin)
+└── docs/                      Guias e documentação (ver abaixo)
 ```
 
-## Placeholders e dados ficticios
+## Como rodar localmente
 
-Marcados no HTML com `<!-- PLACEHOLDER -->`, com selo `Exemplo`, com selo `placeholder` ou com blocos `.ph`.
+1. Copie `js/config.example.js` → `js/config.js` e preencha `SUPABASE_URL` e
+   `SUPABASE_ANON_KEY` (nunca a service_role — o arquivo já é gitignored).
+2. Sirva a pasta (sem build):
 
-- Produtos, nomes, precos, parcelas, SKU, estoque e oferta estruturada sao exemplos.
-- Algumas entradas do catalogo apontam para `produto.html` porque ainda nao existem paginas individuais para todos os produtos.
-- WhatsApp usa link placeholder (`https://wa.me/`) ate a marca fornecer o numero real.
-- CEP retorna mensagens locais fake apenas para demonstrar UX.
-- Sacola persiste apenas itens, frete e cupom no navegador via `localStorage`.
-- Checkout e simulado: valida campos, gera um numero ficticio de pedido, nao cobra e nao envia dados pessoais.
-- Login e newsletter nao persistem dados.
-- Onde faltam fotos reais, o layout usa placeholder premium com o texto `Foto em breve` e descricao do asset esperado.
+```bash
+python -m http.server 5510
+```
 
-## Contrato local em JS
+3. Acesse `http://localhost:5510`. Para testar o fluxo do MercadoPago de ponta a
+   ponta é preciso um túnel público (`ngrok http 5510`) — o MP recusa `localhost`
+   nas URLs de retorno. Detalhes em [docs/MERCADOPAGO-SETUP.md](docs/MERCADOPAGO-SETUP.md).
 
-`js/main.js` centraliza o contrato de UI em `UI_CONTRACT`:
+## Modelo de segurança (resumo)
 
-- `storageKey`: chave da sacola no `localStorage`.
-- `products`: catalogo minimo vindo de `window.DRUZA_CATALOG`.
-- `shippingRules`: respostas fake por prefixo de CEP.
-- `shippingFallback`: retorno padrao quando o CEP nao bate nas faixas simuladas.
-- `freeShippingCents`: valor minimo para liberar frete gratis.
-- `couponCode`, `couponDiscount` e `expiredCouponCodes`: regras locais de cupom.
-- `whatsappPlaceholder`: base atual para gerar o resumo do pedido.
+A regra geral: **nunca confiar no navegador — toda decisão sensível é revalidada
+no servidor.** Detalhes e checklist de produção em [docs/SEGURANCA.md](docs/SEGURANCA.md).
 
-Se o projeto evoluir sem framework, o proximo passo natural e extrair regras comerciais para `data/*.json` ou uma camada `js/services/*`, mantendo a interface atual.
+- **RLS em todas as tabelas** — cada cliente só lê/escreve os próprios dados.
+- **Preços recalculados no servidor** a partir da tabela `products` (o valor
+  enviado pelo navegador é ignorado).
+- **Webhook do MP** não confia na notificação: re-consulta o pagamento na API do
+  MercadoPago com o Access Token da conta + confere o valor antes de marcar "pago".
+- **Admin**: tabela `admins` sem nenhuma política de escrita (promoção só manual,
+  via SQL Editor) + **2FA TOTP obrigatório** verificado **no servidor** (claim
+  `aal2` exigido pelas Edge Functions) + log de auditoria de toda ação.
+- **CORS restringível** por env (`ALLOWED_ORIGIN`), supabase-js **pinado com SRI**
+  nas páginas, entradas validadas/limitadas e **rate limiting por IP** nas Edge
+  Functions, **fontes auto-hospedadas** (zero requisições a terceiros além do
+  Supabase/MP).
 
-## SEO tecnico implementado
+## Documentação (docs/)
 
-- `canonical` em home, produto e paginas auxiliares.
-- Open Graph basico na home, produto e sobre.
-- JSON-LD:
-  - `Organization` em home e produto.
-  - `BreadcrumbList` em `produto.html`.
-  - `Product` + `Offer` em `produto.html`.
+| Guia | Conteúdo |
+| --- | --- |
+| [ADMIN-GUIA.md](docs/ADMIN-GUIA.md) | Painel admin: setup, 2FA, uso diário, recuperação |
+| [SEGURANCA.md](docs/SEGURANCA.md) | Camadas de segurança + checklist de produção |
+| [MERCADOPAGO-SETUP.md](docs/MERCADOPAGO-SETUP.md) | Integração MP: credenciais, webhook, testes |
+| [BACKEND-SETUP.md](docs/BACKEND-SETUP.md) | Supabase: projeto, schema, auth |
+| [GUIA-DE-PRODUCAO.md](docs/GUIA-DE-PRODUCAO.md) | Checklist de publicação |
+| [DIRECAO-DE-ARTE.md](docs/DIRECAO-DE-ARTE.md) | Design system (paleta, tipografia, componentes) |
+| [DESIGN.md](docs/DESIGN.md) / [PRODUCT.md](docs/PRODUCT.md) | Decisões de design e produto |
 
-Observacao: os dados estruturados do produto ainda usam valores de exemplo e precisam ser trocados antes de publicacao real.
+## Deploy das Edge Functions
 
-## Performance e assets
+```bash
+supabase functions deploy create-preference
+supabase functions deploy webhook-mp --no-verify-jwt
+supabase functions deploy admin-list-orders
+supabase functions deploy admin-update-order
+supabase functions deploy admin-get-order
+supabase functions deploy admin-list-products
+supabase functions deploy admin-upsert-product
+supabase functions deploy admin-delete-product
+```
 
-- Nenhuma imagem externa foi adicionada.
-- As 3 fotos reais existentes foram reutilizadas com cuidado, evitando repeticao excessiva nas grades dinamicas.
-- `loading="lazy"` e `decoding="async"` aplicados onde faz sentido.
-- `fetchpriority="high"` aplicado a imagem principal do produto.
-- Nao ha `srcset`/`sizes` porque o projeto ainda nao possui variantes reais dos arquivos.
+## Estado e pendências
 
-Pendencias de performance:
-
-1. Converter as 3 fotos reais para WebP/AVIF.
-2. Criar variantes responsivas das imagens.
-3. Gerar uma OG image dedicada.
-4. Auto-hospedar fontes ou revisar dependencia do Google Fonts.
-
-## Acessibilidade
-
-- `role="dialog"`, `aria-modal`, `aria-labelledby` e `aria-hidden` nos drawers.
-- Foco preso dentro do drawer aberto.
-- Retorno de foco ao botao que abriu o drawer.
-- Overlay e `Escape` fecham os drawers.
-- Conteudo do fundo fica com `inert` quando suportado.
-- Feedbacks de formulario e live region da sacola com `aria-live="polite"`.
-- Controles de tamanho e miniaturas usam elementos interativos reais.
-
-Pendencias de acessibilidade:
-
-1. Testar com leitor de tela real em mobile.
-2. Revisar contraste final depois da etapa de design/arte.
-3. Validar ordem de foco completa em todas as paginas apos novas features.
-
-## Riscos e limitacoes
-
-- Sem backend real, todas as acoes de sacola, CEP, checkout e newsletter sao simulacoes locais.
-- O checkout nao deve ser usado em producao: ele nao processa pagamento, nao calcula frete real e nao grava pedido.
-- `localStorage` pode ser limpo pelo navegador e nao substitui carrinho de loja real.
-- `inert` depende do suporte do navegador; onde nao houver suporte, o projeto ainda usa `aria-hidden`, mas o comportamento pode variar.
-- Links de WhatsApp ainda nao tem numero oficial.
-- O catalogo ainda nao tem paginas dedicadas por produto.
-- Textos legais de privacidade, troca e garantia sao exemplos e precisam de revisao juridica/comercial.
-
-## Proximos passos priorizados
-
-1. Substituir catalogo, precos, estoque, textos legais, WhatsApp e politicas por dados reais.
-2. Criar paginas individuais ou roteamento estatico para cada produto.
-3. Integrar frete, newsletter, checkout e pedidos a servicos reais quando houver backend/plataforma.
-4. Completar etapa de design/arte com Claude Code, revisando responsividade, polimento visual e consistencia da marca.
-5. Otimizar imagens, gerar OG image e revisar SEO final antes do deploy.
-6. Adicionar testes automatizados leves para fluxo de sacola, cupom, frete e checkout simulado.
+- ✅ Checkout MercadoPago validado ponta a ponta (ambiente de teste).
+- ✅ Webhook seguro (re-consulta na API + verificação de valor).
+- ✅ Painel admin com 2FA (codado; requer rodar `db/schema-admin.sql` + deploy).
+- ✅ Pacote logística admin 1/5/6/8 codado: rastreio clicável/copiar, alerta de pago parado, filtro por período, CSV e notas internas (requer rodar schema + redeploy das functions tocadas).
+- ✅ Imagens WebP, fontes auto-hospedadas, robots.txt + sitemap.xml, rate limiting.
+- ⏳ Produção: domínio, credenciais MP reais, analytics, `ALLOWED_ORIGIN`, headers
+  do host — ver [docs/SEGURANCA.md](docs/SEGURANCA.md) e
+  [docs/GUIA-DE-PRODUCAO.md](docs/GUIA-DE-PRODUCAO.md).

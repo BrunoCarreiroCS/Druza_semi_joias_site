@@ -2,7 +2,7 @@
    DRUZA — auth.js
    Camada de autenticação sobre o Supabase. Requer, ANTES deste script:
      <script src="js/config.js"></script>
-     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js" integrity="..." crossorigin="anonymous"></script>
    Expõe window.DruzaAuth com as funções usadas pelas páginas.
    ===================================================================== */
 (function () {
@@ -142,11 +142,48 @@
     return { data: data || [], error: mapError(error) };
   }
 
+  async function createAddress(fields) {
+    if (!client) return { error: 'Configuração ausente.' };
+    const user = await getUser();
+    if (!user) return { error: 'Não autenticado.' };
+    const { data, error } = await client
+      .from('addresses').insert({ ...fields, user_id: user.id }).select().single();
+    return { data, error: mapError(error) };
+  }
+
+  async function updateAddress(id, fields) {
+    if (!client) return { error: 'Configuração ausente.' };
+    const { data, error } = await client
+      .from('addresses').update(fields).eq('id', id).select().single();
+    return { data, error: mapError(error) };
+  }
+
+  async function deleteAddress(id) {
+    if (!client) return { error: 'Configuração ausente.' };
+    const { error } = await client.from('addresses').delete().eq('id', id);
+    return { error: mapError(error) };
+  }
+
+  // Marca um endereço como padrão, removendo o padrão dos demais (o banco
+  // não impõe "só um default por usuário" via constraint, então isso é
+  // feito com duas escritas do lado do cliente, ambas cobertas por RLS).
+  async function setDefaultAddress(id) {
+    if (!client) return { error: 'Configuração ausente.' };
+    const user = await getUser();
+    if (!user) return { error: 'Não autenticado.' };
+    const { error: clearErr } = await client
+      .from('addresses').update({ is_default: false }).eq('user_id', user.id).neq('id', id);
+    if (clearErr) return { error: mapError(clearErr) };
+    const { data, error } = await client
+      .from('addresses').update({ is_default: true }).eq('id', id).select().single();
+    return { data, error: mapError(error) };
+  }
+
   async function listOrders() {
     if (!client) return { data: [], error: 'Configuração ausente.' };
     const { data, error } = await client
       .from('orders')
-      .select('*, order_items(*)')
+      .select('id, status, tracking_code, total_cents, subtotal_cents, shipping_cents, discount_cents, created_at, updated_at, order_items(*)')
       .order('created_at', { ascending: false });
     return { data: data || [], error: mapError(error) };
   }
@@ -186,7 +223,9 @@
     signUp, signIn, signOut,
     requestPasswordReset, updatePassword,
     getSession, getUser, requireAuth, onAuthChange,
-    getProfile, updateProfile, listAddresses, listOrders,
+    getProfile, updateProfile,
+    listAddresses, createAddress, updateAddress, deleteAddress, setDefaultAddress,
+    listOrders,
     invokeFunction
   };
 })();

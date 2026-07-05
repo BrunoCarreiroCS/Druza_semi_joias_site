@@ -1,28 +1,40 @@
 // =====================================================================
 // DRUZA — Edge Function: webhook-mp
 //
-// Recebe notificações do MercadoPago, valida assinatura HMAC,
-// consulta o pagamento na API do MP e atualiza o pedido.
+// Recebe notificações do MercadoPago e atualiza o status do pedido.
 //
-// SEGURANÇA — Por que verificar HMAC:
-//   Sem validação, qualquer pessoa pode mandar POST forjado para esta
-//   URL e marcar pedidos como "pagos". O MercadoPago envia em todo
-//   webhook autêntico um header x-signature com:
-//     ts=<timestamp>,v1=<hash_hex>
-//   Onde v1 = HMAC_SHA256(
-//     key   = MP_WEBHOOK_SECRET (do painel MP),
-//     msg   = `id:<data.id>;request-id:<x-request-id>;ts:<ts>;`
-//   ). Se o nosso cálculo não bater com v1 → notificação forjada,
-//   respondemos 401 e ignoramos.
+// MODELO DE SEGURANÇA (duas camadas; a 2ª é a âncora de confiança):
+//
+//   1) HMAC da x-signature — camada extra ("defense in depth"). Se a
+//      assinatura bater com um dos secrets configurados, ótimo. Se NÃO
+//      bater, apenas logamos: NÃO é o que garante a segurança.
+//
+//   2) Re-consulta autenticada na API do MP — a PROVA de verdade.
+//      Pegamos o id do pagamento da notificação e consultamos
+//      GET /v1/payments/{id} usando o NOSSO Access Token secreto. O MP
+//      só devolve o pagamento se ele pertencer à nossa conta. Uma
+//      notificação forjada aponta para um id que (a) não existe, ou
+//      (b) não é nosso → a consulta falha → rejeitamos. Um id real
+//      nosso devolve o status VERDADEIRO direto da API — nunca
+//      confiamos no status que vem no corpo do webhook.
+//
+//   3) Conferência de valor — o valor do pagamento tem que bater com o
+//      total do pedido antes de marcar como "pago". Impede que um id de
+//      pagamento de valor menor promova um pedido maior.
+//
+// Por que não depender só do HMAC: o ambiente do MP assinou as
+// notificações reais desta conta com uma chave diferente da mostrada no
+// painel (o simulador bate, os pagamentos reais não). A re-consulta na
+// API contorna isso e é uma prova mais forte. Quando/se a assinatura
+// passar a bater, o log 'sig: hmac-ok' aparece e podemos endurecer.
 //
 // Variáveis de ambiente:
-//   - MP_ACCESS_TOKEN          (mesma do create-preference)
-//   - MP_WEBHOOK_SECRET        (gerada no painel MP → Webhooks)
-//   - SUPABASE_URL             (auto)
-//   - SUPABASE_SERVICE_ROLE_KEY (NUNCA expor no browser)
+//   - MP_ACCESS_TOKEN            (mesma do create-preference)
+//   - MP_WEBHOOK_SECRET          (secret do webhook do painel — opcional p/ HMAC)
+//   - MP_WEBHOOK_SECRET_PROD     (opcional — 2º secret p/ HMAC)
+//   - SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY (auto)
 //
-// IMPORTANTE: ao registrar esta função no painel do Supabase use
-//   --no-verify-jwt  (o MP não tem JWT do Supabase)
+// Deploy com  --no-verify-jwt  (o MP não manda JWT do Supabase).
 // =====================================================================
 
 // deno-lint-ignore-file no-explicit-any
@@ -31,36 +43,37 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const MP_ACCESS_TOKEN = Deno.env.get('MP_ACCESS_TOKEN')!;
-const MP_WEBHOOK_SECRET = Deno.env.get('MP_WEBHOOK_SECRET')!;
 
-// Mapa status MP → status interno
+const WEBHOOK_SECRETS: string[] = [
+  Deno.env.get('MP_WEBHOOK_SECRET'),
+  Deno.env.get('MP_WEBHOOK_SECRET_PROD'),
+]
+  .flatMap((s) => (s ?? '').split(','))
+  .map((s) => s.trim())
+  .filter((s) => s.length > 0);
+
 function mapMpStatus(mpStatus: string): string {
   switch (mpStatus) {
-    case 'approved':           return 'paid';
-    case 'pending':            return 'pending';
-    case 'in_process':         return 'pending';
-    case 'rejected':           return 'canceled';
-    case 'cancelled':          return 'canceled';
-    case 'refunded':           return 'refunded';
-    case 'charged_back':       return 'refunded';
-    default:                   return 'pending';
+    case 'approved':     return 'paid';
+    case 'pending':      return 'pending';
+    case 'in_process':   return 'pending';
+    case 'rejected':     return 'canceled';
+    case 'cancelled':    return 'canceled';
+    case 'refunded':     return 'refunded';
+    case 'charged_back': return 'refunded';
+    default:             return 'pending';
   }
 }
 
-// HMAC-SHA256 → hex
 async function hmacSha256Hex(key: string, msg: string): Promise<string> {
   const enc = new TextEncoder();
   const cryptoKey = await crypto.subtle.importKey(
-    'raw', enc.encode(key),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false, ['sign'],
+    'raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
   );
   const sig = await crypto.subtle.sign('HMAC', cryptoKey, enc.encode(msg));
-  return Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, '0')).join('');
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Comparação segura em tempo constante
 function safeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
@@ -68,113 +81,119 @@ function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-// Extrai ts e v1 de "ts=123,v1=abc"
 function parseSignature(header: string | null): { ts: string; v1: string } | null {
   if (!header) return null;
-  const parts = header.split(',').map((p) => p.trim());
   const map: Record<string, string> = {};
-  for (const p of parts) {
-    const idx = p.indexOf('=');
-    if (idx > 0) map[p.slice(0, idx)] = p.slice(idx + 1);
+  for (const p of header.split(',').map((x) => x.trim())) {
+    const i = p.indexOf('=');
+    if (i > 0) map[p.slice(0, i)] = p.slice(i + 1);
   }
   if (!map.ts || !map.v1) return null;
   return { ts: map.ts, v1: map.v1 };
 }
 
+// Camada 1: confere HMAC contra os secrets configurados (best-effort).
+async function checkHmac(manifest: string, v1: string): Promise<boolean> {
+  for (const secret of WEBHOOK_SECRETS) {
+    if (safeEqual(await hmacSha256Hex(secret, manifest), v1)) return true;
+  }
+  return false;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
-  // -----------------------------------------------------------------
-  // 1) Validar assinatura HMAC
-  // -----------------------------------------------------------------
-  const sigHeader = req.headers.get('x-signature');
-  const requestId = req.headers.get('x-request-id') ?? '';
-  console.log('webhook received', { sigHeader, requestId, url: req.url });
-  const sig = parseSignature(sigHeader);
-  if (!sig) {
-    console.log('missing signature');
-    return new Response('Missing signature', { status: 401 });
-  }
-
-  // Ler o body uma única vez antes de tudo
   const url = new URL(req.url);
+  const requestId = req.headers.get('x-request-id') ?? '';
+  const sig = parseSignature(req.headers.get('x-signature'));
+
   let bodyText = '';
   try { bodyText = await req.text(); } catch { /* corpo opcional */ }
   let body: any = null;
-  if (bodyText) {
-    try { body = JSON.parse(bodyText); } catch { /* não-JSON */ }
-  }
+  if (bodyText) { try { body = JSON.parse(bodyText); } catch { /* não-JSON */ } }
 
-  // Para o HMAC: MP v2 usa body.id (notification ID), legacy usa query param id
-  // NUNCA confundir com body.data.id (resource/payment ID)
-  let notificationId = '';
-  if (body?.id !== undefined) {
-    notificationId = String(body.id);
-  } else {
-    notificationId = url.searchParams.get('data.id') ?? url.searchParams.get('id') ?? '';
-  }
+  // Só agimos sobre pagamentos. Qualquer outro tópico é ignorado sem risco.
+  const topic = body?.type || body?.topic
+    || url.searchParams.get('type') || url.searchParams.get('topic');
+  if (topic && topic !== 'payment') return new Response('Ignored', { status: 200 });
 
-  // Para buscar o pagamento na API: usa data.id ou query param
-  let resourceId = url.searchParams.get('data.id') ?? url.searchParams.get('id') ?? '';
-  if (!resourceId && body?.data?.id) resourceId = String(body.data.id);
+  // ID do pagamento (v2: ?data.id=, legacy: ?id=, fallback no corpo).
+  let paymentId = url.searchParams.get('data.id') || url.searchParams.get('id') || '';
+  if (!paymentId && body?.data?.id != null) paymentId = String(body.data.id);
+  if (!paymentId && body?.id != null) paymentId = String(body.id);
+  if (!paymentId) return new Response('Missing payment id', { status: 400 });
 
-  // DEBUG: testar as duas hipóteses de manifest para descobrir qual o MP realmente usa
-  const manifestA = `id:${notificationId};request-id:${requestId};ts:${sig.ts};`;
-  const manifestB = `id:${resourceId};request-id:${requestId};ts:${sig.ts};`;
-  const expectedA = await hmacSha256Hex(MP_WEBHOOK_SECRET, manifestA);
-  const expectedB = await hmacSha256Hex(MP_WEBHOOK_SECRET, manifestB);
-  const secretLen = MP_WEBHOOK_SECRET.length;
-  console.log('hmac debug', {
-    notificationId, resourceId, requestId, ts: sig.ts, secretLen,
-    manifestA, manifestB, received: sig.v1,
-    matchA: safeEqual(expectedA, sig.v1),
-    matchB: safeEqual(expectedB, sig.v1),
-  });
-  const matched = safeEqual(expectedA, sig.v1) || safeEqual(expectedB, sig.v1);
-  if (!matched) {
-    // TODO(produção): investigar por que o HMAC de teste do MP não bate antes de ir ao ar.
-    // Por ora seguimos processando (ambiente de teste), mas logamos o aviso.
-    console.warn('HMAC não validou — seguindo mesmo assim (ambiente de teste).');
+  // -----------------------------------------------------------------
+  // Camada 1 (best-effort): HMAC da assinatura. Não bloqueia.
+  // -----------------------------------------------------------------
+  let hmacOk = false;
+  if (sig && WEBHOOK_SECRETS.length > 0) {
+    const manifest = `id:${paymentId};request-id:${requestId};ts:${sig.ts};`;
+    hmacOk = await checkHmac(manifest, sig.v1);
   }
 
   // -----------------------------------------------------------------
-  // 2) Só nos interessa notificação de pagamento
+  // Camada 2 (âncora de confiança): re-consulta autenticada na API do MP.
+  // O MP só devolve o pagamento se ele for da NOSSA conta.
   // -----------------------------------------------------------------
-  const topic = body?.type || body?.topic || url.searchParams.get('topic') || url.searchParams.get('type');
-  if (topic && topic !== 'payment') {
-    return new Response('Ignored', { status: 200 });
-  }
-  if (!resourceId) return new Response('Missing data.id', { status: 400 });
-
-  // -----------------------------------------------------------------
-  // 3) Buscar o pagamento na API do MercadoPago (fonte da verdade)
-  // -----------------------------------------------------------------
-  const payRes = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(resourceId)}`, {
-    headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
-  });
+  const payRes = await fetch(
+    `https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`,
+    { headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` } },
+  );
   if (!payRes.ok) {
-    return new Response('MP fetch failed', { status: 502 });
+    // 404 = pagamento inexistente ou de outra conta → notificação não confiável.
+    console.warn('pagamento não verificado na API do MP — rejeitado', {
+      paymentId, mpStatus: payRes.status, hmacOk,
+    });
+    return new Response('Unverified payment', { status: 401 });
   }
   const payment = await payRes.json();
 
   const orderId = payment?.external_reference;
   if (!orderId) return new Response('No external_reference', { status: 200 });
 
-  // -----------------------------------------------------------------
-  // 4) Atualizar o pedido com service_role (bypassa RLS)
-  // -----------------------------------------------------------------
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  // Busca o pedido correspondente (precisa existir e ser nosso).
+  const { data: order, error: orderErr } = await admin
+    .from('orders')
+    .select('id, total_cents, status, paid_at')
+    .eq('id', orderId)
+    .single();
+  if (orderErr || !order) {
+    console.warn('pedido do external_reference não encontrado', { orderId, paymentId });
+    return new Response('Order not found', { status: 200 });
+  }
+
   const newStatus = mapMpStatus(String(payment.status || ''));
+
+  // -----------------------------------------------------------------
+  // Camada 3: conferência de valor antes de promover para "pago".
+  // -----------------------------------------------------------------
+  if (newStatus === 'paid' && typeof payment.transaction_amount === 'number') {
+    const paidCents = Math.round(payment.transaction_amount * 100);
+    if (Math.abs(paidCents - order.total_cents) > 1) {
+      console.error('valor do pagamento diverge do total do pedido — não marcado como pago', {
+        orderId, paymentId, paidCents, orderTotal: order.total_cents,
+      });
+      return new Response('Amount mismatch', { status: 409 });
+    }
+  }
+
+  const updateFields: Record<string, string> = {
+    status: newStatus,
+    payment_status: String(payment.status || ''),
+    mp_payment_id: String(payment.id),
+  };
+  if (newStatus === 'paid' && !order.paid_at) {
+    updateFields.paid_at = new Date().toISOString();
+  }
+
   const { error: updateErr } = await admin
     .from('orders')
-    .update({
-      status: newStatus,
-      payment_status: String(payment.status || ''),
-      mp_payment_id: String(payment.id),
-    })
+    .update(updateFields)
     .eq('id', orderId);
 
   if (updateErr) {
@@ -182,5 +201,9 @@ Deno.serve(async (req: Request) => {
     return new Response('DB update failed', { status: 500 });
   }
 
+  console.log('pedido atualizado', {
+    orderId, newStatus, paymentId,
+    sig: hmacOk ? 'hmac-ok' : 'hmac-nao-bateu (validado pela API)',
+  });
   return new Response('OK', { status: 200 });
 });

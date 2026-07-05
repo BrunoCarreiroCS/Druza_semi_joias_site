@@ -1,0 +1,119 @@
+/* =====================================================================
+   DRUZA — admin.css
+   Estilos do painel administrativo. Usa os tokens de css/styles.css e
+   reaproveita padrões de css/account.css (carregue ambos antes deste).
+   ===================================================================== */
+
+.admin-tabs {
+  display: flex; gap: var(--space-2);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--space-6);
+}
+.admin-tab {
+  font-family: var(--font-sans); font-size: 0.9rem; color: var(--muted);
+  padding: var(--space-3) var(--space-2);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.admin-tab:hover { color: var(--ink); }
+.admin-tab.is-active { color: var(--rose-strong); border-bottom-color: var(--rose-strong); }
+
+.admin-filter-bar {
+  display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: flex-end;
+  margin-bottom: var(--space-6);
+}
+.admin-filter-bar .field { min-width: 160px; flex: 1; }
+.admin-filter-bar .btn { min-height: 44px; }
+.admin-filter-bar input,
+.admin-filter-bar select {
+  width: 100%; min-height: 44px; padding: 0.6rem 0.9rem;
+  border: 1.5px solid var(--silver); border-radius: var(--radius-sm);
+  background: var(--white-warm); font-family: var(--font-sans);
+}
+
+.admin-bulk-bar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--space-3); margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--white-warm); border: 1px solid var(--line); border-radius: var(--radius-sm);
+}
+
+.admin-row {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-4);
+  padding: var(--space-4) 0.6rem; border-bottom: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.admin-row:last-child { border-bottom: 0; }
+/* Linha com status/rastreio alterado e ainda não salvo. */
+.admin-row.is-dirty {
+  background: var(--blush);
+  box-shadow: inset 3px 0 0 var(--rose-strong);
+}
+.admin-row__main { flex: 1 1 260px; min-width: 0; }
+.admin-row__title {
+  font-weight: 500; color: var(--ink); margin-bottom: 0.3rem;
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+}
+.admin-row__meta { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+.admin-row__actions {
+  display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: flex-end;
+  flex: 0 0 auto;
+}
+.admin-row__actions .field { margin: 0; min-width: 140px; }
+.admin-row__actions select,
+.admin-row__actions input[type="text"] {
+  min-height: 40px; padding: 0.5rem 0.7rem;
+  border: 1.5px solid var(--silver); border-radius: var(--radius-sm);
+  background: var(--white-warm); font-family: var(--font-sans); font-size: 0.86rem;
+}
+
+#product-form { margin-top: var(--space-6); padding-top: var(--space-6); border-top: 1px solid var(--line); }
+
+/* Modal de detalhe do pedido (logística) */
+.admin-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: var(--space-4); }
+.admin-modal[hidden] { display: none; }
+.admin-modal__backdrop { position: absolute; inset: 0; background: rgba(43, 43, 45, 0.45); }
+.admin-modal__panel {
+  position: relative; z-index: 1; width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
+  background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-card);
+  padding: var(--space-8);
+}
+.admin-modal__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4); }
+.admin-modal__head h2 { font-size: 1.5rem; margin: 0; }
+.detail-block { padding: var(--space-4) 0; border-bottom: 1px solid var(--line); }
+.detail-block:last-child { border-bottom: 0; }
+.detail-block h3 {
+  font-family: var(--font-sans); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--rose-strong); margin: 0 0 var(--space-3);
+}
+.detail-line { display: flex; justify-content: space-between; gap: var(--space-4); padding: 0.25rem 0; font-size: 0.9rem; }
+.detail-label { color: var(--muted); flex-shrink: 0; }
+.detail-value { color: var(--ink); text-align: right; word-break: break-word; }
+.detail-address { font-size: 0.9rem; color: var(--text); line-height: 1.5; }
+.detail-item { font-size: 0.9rem; color: var(--text); padding: 0.2rem 0; }
+.detail-item .muted { color: var(--muted); }
+.detail-totals { margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--line); }
+.detail-block textarea {
+  width: 100%; min-height: 112px; resize: vertical;
+  padding: 0.7rem 0.9rem; border: 1.5px solid var(--silver); border-radius: var(--radius-sm);
+  background: var(--white-warm); font-family: var(--font-sans); color: var(--ink);
+}
+.admin-note-actions {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+/* Ativação do 2FA (QR + segredo) */
+.mfa-qr {
+  display: grid; place-items: center;
+  padding: var(--space-4); margin-bottom: var(--space-4);
+  background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-sm);
+}
+.mfa-qr svg, .mfa-qr img { width: 200px; height: 200px; }
+.mfa-secret {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.95rem; letter-spacing: 0.08em; word-break: break-all;
+  background: var(--white-warm); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: var(--space-3); margin-bottom: var(--space-4); text-align: center;
+}
