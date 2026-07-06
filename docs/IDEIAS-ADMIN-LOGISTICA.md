@@ -31,18 +31,25 @@ autônoma.
    pedido do admin **e** na conta do cliente (`conta.html`). Botão "copiar
    código". *Baixa complexidade, só front. Sonnet.*
 
+2z. ✅ **Analytics (GA4)** — feito em 2026-07-06. `js/analytics.js` carrega o
+    gtag.js só se um Measurement ID (`G-XXXXXXXXXX`) for colado na constante
+    `GA4_ID` no topo do arquivo; vazio = zero chamada de rede (verificado no
+    preview). Incluído em todas as 25 páginas públicas; **de propósito não
+    incluído** em `admin.html`/`admin-login.html` (minimizar terceiros na
+    área restrita). Falta só o usuário criar a conta em analytics.google.com
+    e colar o ID.
+
 2. **E-mail automático ao cliente** — ao marcar **Enviado** (com rastreio),
    disparar e-mail "seu pedido foi postado" via Resend; idem confirmação ao
    virar **Pago** (gancho no `webhook-mp` ou na `admin-update-order`).
    Depende de domínio + Resend configurado. *Média. Sonnet, com revisão do
    texto pelo dono.*
 
-3. **Romaneio / etiqueta imprimível** — botão "Imprimir" no detalhe do pedido
-   que abre uma página limpa (CSS `@media print`) com: endereço do
-   destinatário grande (formato etiqueta), remetente, lista de itens (picking
-   list) e declaração de conteúdo dos Correios pré-preenchida. Versão em lote:
-   imprimir todos os pedidos "Pago" de uma vez. *Média, só front (dados já
-   vêm do `admin-get-order`). Sonnet.*
+3. ✅ **Romaneio / etiqueta imprimível** — feito em 2026-07-06.
+   O detalhe do pedido imprime etiqueta completa com remetente configurável,
+   destinatário grande, CEP destacado, romaneio/picking list e declaração de
+   conteúdo pré-preenchida. A aba Pedidos também imprime em lote os pedidos
+   "Pago" carregados na tela. *Sonnet.*
 
 4. **Timestamps e linha do tempo do pedido** — colunas `paid_at`, `shipped_at`,
    `delivered_at` em `orders` (preenchidas na transição de status) + timeline

@@ -1,160 +1,121 @@
 # Guia de Produção — Druza Semi Joias
 
-Documentação das **próximas etapas** para transformar o protótipo atual em um site
-**profissional, funcional e pronto para vender**. Complementa o `README.md` (estado/risco
-técnico) e o `DIRECAO-DE-ARTE.md` (design system).
+Checklist do que falta para o site sair do ambiente de teste e vender de verdade.
+Complementa `README.md` (arquitetura), `docs/SEGURANCA.md` (camadas de segurança),
+`docs/MERCADOPAGO-SETUP.md` (integração de pagamento) e `docs/ADMIN-GUIA.md`
+(painel administrativo).
 
-## Onde estamos hoje
+## Onde estamos hoje (real, não protótipo)
 
-- Protótipo estático premium (HTML/CSS/JS puro), **mobile-first**, sem framework.
-- Home editorial + página de produto + páginas de conteúdo (`sobre`, `cuidados`, `trocas`,
-  `contato`, `privacidade`).
-- Catálogo local em `js/catalog.js`; **sacola, cupom, frete e checkout são simulados**
-  (`localStorage`), sem backend, pagamento, login ou e-mail reais.
-- Fotos reais **otimizadas** (`anel-paraiba.jpg`, `pulseiras-riviera.jpg`,
-  `anel-coracao.jpg`) e **placeholders premium** (`.ph`, "Foto em breve") onde faltam fotos.
+Isto **não é mais** um protótipo simulado — é uma loja funcional com backend real:
 
-## Como usar este guia
+- **Checkout real** via MercadoPago (Pix/cartão/boleto), testado ponta a ponta em
+  ambiente de teste: carrinho → pagamento → webhook confirma → pedido "Pago".
+- **Backend real** em Supabase: contas de cliente, endereços, pedidos, RLS em
+  todas as tabelas.
+- **Painel administrativo** com 2FA obrigatório, gestão de pedidos (status,
+  rastreio, notas internas, etiqueta imprimível, CSV, alerta de atraso) e
+  produtos (preço/estoque/destaque — fonte única de verdade usada pelo checkout).
+- **Segurança**: RLS, rate limiting, CORS restringível, validação de entrada,
+  XSS corrigido, SRI no CDN, webhook que nunca confia na notificação (re-consulta
+  a API do MP + confere valor).
+- **Performance**: imagens WebP, fontes auto-hospedadas (zero Google Fonts),
+  robots.txt + sitemap.xml.
+- **Analytics**: scaffold do GA4 pronto (`js/analytics.js`), só falta colar o
+  Measurement ID.
 
-Fases em ordem sugerida. Cada uma tem **objetivo**, **tarefas** e **critério de pronto**.
-🔑 marca uma **decisão do dono** (não dá para automatizar — depende do negócio).
-
----
-
-## Fase 1 — Conteúdo real
-
-**Objetivo:** eliminar todo dado de exemplo.
-
-- Catálogo real em `js/catalog.js`: nome, **preço, parcelas, SKU, estoque**, variações
-  (tamanho), descrição, material (prata 925, banho), medidas e cuidados por produto.
-- **Fotos reais de produto**: estúdio em fundo neutro (4:5), close macro da pedra, e
-  lifestyle — substituindo os blocos `.ph` e as fotos reaproveitadas.
-- Textos institucionais e **legais reais** (Sobre, Cuidados, Trocas/Devoluções, Garantia,
-  Privacidade, FAQ) — com **revisão jurídica**.
-- Dados da marca: **WhatsApp oficial**, redes sociais, razão social, CNPJ, endereço.
-
-**Pronto quando:** nenhum selo `Exemplo`/`placeholder`, nenhum `<!-- PLACEHOLDER -->` e
-nenhum `https://wa.me/` genérico restarem.
-
-## Fase 2 — 🔑 Plataforma e tecnologia
-
-**Objetivo:** decidir como o site vai realmente vender.
-
-- **A) Estático + headless commerce** (ex.: Snipcart, Shopify Storefront API, Nuvemshop
-  headless): mantém este front-end e pluga carrinho/checkout reais.
-- **B) Migrar o design para uma plataforma BR** (Nuvemshop, Shopify, Loja Integrada, Yampi)
-  como tema: já vem com checkout, pagamento, frete, estoque e painel.
-- **C) Stack próprio** (ex.: Next.js + CMS headless + gateway): máximo controle, maior custo
-  e manutenção.
-
-**Recomendação:** para uma marca de semi joias iniciando, **B** (plataforma brasileira) ou
-**A** (headless) — evitam construir backend fiscal/pagamento do zero.
-
-**Pronto quando:** plataforma escolhida e conta criada.
-
-## Fase 3 — Comércio real (checkout · pagamento · frete · pedidos)
-
-**Objetivo:** uma compra de verdade, ponta a ponta.
-
-- Carrinho/checkout reais (substituem a simulação em `js/main.js`/`UI_CONTRACT`).
-- **Pagamento**: 🔑 gateway (Mercado Pago, Pagar.me, PagSeguro, Stripe) com **Pix + cartão**.
-- **Frete real** por CEP (Correios / Melhor Envio / transportadora).
-- Cupons e promoções no painel da plataforma.
-- **E-mails transacionais** (confirmação, envio) + **newsletter** (🔑 Mailchimp, RD Station,
-  Klaviyo).
-- Conta/login do cliente, se necessário.
-
-**Pronto quando:** um **pedido-teste em sandbox** percorre carrinho → pagamento → confirmação
-→ e-mail.
-
-## Fase 4 — Imagens e performance
-
-**Objetivo:** rápido em qualquer dispositivo.
-
-- **WebP/AVIF** com `<picture>` + fallback; variantes responsivas (`srcset`/`sizes`).
-  - _(Hoje: JPEG q82 ≤1200px. WebP pendente — faltou ferramenta na máquina; rodar
-    `cwebp`/`squoosh`/`sharp` quando disponível.)_
-- **OG image dedicada** 1200×630 (substituir o logo na meta `og:image`).
-- Auto-hospedar/subsetar as fontes (Cormorant + Jost) e remover render-block.
-- **Lighthouse ≥ 90** em Performance/SEO/Best Practices/A11y; Core Web Vitals (LCP, CLS,
-  INP) no verde.
-- Remover assets originais não usados (`img/Captura de tela ….png`).
-
-**Pronto quando:** Lighthouse mobile ≥ 90 e CWV ok.
-
-## Fase 5 — SEO
-
-- Título/meta/`canonical` por página; **`sitemap.xml`** e **`robots.txt`**.
-- **JSON-LD** `Product`/`Offer`/`BreadcrumbList`/`Organization` com **dados reais**.
-- URLs amigáveis com **páginas dedicadas por produto e categoria** (hoje várias apontam para
-  `produto.html`).
-- Conteúdo para termos-foco (guia de cuidados, blog): _semi joias em prata, anel feminino
-  prata, anel com pedra verde, presente feminino sofisticado_.
-- **Google Search Console** + envio do sitemap.
-
-**Pronto quando:** páginas indexáveis, sitemap enviado e dados estruturados validados.
-
-## Fase 6 — Analytics e medição
-
-- **GA4** com eventos de e-commerce: `view_item`, `add_to_cart`, `begin_checkout`, `purchase`.
-- Meta Pixel / TikTok Pixel se houver mídia paga.
-- **Banner de consentimento de cookies (LGPD)**.
-
-**Pronto quando:** funil de compra mensurável e consentimento ativo.
-
-## Fase 7 — Acessibilidade e QA
-
-- Auditoria final com a skill `web-design-guidelines`; teste com **leitor de tela no mobile**.
-- Contraste AA, foco visível, navegação 100% por teclado.
-- QA cross-browser/dispositivo do **fluxo de compra completo**.
-- (Opcional) testes automatizados leves de sacola, cupom, frete e checkout.
-
-**Pronto quando:** fluxo de compra passa em desktop e mobile, sem erros de console.
-
-## Fase 8 — Deploy, domínio e ambientes
-
-- Hospedagem: estático/headless → **Netlify / Vercel / Cloudflare Pages**; plataforma → a
-  própria.
-- **Domínio `druza.com.br`** + HTTPS + redirects (www → apex, http → https).
-- **Staging** antes do produção; deploy a partir do `git`.
-- Backup e versionamento garantidos.
-
-**Pronto quando:** staging aprovado e produção no ar com HTTPS.
-
-## Fase 9 — Pós-lançamento
-
-- Monitorar **conversão, abandono de carrinho e CWV**.
-- **CRO** contínuo: testes A/B em hero, CTAs e checkout.
-- Conteúdo recorrente, novas coleções, **prova social real** (fotos/avaliações de clientes).
-- Atualizações de segurança e dependências.
+O que falta é **conteúdo/decisões de negócio** e **colocar no ar com domínio
+próprio** — não é mais construir a base técnica.
 
 ---
 
-## ✅ Checklist "pronto para produção"
+## Fase 1 — Sair do ambiente de teste (obrigatório antes de vender de verdade)
 
-- [ ] Sem placeholders nem dados de exemplo (Fase 1)
-- [ ] Plataforma definida (Fase 2)
-- [ ] Checkout, pagamento (Pix/cartão) e frete reais **testados** (Fase 3)
-- [ ] Textos legais revisados juridicamente (Fase 1)
-- [ ] Imagens WebP + responsivas + OG image (Fase 4)
-- [ ] Lighthouse mobile ≥ 90 e CWV ok (Fase 4)
-- [ ] SEO: sitemap, robots, JSON-LD real, páginas por produto (Fase 5)
-- [ ] GA4 + eventos + consentimento LGPD (Fase 6)
-- [ ] Acessibilidade AA + QA cross-device (Fase 7)
-- [ ] Domínio + HTTPS + staging (Fase 8)
+🔑 = decisão/ação que só o dono consegue fazer (precisa de acesso a painéis
+externos: Supabase, MercadoPago, GoDaddy/DNS, host).
+
+1. 🔑 **Hospedar o site.** O código é estático (HTML/CSS/JS) + Edge Functions no
+   Supabase — falta só um host que sirva os arquivos estáticos: **Vercel,
+   Netlify ou Cloudflare Pages** (qualquer um dos três, planos gratuitos
+   atendem). O GoDaddy só administra o **nome** do domínio; ele não hospeda o
+   código.
+2. 🔑 **Apontar o DNS** do domínio (no GoDaddy) para o host escolhido (cada um
+   fornece um registro CNAME/A pra colar lá).
+3. 🔑 **Trocar credenciais do MercadoPago** de teste (`TEST-...`) para produção
+   (`APP_USR-...`):
+   ```powershell
+   supabase secrets set MP_ACCESS_TOKEN=APP_USR-sua-chave-producao
+   supabase secrets set PUBLIC_SITE_URL=https://SEU-DOMINIO
+   supabase functions deploy webhook-mp --no-verify-jwt
+   supabase functions deploy create-preference
+   ```
+4. 🔑 **Webhook de produção** configurado no painel do MercadoPago (mesma URL
+   do Supabase, mas no ambiente "Produção" do MP — ver `docs/MERCADOPAGO-SETUP.md`).
+5. 🔑 **Restringir CORS** (a URL para de mudar assim que o domínio for fixo):
+   ```powershell
+   supabase secrets set ALLOWED_ORIGIN=https://SEU-DOMINIO
+   # redeploy de todas as 8 Edge Functions depois
+   ```
+6. 🔑 **Supabase → Authentication → URL Configuration**: trocar "Site URL" e
+   "Redirect URLs" de localhost/ngrok para o domínio real (só dá pra fazer
+   pelo painel, não por código).
+7. **Teste com dinheiro real**: um pagamento de valor baixo, ponta a ponta,
+   confirmando que webhook/status/e-mail funcionam com credenciais reais.
+
+**Pronto quando:** site acessível pelo domínio com HTTPS, e um pagamento real
+de teste (valor baixo) completa o fluxo até "Pago".
+
+## Fase 2 — Conteúdo e polimento (não bloqueia vender, mas vale fazer)
+
+- 🔑 **GA4**: criar conta em analytics.google.com, colar o Measurement ID em
+  `js/analytics.js` (`GA4_ID = '...'`).
+- **og-image dedicada** (1200×630): hoje o link compartilhado usa uma foto de
+  produto como prévia — funciona, mas uma arte pensada pra isso fica melhor.
+- 🔑 **Revisão jurídica dos textos legais** (privacidade, trocas/devolução,
+  garantia) — hoje são textos-modelo razoáveis, mas vale confirmação jurídica
+  antes de valerem oficialmente.
+- **Página 404 personalizada** — hoje um link quebrado cai na página padrão do
+  host escolhido.
+- **Fotos e descrição de produtos novos**: o catálogo dinâmico (painel admin)
+  já cobre preço/estoque/visibilidade; fotos/descrição de produto novo ainda
+  dependem de edição de código (`js/catalog.js`) — ver
+  `docs/IDEIAS-ADMIN-LOGISTICA.md` item 11 pra virar CMS completo no futuro.
+
+## Fase 3 — Crescimento (pós-lançamento, sem pressa)
+
+Backlog completo e priorizado em `docs/IDEIAS-ADMIN-LOGISTICA.md`: e-mail
+transacional automático, frete real (Correios/Melhor Envio), estoque
+numérico, cupons gerenciáveis pelo painel, dashboard de vendas, variações por
+tamanho, CMS de fotos, entre outros.
+
+---
+
+## ✅ Checklist "pronto para vender de verdade"
+
+- [ ] Site no ar no domínio próprio, com HTTPS
+- [ ] Credenciais do MercadoPago em modo produção
+- [ ] Webhook de produção configurado no MP
+- [ ] `ALLOWED_ORIGIN` restrito ao domínio final
+- [ ] Redirect URLs do Supabase Auth atualizadas
+- [ ] Pagamento real de teste (valor baixo) completou o fluxo
+- [ ] GA4 com Measurement ID configurado
+- [ ] Textos legais revisados juridicamente
 
 ## 🔑 Decisões pendentes do dono
 
-| Tema | Opções típicas |
+| Tema | O que falta |
 |---|---|
-| Plataforma | Nuvemshop · Shopify · Loja Integrada · Yampi · headless · stack próprio |
-| Pagamento | Mercado Pago · Pagar.me · PagSeguro · Stripe |
-| Frete | Correios · Melhor Envio · transportadora |
-| E-mail/Newsletter | Mailchimp · RD Station · Klaviyo |
-| Marca | WhatsApp oficial · dados fiscais · políticas |
+| Domínio | Definir domínio final e ter acesso à conta que o administra |
+| Hospedagem | Escolher host estático (Vercel/Netlify/Cloudflare Pages) |
+| MercadoPago | Ativar credenciais de produção na conta da loja |
+| Textos legais | Revisão jurídica de privacidade/trocas/garantia |
+| Analytics | Criar conta GA4 e obter o Measurement ID |
 
 ---
 
 ### Documentos relacionados
-- `README.md` — estado técnico atual, riscos e contrato local de UI.
-- `DIRECAO-DE-ARTE.md` — design system (paleta, tipografia, componentes, copy).
+- `README.md` — arquitetura e estrutura de arquivos.
+- `docs/SEGURANCA.md` — camadas de segurança e checklist de deploy detalhado.
+- `docs/MERCADOPAGO-SETUP.md` — passo a passo completo da integração de pagamento.
+- `docs/ADMIN-GUIA.md` — como usar o painel administrativo.
+- `docs/IDEIAS-ADMIN-LOGISTICA.md` — backlog priorizado de melhorias futuras.

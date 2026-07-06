@@ -37,6 +37,7 @@
   padding: var(--space-3) var(--space-4);
   background: var(--white-warm); border: 1px solid var(--line); border-radius: var(--radius-sm);
 }
+.admin-bulk-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: flex-end; }
 
 .admin-row {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-4);

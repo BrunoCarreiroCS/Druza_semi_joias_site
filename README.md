@@ -93,6 +93,8 @@ no servidor.** Detalhes e checklist de produção em [docs/SEGURANCA.md](docs/SE
 | [GUIA-DE-PRODUCAO.md](docs/GUIA-DE-PRODUCAO.md) | Checklist de publicação |
 | [DIRECAO-DE-ARTE.md](docs/DIRECAO-DE-ARTE.md) | Design system (paleta, tipografia, componentes) |
 | [DESIGN.md](docs/DESIGN.md) / [PRODUCT.md](docs/PRODUCT.md) | Decisões de design e produto |
+| [IDEIAS-ADMIN-LOGISTICA.md](docs/IDEIAS-ADMIN-LOGISTICA.md) | Backlog priorizado de melhorias futuras |
+| [EVOLUCAO.md](docs/EVOLUCAO.md) | Linha do tempo de tudo que já foi construído |
 
 ## Deploy das Edge Functions
 
@@ -113,7 +115,14 @@ supabase functions deploy admin-delete-product
 - ✅ Webhook seguro (re-consulta na API + verificação de valor).
 - ✅ Painel admin com 2FA (codado; requer rodar `db/schema-admin.sql` + deploy).
 - ✅ Pacote logística admin 1/5/6/8 codado: rastreio clicável/copiar, alerta de pago parado, filtro por período, CSV e notas internas (requer rodar schema + redeploy das functions tocadas).
+- ✅ Etiqueta de envio + romaneio imprimível por pedido (front-end puro). Ainda
+  faltam (backlog): remetente configurável, declaração de conteúdo dos Correios
+  e impressão em lote — ver [docs/IDEIAS-ADMIN-LOGISTICA.md](docs/IDEIAS-ADMIN-LOGISTICA.md) item 3.
 - ✅ Imagens WebP, fontes auto-hospedadas, robots.txt + sitemap.xml, rate limiting.
-- ⏳ Produção: domínio, credenciais MP reais, analytics, `ALLOWED_ORIGIN`, headers
-  do host — ver [docs/SEGURANCA.md](docs/SEGURANCA.md) e
+- ✅ Analytics: scaffold do GA4 pronto em `js/analytics.js` (desativado até colar
+  o Measurement ID).
+- ⏳ Produção: domínio, hospedagem, credenciais MP reais, `ALLOWED_ORIGIN`,
+  Measurement ID do GA4 — checklist acionável em
   [docs/GUIA-DE-PRODUCAO.md](docs/GUIA-DE-PRODUCAO.md).
+
+Linha do tempo completa de como o projeto evoluiu: [docs/EVOLUCAO.md](docs/EVOLUCAO.md).

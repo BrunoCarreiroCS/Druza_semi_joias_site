@@ -63,11 +63,11 @@ Deno.serve(async (req: Request) => {
   let dateTo: string | null = null;
   if (body.date_from) {
     dateFrom = normalizeDateFilter(body.date_from);
-    if (!dateFrom) return json({ error: 'date_from invÃ¡lida.' }, 400);
+    if (!dateFrom) return json({ error: 'Data inicial inválida.' }, 400);
   }
   if (body.date_to) {
     dateTo = normalizeDateFilter(body.date_to, true);
-    if (!dateTo) return json({ error: 'date_to invÃ¡lida.' }, 400);
+    if (!dateTo) return json({ error: 'Data final inválida.' }, 400);
   }
   if (dateFrom && dateTo && new Date(dateFrom).getTime() > new Date(dateTo).getTime()) {
     return json({ error: 'date_from deve ser anterior ou igual a date_to.' }, 400);

@@ -102,7 +102,7 @@
             <label class="field"><span>De</span>
               <input type="date" id="order-date-from" />
             </label>
-            <label class="field"><span>Ate</span>
+            <label class="field"><span>Até</span>
               <input type="date" id="order-date-to" />
             </label>
             <button type="button" class="btn btn--secondary" id="order-search-btn">Buscar</button>
@@ -110,7 +110,11 @@
           </div>
           <div class="admin-bulk-bar">
             <span class="field__hint" id="bulk-save-status">Nenhuma alteração pendente.</span>
-            <button type="button" class="btn btn--primary btn--sm" id="save-all-btn" disabled>Salvar todas as alterações</button>
+            <div class="admin-bulk-actions">
+              <button type="button" class="btn btn--ghost btn--sm" id="sender-settings-btn">Remetente</button>
+              <button type="button" class="btn btn--secondary btn--sm" id="print-paid-btn">Imprimir etiquetas pagas</button>
+              <button type="button" class="btn btn--primary btn--sm" id="save-all-btn" disabled>Salvar todas as alterações</button>
+            </div>
           </div>
           <div id="orders-list"><p class="field__hint">Carregando…</p></div>
         </section>
@@ -273,6 +277,8 @@
       const dateFromEl = document.getElementById('order-date-from');
       const dateToEl = document.getElementById('order-date-to');
       const exportCsvBtn = document.getElementById('order-export-csv');
+      const senderSettingsBtn = document.getElementById('sender-settings-btn');
+      const printPaidBtn = document.getElementById('print-paid-btn');
       const saveAllBtn = document.getElementById('save-all-btn');
       const bulkSaveStatusEl = document.getElementById('bulk-save-status');
       let currentOrders = [];
@@ -429,6 +435,33 @@
         URL.revokeObjectURL(url);
       }
       exportCsvBtn.addEventListener('click', exportOrdersCsv);
+      senderSettingsBtn.addEventListener('click', function () {
+        if (configureSender(true)) window.alert('Remetente salvo para as próximas impressões.');
+      });
+      printPaidBtn.addEventListener('click', async function () {
+        const paidOrders = currentOrders.filter(function (o) { return o.status === 'paid'; });
+        if (!paidOrders.length) {
+          window.alert('Nenhum pedido pago carregado na tela para imprimir.');
+          return;
+        }
+        printPaidBtn.disabled = true;
+        const originalText = printPaidBtn.textContent;
+        const details = [];
+        const failures = [];
+        for (let i = 0; i < paidOrders.length; i++) {
+          const order = paidOrders[i];
+          printPaidBtn.textContent = 'Preparando ' + (i + 1) + ' de ' + paidOrders.length + '...';
+          const { data, error } = await D.getOrder(order.id);
+          if (error || !data) failures.push(String(order.id).slice(0, 8));
+          else details.push(data);
+        }
+        printPaidBtn.disabled = false;
+        printPaidBtn.textContent = originalText;
+        if (failures.length) {
+          window.alert('Alguns pedidos não entraram na impressão: ' + failures.join(', '));
+        }
+        printShippingLabels(details);
+      });
 
       ordersListEl.addEventListener('click', async function (e) {
         const copyBtn = e.target.closest('button[data-copy-tracking]');
@@ -460,6 +493,7 @@
       // ---------------------------------------------------------------
       const orderModal = document.getElementById('order-modal');
       const orderModalBody = document.getElementById('order-modal-body');
+      let currentOrderDetail = null; // dados do pedido aberto (p/ imprimir etiqueta)
 
       function closeOrderModal() { orderModal.hidden = true; orderModalBody.innerHTML = ''; }
       orderModal.querySelectorAll('[data-close-modal]').forEach(function (el) {
@@ -483,6 +517,7 @@
         orderModal.hidden = false;
         const { data, error } = await D.getOrder(id);
         if (error || !data) { orderModalBody.innerHTML = '<p class="auth-feedback is-error">' + esc(error || 'Falha ao carregar.') + '</p>'; return; }
+        currentOrderDetail = data;
         const o = data.order || {};
         const c = data.customer || {};
         const a = data.address || null;
@@ -520,7 +555,9 @@
             line('E-mail', c.email) +
             line('Telefone', c.phone) +
           '</section>' +
-          '<section class="detail-block"><h3>Entrega</h3><div class="detail-address">' + addrHtml + '</div></section>' +
+          '<section class="detail-block"><h3>Entrega</h3><div class="detail-address">' + addrHtml + '</div>' +
+            (a ? '<div class="admin-note-actions"><button type="button" class="btn btn--secondary btn--sm" data-action="print-label">Imprimir etiqueta completa</button></div>' : '') +
+          '</section>' +
           '<section class="detail-block"><h3>Pagamento</h3>' + payHtml + '</section>' +
           '<section class="detail-block"><h3>Itens</h3>' + items +
             '<div class="detail-totals">' +
@@ -541,10 +578,174 @@
           '</section>';
       }
 
+      const SENDER_STORAGE_KEY = 'druza_admin_sender_v1';
+      const DEFAULT_SENDER = {
+        name: 'Druza Semi Joias',
+        document: 'CNPJ 19.600.917/0001-55',
+        address: '',
+      };
+
+      function loadSender() {
+        try {
+          return Object.assign({}, DEFAULT_SENDER, JSON.parse(localStorage.getItem(SENDER_STORAGE_KEY) || '{}'));
+        } catch (_) {
+          return Object.assign({}, DEFAULT_SENDER);
+        }
+      }
+
+      function configureSender(force) {
+        const current = loadSender();
+        if (!force && current.address) return current;
+        const name = window.prompt('Nome do remetente', current.name || DEFAULT_SENDER.name);
+        if (name == null) return null;
+        const documentId = window.prompt('Documento do remetente (CNPJ/CPF)', current.document || DEFAULT_SENDER.document);
+        if (documentId == null) return null;
+        const address = window.prompt('Endereco completo do remetente (rua, numero, bairro, cidade/UF e CEP)', current.address || '');
+        if (address == null) return null;
+        const sender = {
+          name: name.trim() || DEFAULT_SENDER.name,
+          document: documentId.trim() || DEFAULT_SENDER.document,
+          address: address.trim(),
+        };
+        if (!sender.address) {
+          window.alert('Preencha o endereco do remetente antes de imprimir.');
+          return null;
+        }
+        localStorage.setItem(SENDER_STORAGE_KEY, JSON.stringify(sender));
+        return sender;
+      }
+
+      function moneyFromCents(cents) {
+        return (Number(cents || 0) / 100).toFixed(2).replace('.', ',');
+      }
+
+      function itemUnitCents(item) {
+        const qty = Math.max(Number(item.qty) || 1, 1);
+        if (Number.isFinite(Number(item.unit_price_cents))) return Number(item.unit_price_cents);
+        if (Number.isFinite(Number(item.total_cents))) return Math.round(Number(item.total_cents) / qty);
+        return 0;
+      }
+
+      function formatAddressHtml(address) {
+        const compl = address.complement ? ' - ' + esc(address.complement) : '';
+        const bairro = address.neighborhood ? esc(address.neighborhood) + '<br>' : '';
+        return esc(address.recipient) + '<br>' +
+          esc(address.street) + ', ' + esc(address.number) + compl + '<br>' +
+          bairro + esc(address.city) + ' / ' + esc(address.state) +
+          '<div class="cep">CEP ' + esc(address.cep) + '</div>';
+      }
+
+      function renderPrintableOrder(detail, sender, index, total) {
+        const o = detail.order || {};
+        const c = detail.customer || {};
+        const a = detail.address || null;
+        if (!a) return '';
+        const orderLabel = String(o.id || '').slice(0, 8);
+        const rows = (o.order_items || []).map(function (it) {
+          const qty = Number(it.qty) || 1;
+          const unit = itemUnitCents(it);
+          const lineTotal = unit * qty;
+          return '<tr>' +
+            '<td class="q">' + esc(String(qty)) + 'x</td>' +
+            '<td>' + esc(it.product_name) + '</td>' +
+            '<td class="money">R$ ' + esc(moneyFromCents(unit)) + '</td>' +
+            '<td class="money">R$ ' + esc(moneyFromCents(lineTotal)) + '</td>' +
+          '</tr>';
+        }).join('') || '<tr><td colspan="4">Sem itens.</td></tr>';
+
+        const declarationRows = (o.order_items || []).map(function (it) {
+          const qty = Number(it.qty) || 1;
+          const unit = itemUnitCents(it);
+          return '<tr>' +
+            '<td>' + esc(it.product_name) + '</td>' +
+            '<td class="center">' + esc(String(qty)) + '</td>' +
+            '<td class="money">R$ ' + esc(moneyFromCents(unit)) + '</td>' +
+            '<td class="money">R$ ' + esc(moneyFromCents(unit * qty)) + '</td>' +
+          '</tr>';
+        }).join('') || '<tr><td colspan="4">Sem itens.</td></tr>';
+
+        return '<section class="print-page">' +
+          '<div class="label">' +
+            '<p class="tag">Remetente</p>' +
+            '<div class="sender"><strong>' + esc(sender.name) + '</strong><br>' +
+              esc(sender.document) + '<br>' + esc(sender.address) + '</div>' +
+            '<p class="tag">Destinatario</p>' +
+            '<div class="to">' + formatAddressHtml(a) + '</div>' +
+            '<p class="meta">Pedido ' + esc(orderLabel) +
+              (o.tracking_code ? ' - Rastreio ' + esc(o.tracking_code) : '') +
+              (total > 1 ? ' - Etiqueta ' + index + ' de ' + total : '') + '</p>' +
+          '</div>' +
+          '<div class="pick">' +
+            '<h2>Romaneio / picking list</h2>' +
+            '<table><thead><tr><th>Qtd.</th><th>Item</th><th>Unit.</th><th>Total</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+            '<p class="meta">Cliente: ' + esc(c.full_name || c.email || '-') +
+              ' - Total do pedido: ' + esc(brl(o.total_cents)) + '</p>' +
+          '</div>' +
+          '<div class="declaration">' +
+            '<h2>Declaracao de conteudo</h2>' +
+            '<div class="decl-grid">' +
+              '<div><strong>Remetente</strong><br>' + esc(sender.name) + '<br>' + esc(sender.document) + '<br>' + esc(sender.address) + '</div>' +
+              '<div><strong>Destinatario</strong><br>' + esc(a.recipient) + '<br>' +
+                esc(a.street) + ', ' + esc(a.number) + (a.complement ? ' - ' + esc(a.complement) : '') + '<br>' +
+                esc(a.city) + '/' + esc(a.state) + ' - CEP ' + esc(a.cep) + '</div>' +
+            '</div>' +
+            '<table><thead><tr><th>Descricao</th><th>Qtd.</th><th>Valor unit.</th><th>Valor total</th></tr></thead><tbody>' + declarationRows + '</tbody></table>' +
+            '<p class="meta">Valor total declarado: ' + esc(brl(o.total_cents)) + '</p>' +
+            '<p class="declaration-text">Declaro que nao me enquadro no conceito de contribuinte previsto na legislacao vigente e que os bens acima descritos sao de minha propriedade, assumindo inteira responsabilidade pelo seu conteudo.</p>' +
+            '<div class="signature"><span>Data</span><span>Assinatura do remetente</span></div>' +
+          '</div>' +
+        '</section>';
+      }
+
+      function printShippingLabels(details) {
+        const list = (details || []).filter(function (detail) { return detail && detail.address; });
+        if (!list.length) { window.alert('Nenhum pedido com endereco de entrega para imprimir.'); return; }
+        const sender = configureSender(false);
+        if (!sender) return;
+        const win = window.open('', '_blank', 'width=900,height=700');
+        if (!win) { window.alert('Permita pop-ups para imprimir as etiquetas.'); return; }
+        const pages = list.map(function (detail, i) {
+          return renderPrintableOrder(detail, sender, i + 1, list.length);
+        }).join('');
+        const doc =
+          '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+          '<title>Etiquetas Druza</title>' +
+          '<style>' +
+          '*{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}' +
+          'body{margin:0;padding:18px;color:#111;background:#f4f4f4}' +
+          '.noprint{text-align:center;margin:0 0 18px}.noprint button{font-size:15px;padding:10px 22px;cursor:pointer;margin:0 4px}' +
+          '.print-page{width:190mm;min-height:277mm;margin:0 auto 16px;background:#fff;padding:12mm;page-break-after:always}' +
+          '.print-page:last-child{page-break-after:auto}' +
+          '.label{border:2px solid #111;border-radius:8px;padding:16px;margin-bottom:14px}' +
+          '.tag{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#666;margin:0 0 4px}' +
+          '.sender{font-size:12px;color:#333;padding-bottom:10px;border-bottom:1px dashed #999;margin-bottom:12px;line-height:1.35}' +
+          '.to{font-size:18px;font-weight:bold;line-height:1.35}.cep{font-size:24px;font-weight:bold;letter-spacing:.05em;margin-top:8px}' +
+          '.pick,.declaration{margin-top:14px}.pick h2,.declaration h2{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:#555;border-bottom:1px solid #ccc;padding-bottom:5px}' +
+          'table{width:100%;border-collapse:collapse;font-size:12px}th{text-align:left;background:#eee}th,td{padding:5px 4px;border:1px solid #ddd;vertical-align:top}' +
+          'td.q{width:42px;font-weight:bold;white-space:nowrap}.money{text-align:right;white-space:nowrap}.center{text-align:center}' +
+          '.meta{font-size:11px;color:#555;margin:8px 0}.decl-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11px;margin-bottom:8px}' +
+          '.declaration-text{font-size:10px;line-height:1.35}.signature{display:grid;grid-template-columns:1fr 2fr;gap:24px;margin-top:24px;font-size:11px}' +
+          '.signature span{border-top:1px solid #111;text-align:center;padding-top:5px}' +
+          '@media print{body{padding:0;background:#fff}.noprint{display:none}.print-page{margin:0;width:auto;min-height:auto;box-shadow:none}}' +
+          '</style></head><body>' +
+          '<div class="noprint"><button onclick="window.print()">Imprimir</button><button onclick="window.close()">Fechar</button></div>' +
+          pages +
+          '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();},300);};</scr' + 'ipt>' +
+          '</body></html>';
+        win.document.write(doc);
+        win.document.close();
+        win.focus();
+      }
+
       orderModalBody.addEventListener('click', async function (e) {
         const copyBtn = e.target.closest('button[data-copy-tracking]');
         if (copyBtn) {
           await copyText(copyBtn.getAttribute('data-copy-tracking') || '');
+          return;
+        }
+        const printBtn = e.target.closest('button[data-action="print-label"]');
+        if (printBtn) {
+          printShippingLabels([currentOrderDetail]);
           return;
         }
         const noteBtn = e.target.closest('button[data-action="save-admin-note"]');
