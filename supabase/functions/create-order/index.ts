@@ -1,10 +1,11 @@
 // =====================================================================
-// DRUZA — Edge Function: create-preference
-// Cria pedido (status=pending) + preferência MercadoPago. Retorna init_point.
+// DRUZA — Edge Function: create-order
+// Cria pedido (status=pending) a partir do carrinho. Não fala com o
+// MercadoPago — isso é feito depois por "process-payment", quando o
+// Payment Brick (checkout embutido) devolve os dados de pagamento.
 //
-// Variáveis de ambiente (configurar com `supabase secrets set`):
-//   - MP_ACCESS_TOKEN     (Access Token do MercadoPago, começa com APP_USR-)
-//   - PUBLIC_SITE_URL     (URL pública do site: https://druza.com.br ou http://localhost:5510)
+// Variáveis de ambiente:
+//   - (nenhuma específica do MP aqui — só SUPABASE_URL/ANON_KEY, auto)
 //
 // O cliente chama esta função autenticado (JWT). Validamos o JWT, criamos
 // o pedido em nome do usuário e protegemos os totais recalculando do
@@ -18,8 +19,6 @@ import { rateLimit } from '../_shared/rate-limit.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
-const MP_ACCESS_TOKEN = Deno.env.get('MP_ACCESS_TOKEN')!;
-const PUBLIC_SITE_URL = Deno.env.get('PUBLIC_SITE_URL') ?? '';
 
 const SHIPPING_RULES: Array<{ prefixes: string[]; price_cents: number }> = [
   { prefixes: ['01', '02', '03', '04'], price_cents: 1490 },
@@ -60,8 +59,8 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
-  // Rate limit conservador: criar preferência dispara chamada ao MP e
-  // escreve pedido — 10/min por IP é folga pra uso real e barra abuso.
+  // Rate limit conservador: cria pedido e escreve no banco — 10/min por IP
+  // é folga pra uso real e barra abuso.
   const limited = rateLimit(req, CORS, { limit: 10 });
   if (limited) return limited;
 
@@ -183,74 +182,8 @@ Deno.serve(async (req: Request) => {
   const { error: itemsErr } = await supabase.from('order_items').insert(itemsInsert);
   if (itemsErr) return json({ error: 'Falha ao registrar itens.', detail: itemsErr.message }, 500);
 
-  // 6) Criar preferência no MercadoPago
-  const siteUrl = PUBLIC_SITE_URL || new URL(req.url).origin;
-  const mpItems = resolvedItems.map((it) => ({
-    id: it.slug,
-    title: it.name,
-    quantity: it.qty,
-    unit_price: it.price / 100,
-    currency_id: 'BRL',
-  }));
-  // Frete e desconto como linhas auxiliares (MP só aceita unit_price ≥ 0)
-  if (shipping > 0) {
-    mpItems.push({
-      id: 'frete', title: 'Frete', quantity: 1,
-      unit_price: shipping / 100, currency_id: 'BRL',
-    });
-  }
-  if (discount > 0) {
-    // Desconto vira "campaign" no MP (não pode usar unit_price negativo).
-    // Aplicamos como ajuste no total do pedido enviado: subtraímos do primeiro item.
-    // Estratégia simples: o desconto fica registrado no banco; no MP enviamos total já líquido
-    // diminuindo proporcionalmente o primeiro item.
-    const first = mpItems[0];
-    const reduction = discount / 100;
-    first.unit_price = Math.max(0.01, +(first.unit_price - reduction / first.quantity).toFixed(2));
-  }
-
-  const prefBody = {
-    items: mpItems,
-    external_reference: order.id,
-    back_urls: {
-      success: `${siteUrl}/pagamento-sucesso.html?order=${order.id}`,
-      pending: `${siteUrl}/pagamento-pendente.html?order=${order.id}`,
-      failure: `${siteUrl}/pagamento-falha.html?order=${order.id}`,
-    },
-    // NÃO definir notification_url aqui: quando presente na preferência ele
-    // tem precedência sobre o webhook do painel e é assinado com outra chave,
-    // quebrando a validação HMAC. Deixamos as notificações passarem pelo
-    // webhook configurado no painel MP (mesma URL, assinado com o secret do
-    // painel que a função webhook-mp valida).
-    payer: { email: user.email ?? undefined },
-    metadata: { order_id: order.id, user_id: user.id },
-  };
-
-  const prefRes = await fetch('https://api.mercadopago.com/checkout/preferences', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
-    },
-    body: JSON.stringify(prefBody),
-  });
-
-  if (!prefRes.ok) {
-    const text = await prefRes.text();
-    return json({ error: 'MercadoPago recusou a preferência.', detail: text }, 502);
-  }
-  const pref = await prefRes.json();
-
-  // 7) Guardar id da preferência no pedido (para correlacionar webhook → order)
-  await supabase
-    .from('orders')
-    .update({ mp_preference_id: pref.id })
-    .eq('id', order.id);
-
   return json({
     order_id: order.id,
-    preference_id: pref.id,
-    init_point: pref.init_point,
-    sandbox_init_point: pref.sandbox_init_point,
+    total_cents: total,
   });
 });

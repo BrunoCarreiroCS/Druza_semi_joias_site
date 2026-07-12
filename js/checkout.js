@@ -1,8 +1,10 @@
 /* =====================================================================
    DRUZA — checkout.js
-   Lê o carrinho salvo (druzaCartV1), revisa, escolhe endereço e chama
-   a Edge Function create-preference. Redireciona para o init_point.
-   Requer: js/config.js, supabase SDK, js/auth.js carregados antes.
+   Lê o carrinho salvo (druzaCartV1), revisa, escolhe endereço, cria o
+   pedido via create-order e monta o Payment Brick (checkout embutido do
+   MercadoPago) para pagar sem sair do site nem precisar de conta MP.
+   Requer: js/config.js, supabase SDK, js/auth.js e o SDK do MercadoPago
+   (https://sdk.mercadopago.com/js/v2) carregados antes.
    ===================================================================== */
 (function () {
   'use strict';
@@ -31,7 +33,8 @@
     addressPick: document.getElementById('address-pick'),
     addressForm: document.getElementById('address-form'),
     newAddressWrap: document.getElementById('new-address-wrap'),
-    payBtn: document.getElementById('pay-btn'),
+    goToPaymentBtn: document.getElementById('go-to-payment-btn'),
+    brickContainer: document.getElementById('paymentBrick_container'),
     feedback: document.getElementById('feedback'),
   };
 
@@ -61,6 +64,8 @@
   let addresses = [];
   let selectedAddressId = null;
   let usingNewAddress = false;
+  let userEmail = null;
+  let orderId = null;
 
   function loadCart() {
     try {
@@ -193,7 +198,7 @@
     return a;
   }
 
-  async function pay() {
+  async function goToPayment() {
     clearError();
     if (!cart.items.length) { setError('Sua sacola está vazia.'); return; }
 
@@ -210,17 +215,66 @@
       payload.address_id = selectedAddressId;
     }
 
-    els.payBtn.disabled = true;
-    els.payBtn.textContent = 'Preparando pagamento…';
-    const { data, error } = await A.invokeFunction('create-preference', payload);
-    if (error || !data?.init_point) {
+    els.goToPaymentBtn.disabled = true;
+    els.goToPaymentBtn.textContent = 'Preparando pagamento…';
+    const { data, error } = await A.invokeFunction('create-order', payload);
+    if (error || !data?.order_id) {
       setError(error || 'Não foi possível iniciar o pagamento. Tente novamente.');
-      els.payBtn.disabled = false;
-      els.payBtn.textContent = 'Pagar com MercadoPago';
+      els.goToPaymentBtn.disabled = false;
+      els.goToPaymentBtn.textContent = 'Ir para pagamento';
       return;
     }
-    // Sucesso: redireciona para o MP
-    location.href = data.init_point;
+
+    orderId = data.order_id;
+    els.goToPaymentBtn.hidden = true;
+    els.brickContainer.hidden = false;
+    await mountBrick(data.total_cents);
+  }
+
+  async function mountBrick(totalCents) {
+    const mp = new MercadoPago(window.DRUZA_CONFIG.MP_PUBLIC_KEY, { locale: 'pt-BR' });
+    const bricksBuilder = mp.bricks();
+    await bricksBuilder.create('payment', 'paymentBrick_container', {
+      initialization: {
+        amount: totalCents / 100,
+        payer: userEmail ? { email: userEmail } : undefined,
+      },
+      customization: {
+        paymentMethods: {
+          creditCard: 'all',
+          debitCard: 'all',
+          bankTransfer: ['pix'],
+        },
+      },
+      callbacks: {
+        onSubmit: handleBrickSubmit,
+        onError: handleBrickError,
+      },
+    });
+  }
+
+  async function handleBrickSubmit({ formData }) {
+    clearError();
+    const { data, error } = await A.invokeFunction('process-payment', {
+      order_id: orderId,
+      ...formData,
+    });
+    if (error) {
+      setError(error);
+      return; // Brick continua montado — cliente pode tentar outro cartão.
+    }
+    if (data.status === 'paid') {
+      location.href = 'pagamento-sucesso.html?order=' + orderId;
+    } else if (data.status === 'pending') {
+      location.href = 'pagamento-pendente.html?order=' + orderId;
+    } else {
+      setError(data.detail || data.error || 'Pagamento recusado. Tente outro cartão.');
+    }
+  }
+
+  function handleBrickError(error) {
+    console.error('Payment Brick error', error);
+    setError('Não foi possível carregar o formulário de pagamento. Recarregue a página e tente novamente.');
   }
 
   // -----------------------------------------------------------------
@@ -245,6 +299,7 @@
       location.replace('login.html?next=' + next);
       return;
     }
+    userEmail = session.user?.email || null;
 
     // Carrega endereços
     const { data } = await A.listAddresses();
@@ -272,6 +327,6 @@
       renderTotals();
     });
 
-    els.payBtn.addEventListener('click', pay);
+    els.goToPaymentBtn.addEventListener('click', goToPayment);
   })();
 })();

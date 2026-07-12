@@ -3,7 +3,9 @@
 Loja virtual da Druza Semi Joias (semi joias femininas em prata, pedras esmeralda e
 Paraíba). Front-end estático em **HTML/CSS/JS puro** (sem frameworks, mobile-first),
 backend em **Supabase** (Postgres + Auth + Edge Functions) e pagamento via
-**MercadoPago Checkout Pro**. Checkout validado ponta a ponta em ambiente de teste.
+**MercadoPago Payment Brick** (checkout embutido — cliente paga com cartão ou
+Pix sem sair do site e sem precisar ter conta no MercadoPago). Checkout
+validado ponta a ponta em ambiente de teste.
 
 ## Funcionalidades
 
@@ -12,9 +14,10 @@ backend em **Supabase** (Postgres + Auth + Edge Functions) e pagamento via
   persistência local, cupom e frete simulado por CEP.
 - **Contas de cliente**: cadastro, login, recuperação de senha, área da conta
   (`conta.html`) com histórico de pedidos e CRUD de endereços.
-- **Checkout real**: `checkout.html` → Edge Function `create-preference` (recalcula
+- **Checkout real**: `checkout.html` → Edge Function `create-order` (recalcula
   totais no servidor a partir da tabela `products` — nunca confia no preço do
-  navegador) → MercadoPago → webhook confirma o pagamento → pedido "Pago".
+  navegador) → Payment Brick embutido → Edge Function `process-payment` cobra
+  na API do MercadoPago → webhook confirma (Pix) → pedido "Pago".
 - **Painel administrativo** (`admin.html`, login dedicado em `admin-login.html`,
   com **2FA obrigatório**): gestão de pedidos (status, rastreio, detalhe logístico
   com cliente/endereço/forma de pagamento) e produtos (preço, estoque, destaque).
@@ -43,8 +46,9 @@ backend em **Supabase** (Postgres + Auth + Edge Functions) e pagamento via
 │   ├── schema-payments.sql    Colunas de pagamento (MercadoPago)
 │   └── schema-admin.sql       Admin (admins, products, admin_audit_log) + RLS
 ├── supabase/functions/
-│   ├── _shared/               require-admin.ts (autorização + 2FA) · cors.ts
-│   ├── create-preference/     Cria pedido + preferência MP (preços server-side)
+│   ├── _shared/               require-admin.ts (autorização + 2FA) · cors.ts · mp-status.ts
+│   ├── create-order/          Cria pedido, preços server-side (sem falar com o MP)
+│   ├── process-payment/       Cobra o pedido via Payment Brick (API MercadoPago)
 │   ├── webhook-mp/            Confirma pagamento (re-consulta autenticada na API MP)
 │   └── admin-*/               6 funções do painel (sempre passam por require-admin)
 └── docs/                      Guias e documentação (ver abaixo)
@@ -99,7 +103,8 @@ no servidor.** Detalhes e checklist de produção em [docs/SEGURANCA.md](docs/SE
 ## Deploy das Edge Functions
 
 ```bash
-supabase functions deploy create-preference
+supabase functions deploy create-order
+supabase functions deploy process-payment
 supabase functions deploy webhook-mp --no-verify-jwt
 supabase functions deploy admin-list-orders
 supabase functions deploy admin-update-order

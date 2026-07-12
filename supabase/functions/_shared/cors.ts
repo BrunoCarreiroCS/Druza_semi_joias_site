@@ -2,8 +2,8 @@
 // DRUZA — _shared/cors.ts
 //
 // Cabeçalhos CORS compartilhados por todas as Edge Functions chamadas
-// pelo navegador (create-preference + admin-*). O webhook-mp não usa
-// CORS (é servidor→servidor, o MercadoPago não é um navegador).
+// pelo navegador (create-order + process-payment + admin-*). O webhook-mp
+// não usa CORS (é servidor→servidor, o MercadoPago não é um navegador).
 //
 // Camada de segurança: em produção, restrinja a origem com
 //   supabase secrets set ALLOWED_ORIGIN=https://druza.com.br
@@ -11,7 +11,7 @@
 // desenvolvimento — necessário enquanto o site roda via localhost/ngrok
 // com URL que muda). CORS aqui é defesa em profundidade: a autorização
 // real continua sendo o JWT + tabela admins + aal2 (require-admin.ts)
-// e o recálculo server-side de preços (create-preference).
+// e o recálculo server-side de preços (create-order).
 // =====================================================================
 
 const ALLOWED_ORIGIN = (Deno.env.get('ALLOWED_ORIGIN') ?? '').trim();

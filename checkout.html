@@ -112,16 +112,17 @@
           <div class="checkout-card">
             <h2>Pagamento</h2>
             <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: var(--space-4);">
-              Você será redirecionado para o ambiente seguro do MercadoPago para pagar com Pix,
-              cartão de crédito ou boleto.
+              Pague com cartão de crédito, débito ou Pix sem sair do site — e sem precisar
+              ter conta no MercadoPago.
             </p>
             <p class="auth-feedback" id="feedback" role="alert" aria-live="polite"></p>
-            <button type="button" class="btn btn--primary pay-button" id="pay-btn">
-              Pagar com MercadoPago
+            <button type="button" class="btn btn--primary pay-button" id="go-to-payment-btn">
+              Ir para pagamento
             </button>
+            <div id="paymentBrick_container" hidden></div>
             <p class="secure-note">
-              🔒 Seus dados de pagamento ficam no MercadoPago. A Druza nunca recebe ou guarda
-              número de cartão.
+              🔒 Seus dados de cartão são criptografados no seu navegador e enviados direto
+              ao MercadoPago. A Druza nunca recebe nem guarda número de cartão.
             </p>
           </div>
         </section>
@@ -134,6 +135,7 @@
   <script src="js/config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js" integrity="sha384-dGnL7r9uccC9TdSdE05clTJ6esxMU42XBQ1/BWLzKQOBi7qR1aCMRIi0LzUmexIg" crossorigin="anonymous"></script>
   <script src="js/auth.js"></script>
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
   <script src="js/checkout.js"></script>
 </body>
 </html>

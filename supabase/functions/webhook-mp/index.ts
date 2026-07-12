@@ -29,7 +29,7 @@
 // passar a bater, o log 'sig: hmac-ok' aparece e podemos endurecer.
 //
 // Variáveis de ambiente:
-//   - MP_ACCESS_TOKEN            (mesma do create-preference)
+//   - MP_ACCESS_TOKEN            (mesma do process-payment)
 //   - MP_WEBHOOK_SECRET          (secret do webhook do painel — opcional p/ HMAC)
 //   - MP_WEBHOOK_SECRET_PROD     (opcional — 2º secret p/ HMAC)
 //   - SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY (auto)
@@ -39,6 +39,7 @@
 
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { mapMpStatus } from '../_shared/mp-status.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -51,19 +52,6 @@ const WEBHOOK_SECRETS: string[] = [
   .flatMap((s) => (s ?? '').split(','))
   .map((s) => s.trim())
   .filter((s) => s.length > 0);
-
-function mapMpStatus(mpStatus: string): string {
-  switch (mpStatus) {
-    case 'approved':     return 'paid';
-    case 'pending':      return 'pending';
-    case 'in_process':   return 'pending';
-    case 'rejected':     return 'canceled';
-    case 'cancelled':    return 'canceled';
-    case 'refunded':     return 'refunded';
-    case 'charged_back': return 'refunded';
-    default:             return 'pending';
-  }
-}
 
 async function hmacSha256Hex(key: string, msg: string): Promise<string> {
   const enc = new TextEncoder();

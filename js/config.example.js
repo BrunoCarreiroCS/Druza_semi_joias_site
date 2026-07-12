@@ -12,5 +12,9 @@
    ===================================================================== */
 window.DRUZA_CONFIG = {
   SUPABASE_URL: 'https://SEU-PROJETO.supabase.co',
-  SUPABASE_ANON_KEY: 'sua-anon-key-publica-aqui'
+  SUPABASE_ANON_KEY: 'sua-anon-key-publica-aqui',
+  // Public Key do MercadoPago (painel MP → Credenciais) — usada pelo
+  // Payment Brick no checkout. Também é segura no navegador, diferente
+  // do Access Token. Ver docs/MERCADOPAGO-SETUP.md.
+  MP_PUBLIC_KEY: 'sua-public-key-mercadopago-aqui'
 };

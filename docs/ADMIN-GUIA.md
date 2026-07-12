@@ -111,7 +111,8 @@ supabase functions deploy admin-get-order
 supabase functions deploy admin-list-products
 supabase functions deploy admin-upsert-product
 supabase functions deploy admin-delete-product
-supabase functions deploy create-preference
+supabase functions deploy create-order
+supabase functions deploy process-payment
 ```
 
 Pronto. A configuração acabou — daqui pra frente é só usar.

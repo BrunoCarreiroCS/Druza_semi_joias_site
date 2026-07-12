@@ -25,16 +25,24 @@ sempre decididos/revalidados no servidor (Edge Functions + RLS do Postgres).
 - **`admin_audit_log`**: nenhum acesso via client; toda ação administrativa de
   escrita é registrada (quem, quando, o quê) pelas Edge Functions.
 
-### 1.2 Pagamento (MercadoPago)
+### 1.2 Pagamento (MercadoPago Payment Brick)
 
-- **Preço nunca vem do navegador**: `create-preference` recalcula subtotal,
-  frete, cupom e total a partir da tabela `products` no servidor.
+- **Preço nunca vem do navegador**: `create-order` recalcula subtotal,
+  frete, cupom e total a partir da tabela `products` no servidor;
+  `process-payment` cobra o valor gravado no pedido, nunca um valor vindo
+  do payload da chamada.
+- **Cobrança exige o pedido no estado certo**: `process-payment` só cobra
+  pedidos com `status = 'pending'` pertencentes ao usuário autenticado
+  (RLS `orders_select_own`), e usa `X-Idempotency-Key` único por
+  tentativa para não duplicar cobrança em retry de rede.
 - **Webhook não confia na notificação**: `webhook-mp` pega o id do pagamento e
   **re-consulta a API do MP** com o nosso Access Token (só devolve pagamentos da
   nossa conta) + **confere o valor pago** contra o total do pedido antes de
   marcar "pago". HMAC da assinatura é camada extra best-effort (o ambiente do MP
   assina inconsistentemente — ver histórico no repositório de memória).
-- Dados de cartão **nunca** passam pelo nosso código (PCI fica no MP).
+- Dados de cartão **nunca** passam pelo nosso código: o Payment Brick
+  tokeniza no browser via iframe do MP (PCI fica no MP), mesmo sem
+  redirecionar para o domínio do MercadoPago.
 
 ### 1.3 Painel administrativo
 
@@ -67,8 +75,9 @@ sempre decididos/revalidados no servidor (Edge Functions + RLS do Postgres).
 - **CORS restringível**: `_shared/cors.ts` lê a env `ALLOWED_ORIGIN`. Sem ela,
   usa `*` (necessário em dev, com ngrok mudando de URL); em produção, defina a
   origem única (ver checklist).
-- **Rate limiting por IP** (`_shared/rate-limit.ts`): create-preference 10/min,
-  escritas admin 30/min, leituras admin 60/min. É um amortecedor em memória
+- **Rate limiting por IP** (`_shared/rate-limit.ts`): create-order e
+  process-payment 10/min cada, escritas admin 30/min, leituras admin 60/min.
+  É um amortecedor em memória
   (zera em cold start, não é global entre instâncias) — barra rajadas óbvias
   de brute-force/abuso; limite forte global fica como upgrade (§4). O
   webhook-mp fica de fora de propósito (o MP manda rajadas legítimas).
@@ -90,10 +99,10 @@ sempre decididos/revalidados no servidor (Edge Functions + RLS do Postgres).
    supabase secrets set ALLOWED_ORIGIN=https://druza.com.br
    # redeploy de todas as functions depois
    ```
-2. **Trocar credenciais MP** de teste → produção (`MP_ACCESS_TOKEN`) e revalidar
-   o fluxo com um pagamento real de valor baixo.
-3. **`PUBLIC_SITE_URL`** → domínio real (hoje aponta para o túnel de teste).
-4. **Headers de segurança no host** (configuração do servidor/CDN onde o site
+2. **Trocar credenciais MP** de teste → produção (`MP_ACCESS_TOKEN` e
+   `MP_PUBLIC_KEY` em `js/config.js`) e revalidar o fluxo com um pagamento
+   real de valor baixo.
+3. **Headers de segurança no host** (configuração do servidor/CDN onde o site
    estático for publicado — não dá para fazer via HTML):
    - `Strict-Transport-Security: max-age=31536000; includeSubDomains`
    - `X-Content-Type-Options: nosniff`
@@ -101,10 +110,10 @@ sempre decididos/revalidados no servidor (Edge Functions + RLS do Postgres).
    - `Referrer-Policy: strict-origin-when-cross-origin`
    - CSP completa é desejável, mas exige mover os scripts inline das páginas
      para arquivos próprios primeiro (ver ideias futuras).
-5. **Supabase Auth**: conferir senha mínima ≥ 8, confirmação de e-mail ativa,
+4. **Supabase Auth**: conferir senha mínima ≥ 8, confirmação de e-mail ativa,
    e **Redirect URLs** limitadas ao domínio real (remover ngrok/localhost).
-6. **Backups**: ativar/verificar backup automático do banco no plano do Supabase.
-7. **Revisar quem está em `admins`** (deve ser só o dono) e testar o fluxo 2FA
+5. **Backups**: ativar/verificar backup automático do banco no plano do Supabase.
+6. **Revisar quem está em `admins`** (deve ser só o dono) e testar o fluxo 2FA
    completo no domínio final.
 
 ---
