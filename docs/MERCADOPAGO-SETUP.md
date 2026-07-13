@@ -27,17 +27,33 @@ MercadoPago → POST webhook-mp (reconsulta a API, nunca confia no corpo)
 
 1. Crie conta em **mercadopago.com.br** (use a conta da Druza)
 2. Acesse **Seu negócio → Configurações → Gestão e administração → Credenciais**
-3. Você verá dois conjuntos de credenciais:
-   - **Credenciais de teste** (`TEST-...`) — para testar sem dinheiro real
-   - **Credenciais de produção** (`APP_USR-...`) — para vendas reais
-4. **Copie o "Access Token" E a "Public Key"** das credenciais de teste
-   (vamos começar testando). O Access Token é secreto (só servidor); a
-   Public Key é feita pra ficar exposta no browser — é ela que o Payment
-   Brick usa pra inicializar.
+3. Você verá dois conjuntos de credenciais, ambos com prefixo `APP_USR-`
+   (o painel atual do MP não usa mais o prefixo `TEST-` pra diferenciar —
+   quem diferencia é a aba onde você está: "Credenciais de teste" vs.
+   "Credenciais de produção").
+
+> ⚠️ **Pegadinha real, já vivida neste projeto**: a aba **"Credenciais de
+> teste" da sua conta PRINCIPAL não serve pra testar com os cartões de
+> teste oficiais do MP** (`5031 4332 1540 6351` etc.). Tentar cobrar um
+> desses cartões contra essas credenciais retorna
+> `"Unauthorized use of live credentials"` — o MP trata como tentativa de
+> uso indevido de cartão de teste numa conta real, mesmo que seja a aba
+> "de teste" dela.
+>
+> **O que de fato funciona**: criar um **usuário de teste do tipo
+> vendedor** (`Seu negócio → Integrações → Testar integrações → Criar
+> usuário de teste`), fazer login com ELE (login/senha fictícios que o MP
+> gera, numa aba anônima), e pegar Public Key + Access Token **de dentro
+> dessa conta de teste separada** — é só essa combinação que aceita os
+> cartões de teste oficiais sem erro.
+
+4. **Copie o "Access Token" E a "Public Key"** de dentro da conta de teste
+   (vendedor fictício), não da conta real da Druza. O Access Token é
+   secreto (só servidor); a Public Key é feita pra ficar exposta no
+   browser — é ela que o Payment Brick usa pra inicializar.
 
 > ⚠️ Nunca exponha o Access Token no browser. Ele fica só no servidor.
-> A Public Key (`TEST-...`/`APP_USR-...`, formato diferente do Access
-> Token) é segura para expor — vai em `js/config.js` (Passo 6).
+> A Public Key é segura para expor — vai em `js/config.js` (Passo 6).
 
 ---
 
@@ -234,9 +250,13 @@ supabase functions logs process-payment --tail
 script `https://sdk.mercadopago.com/js/v2` está sendo carregado antes de
 `js/checkout.js` (veja o console do navegador).
 
-**Em modo teste só posso usar o cartão da própria conta**
-→ Para testar com outras contas, crie uma **conta de teste** no MP:
-   `Seu negócio → Integrações → Teste integradores → Criar usuário de teste`
+**"Unauthorized use of live credentials" ao pagar com cartão de teste**
+→ Você está usando a Public Key/Access Token da aba "Credenciais de
+   teste" da conta REAL da Druza. Isso não funciona com os cartões de
+   teste oficiais — veja o aviso no Passo 1. Crie um **usuário de teste
+   vendedor** (`Seu negócio → Integrações → Testar integrações → Criar
+   usuário de teste`), faça login nele e pegue as credenciais de dentro
+   dessa conta separada.
 
 ---
 
