@@ -259,7 +259,10 @@
         },
       });
     } catch (err) {
-      handleBrickError(err);
+      // Falha ao MONTAR o formulário (ex.: SDK não carregou) — isso sim
+      // é um erro que impede o pagamento e merece aviso ao cliente.
+      console.error('Payment Brick mount error', err);
+      setError('Não foi possível carregar o formulário de pagamento. Recarregue a página e tente novamente.');
     }
   }
 
@@ -363,8 +366,14 @@
   }
 
   function handleBrickError(error) {
+    // onError do Brick dispara para MUITOS eventos que NÃO impedem o
+    // pagamento: validação de campo, inferência de bandeira durante a
+    // digitação ("Cannot infer Payment Method"), etc. O próprio Brick já
+    // mostra esses erros inline no campo certo, então aqui só registramos
+    // no console — nunca jogamos um erro vermelho por cima. Falhas reais
+    // de carregamento são tratadas no catch do mountBrick, e falhas de
+    // cobrança no handleBrickSubmit.
     console.error('Payment Brick error', error);
-    setError('Não foi possível carregar o formulário de pagamento. Recarregue a página e tente novamente.');
   }
 
   // -----------------------------------------------------------------
