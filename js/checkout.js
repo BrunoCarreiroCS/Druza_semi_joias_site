@@ -231,26 +231,36 @@
     await mountBrick(data.total_cents);
   }
 
+  // bricksBuilder.create() exige onReady e/ou onError nos callbacks — sem
+  // onReady, o SDK rejeita com "Callbacks onReady and/or onError are
+  // required" e o container fica preso no skeleton de carregamento pra
+  // sempre (a rejeição nunca chegava a aparecer até isso ser investigado,
+  // porque nada estava logando o catch). onReady não precisa fazer nada.
   async function mountBrick(totalCents) {
     const mp = new MercadoPago(window.DRUZA_CONFIG.MP_PUBLIC_KEY, { locale: 'pt-BR' });
     const bricksBuilder = mp.bricks();
-    await bricksBuilder.create('payment', 'paymentBrick_container', {
-      initialization: {
-        amount: totalCents / 100,
-        payer: userEmail ? { email: userEmail } : undefined,
-      },
-      customization: {
-        paymentMethods: {
-          creditCard: 'all',
-          debitCard: 'all',
-          bankTransfer: ['pix'],
+    try {
+      await bricksBuilder.create('payment', 'paymentBrick_container', {
+        initialization: {
+          amount: totalCents / 100,
+          payer: userEmail ? { email: userEmail, entityType: 'individual' } : undefined,
         },
-      },
-      callbacks: {
-        onSubmit: handleBrickSubmit,
-        onError: handleBrickError,
-      },
-    });
+        customization: {
+          paymentMethods: {
+            creditCard: 'all',
+            debitCard: 'all',
+            bankTransfer: ['pix'],
+          },
+        },
+        callbacks: {
+          onReady: () => {},
+          onSubmit: handleBrickSubmit,
+          onError: handleBrickError,
+        },
+      });
+    } catch (err) {
+      handleBrickError(err);
+    }
   }
 
   async function handleBrickSubmit({ formData }) {

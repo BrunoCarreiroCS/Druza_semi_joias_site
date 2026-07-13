@@ -169,7 +169,12 @@ Deno.serve(async (req: Request) => {
       coupon_code: discount > 0 ? COUPON_CODE : null,
       shipping_address_id: shippingAddressId,
     })
-    .select().single();
+    // Select explícito: "orders" tem GRANT SELECT por coluna pra
+    // authenticated (db/schema-admin.sql exclui admin_notes de propósito).
+    // Um .select() sem coluna vira "SELECT *" no PostgREST e esbarra nessa
+    // trava, retornando "permission denied for table orders".
+    .select('id, total_cents')
+    .single();
   if (orderErr || !order) return json({ error: 'Falha ao criar pedido.', detail: orderErr?.message }, 500);
 
   const itemsInsert = resolvedItems.map((it) => ({
