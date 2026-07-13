@@ -98,7 +98,9 @@ Deno.serve(async (req: Request) => {
       'X-Idempotency-Key': crypto.randomUUID(),
     },
     body: JSON.stringify({
-      transaction_amount: order.total_cents / 100,
+      // toFixed(2) evita que a divisão gere um float com mais de 2 casas
+      // (ex.: 100.57000000000001), que o MP pode recusar.
+      transaction_amount: Number((order.total_cents / 100).toFixed(2)),
       token: body.token,
       installments: body.installments ?? 1,
       payment_method_id: body.payment_method_id,
@@ -151,5 +153,18 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Falha ao atualizar pedido.', detail: updateErr.message }, 500);
   }
 
-  return json({ status: newStatus, order_id: order.id });
+  // Pix: o MP devolve o QR Code e o código copia-e-cola em
+  // point_of_interaction.transaction_data. SEM isso o cliente não tem
+  // como pagar — o front precisa exibir esses dados (não basta mandar
+  // pra uma página de "pendente"). O webhook confirma o pagamento depois.
+  const td = payment?.point_of_interaction?.transaction_data;
+  const pix = (td && (td.qr_code || td.qr_code_base64))
+    ? {
+        qr_code: td.qr_code ?? null,
+        qr_code_base64: td.qr_code_base64 ?? null,
+        ticket_url: td.ticket_url ?? null,
+      }
+    : null;
+
+  return json({ status: newStatus, order_id: order.id, pix });
 });

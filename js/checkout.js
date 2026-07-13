@@ -243,7 +243,7 @@
       await bricksBuilder.create('payment', 'paymentBrick_container', {
         initialization: {
           amount: totalCents / 100,
-          payer: userEmail ? { email: userEmail, entityType: 'individual' } : undefined,
+          payer: userEmail ? { email: userEmail } : undefined,
         },
         customization: {
           paymentMethods: {
@@ -263,6 +263,11 @@
     }
   }
 
+  // O onSubmit do Brick DEVE retornar uma promise: se ela resolver, o Brick
+  // considera o pagamento concluído; se rejeitar, ele reabilita o formulário
+  // pro cliente corrigir/tentar de novo. Por isso, em qualquer falha (rede,
+  // cartão recusado) fazemos throw — senão o Brick mostraria "sucesso" sobre
+  // um cartão recusado e o cliente ficaria preso.
   async function handleBrickSubmit({ formData }) {
     clearError();
     const { data, error } = await A.invokeFunction('process-payment', {
@@ -271,15 +276,90 @@
     });
     if (error) {
       setError(error);
-      return; // Brick continua montado — cliente pode tentar outro cartão.
+      throw new Error(error);
     }
     if (data.status === 'paid') {
+      clearCart();
       location.href = 'pagamento-sucesso.html?order=' + orderId;
-    } else if (data.status === 'pending') {
-      location.href = 'pagamento-pendente.html?order=' + orderId;
-    } else {
-      setError(data.detail || data.error || 'Pagamento recusado. Tente outro cartão.');
+      return;
     }
+    if (data.status === 'pending') {
+      clearCart();
+      if (data.pix) {
+        showPix(data.pix); // Pix: mostra QR/copia-e-cola na própria página
+      } else {
+        location.href = 'pagamento-pendente.html?order=' + orderId;
+      }
+      return;
+    }
+    // Recusado (canceled) ou status inesperado: mostra o erro e rejeita a
+    // promise pra o Brick reabilitar o formulário.
+    const msg = data.detail || data.error || 'Pagamento recusado. Tente outro cartão.';
+    setError(msg);
+    throw new Error(msg);
+  }
+
+  function showPix(pix) {
+    els.brickContainer.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.style.textAlign = 'center';
+
+    const title = document.createElement('p');
+    title.textContent = 'Pague com Pix: escaneie o QR Code no app do seu banco ou copie o código abaixo.';
+    title.style.marginBottom = 'var(--space-4)';
+    wrap.appendChild(title);
+
+    if (pix.qr_code_base64) {
+      const img = document.createElement('img');
+      img.src = 'data:image/png;base64,' + pix.qr_code_base64;
+      img.alt = 'QR Code Pix';
+      img.style.maxWidth = '220px';
+      img.style.display = 'block';
+      img.style.margin = '0 auto var(--space-4)';
+      wrap.appendChild(img);
+    }
+
+    if (pix.qr_code) {
+      const code = document.createElement('textarea');
+      code.readOnly = true;
+      code.value = pix.qr_code;
+      code.rows = 3;
+      code.style.width = '100%';
+      code.style.marginBottom = 'var(--space-2)';
+      wrap.appendChild(code);
+
+      const copyBtn = document.createElement('button');
+      copyBtn.type = 'button';
+      copyBtn.className = 'btn btn--secondary';
+      copyBtn.textContent = 'Copiar código Pix';
+      copyBtn.addEventListener('click', () => {
+        code.select();
+        try { navigator.clipboard.writeText(pix.qr_code); } catch (e) { document.execCommand('copy'); }
+        copyBtn.textContent = 'Código copiado ✓';
+      });
+      wrap.appendChild(copyBtn);
+    }
+
+    const note = document.createElement('p');
+    note.textContent = 'Assim que o pagamento for confirmado, seu pedido entra em produção. Acompanhe em Minha conta.';
+    note.style.margin = 'var(--space-4) 0';
+    note.style.color = 'var(--muted)';
+    note.style.fontSize = '0.9rem';
+    wrap.appendChild(note);
+
+    const link = document.createElement('a');
+    link.href = 'conta.html';
+    link.className = 'btn btn--primary';
+    link.textContent = 'Acompanhar pedido';
+    link.style.display = 'inline-block';
+    wrap.appendChild(link);
+
+    els.brickContainer.appendChild(wrap);
+    els.brickContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function clearCart() {
+    try { localStorage.removeItem(CART_KEY); } catch (e) { /* ignore */ }
   }
 
   function handleBrickError(error) {
