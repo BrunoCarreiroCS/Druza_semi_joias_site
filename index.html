@@ -3,27 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- SEO (Fase 2e refina títulos/meta/JSON-LD por página) -->
-  <title>Druza Semi Joias — Prata, brilho e pedras verdes</title>
-  <meta name="description" content="Semi joias femininas em prata com pedras verdes esmeralda e Paraíba. Peças delicadas e marcantes, para o dia a dia e para presentear." />
+  <title>Druza Semi Joias - Prata, brilho e pedras verdes</title>
+  <meta name="description" content="Semi joias femininas em prata com pedras verdes esmeralda e Paraiba. Pecas delicadas e marcantes, para o dia a dia e para presentear." />
   <link rel="canonical" href="https://druza.com.br/" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://druza.com.br/" />
-  <meta property="og:title" content="Druza Semi Joias — Prata, brilho e pedras verdes" />
-  <meta property="og:description" content="Semi joias femininas em prata com pedras verdes esmeralda e Paraíba." />
-  <!-- PLACEHOLDER: og:image (gerar img/og-image.jpg na Fase 2e) -->
-  <meta property="og:image" content="https://druza.com.br/img/anel-paraiba.jpg" />
-  <meta property="og:image:alt" content="Logo da Druza Semi Joias." />
+  <meta property="og:title" content="Druza Semi Joias - Prata, brilho e pedras verdes" />
+  <meta property="og:description" content="Semi joias femininas em prata com pedras verdes esmeralda e Paraiba." />
+  <meta property="og:image" content="https://druza.com.br/img/anel-paraiba.webp" />
+  <meta property="og:image:alt" content="Anel de prata com pedra Paraiba da Druza Semi Joias." />
   <meta name="twitter:card" content="summary_large_image" />
-
   <link rel="icon" href="img/druza-logo.png" />
-
-  <!-- Fontes: Cormorant Garamond (títulos) + Jost (UI/texto) -->
   <link rel="stylesheet" href="css/fonts.css" />
-
   <link rel="stylesheet" href="css/styles.css" />
-
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -31,162 +23,46 @@
       "name": "Druza Semi Joias",
       "url": "https://druza.com.br/",
       "logo": "https://druza.com.br/img/druza-logo.png",
-      "description": "Protótipo estático da Druza Semi Joias com dados de catálogo e oferta marcados como exemplo."
+      "description": "Semi joias femininas em prata com pedras verdes e acabamento delicado."
     }
   </script>
   <script src="js/analytics.js" defer></script>
 </head>
-<body>
-  <a class="skip-link" href="#main">Pular para o conteúdo</a>
+<body class="home-page">
+  <a class="skip-link" href="#main">Pular para o conteudo</a>
 
-  <!-- ====================== BARRA DE ANÚNCIO ====================== -->
-  <!-- PLACEHOLDER: oferta real (frete grátis / parcelamento) -->
   <div class="announce" role="region" aria-label="Avisos da loja">
-    Frete grátis acima de R$ 199 · até 6x sem juros
+    Frete gratis acima de R$ 199 - ate 6x sem juros
     <button class="announce__close" type="button" aria-label="Fechar aviso" data-close-announce>&times;</button>
   </div>
 
-  <!-- ====================== HEADER ====================== -->
   <header class="site-header">
     <div class="container site-header__inner">
       <button class="icon-btn nav-toggle" type="button" aria-label="Abrir menu" aria-controls="mobile-menu" aria-expanded="false" data-open="mobile-menu">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke-linecap="round"/></svg>
       </button>
 
-      <!-- LOGO: selo rosé com lótus branca + wordmark (recriado em SVG) -->
-      <a class="logo" href="index.html" aria-label="Druza Semi Joias — página inicial">
-        <svg class="logo__seal" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-          <circle cx="24" cy="24" r="23" fill="var(--rose)" />
-          <g transform="translate(24,33) scale(0.42)" fill="#FFFFFF">
-            <path transform="rotate(-52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
-            <path transform="rotate(-26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
-            <path d="M0,0 C -9,-16 -6,-44 0,-54 C 6,-44 9,-16 0,0 Z" />
-            <path transform="rotate(26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
-            <path transform="rotate(52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
-          </g>
-        </svg>
+      <a class="logo" href="index.html" aria-label="Druza Semi Joias - pagina inicial">
+        <span class="logo__seal" aria-hidden="true">
+          <img src="img/druza-mark-white.png" width="226" height="181" alt="" />
+        </span>
         <span class="logo__word">
           <span class="logo__name">Druza</span>
-          <span class="logo__sub">Semi Joias · Prata</span>
+          <span class="logo__sub">Semi Joias - Prata</span>
         </span>
       </a>
 
-      <!-- NAV desktop -->
-      <nav class="main-nav" aria-label="Navegação principal">
+      <nav class="main-nav" aria-label="Navegacao principal">
         <ul>
-          <li class="main-nav__item">
-            <a class="main-nav__link" href="produtos/anel-coracao-esmeralda.html">Anéis</a>
-            <div class="mega-menu" aria-label="Opções de anéis">
-              <div class="container mega-menu__inner">
-                <div class="mega-menu__col">
-                  <strong>Anéis</strong>
-                  <a href="produtos/anel-coracao-esmeralda.html">Anel coração</a>
-                  <a href="produtos/anel-paraiba-quadrado.html">Anel Paraíba</a>
-                  <a href="produtos/anel-coracao-esmeralda.html#faq-title">Tamanhos de exemplo</a>
-                </div>
-                <div class="mega-menu__col">
-                  <strong>Pedras</strong>
-                  <a href="produtos/anel-coracao-esmeralda.html#desc-title">Esmeralda</a>
-                  <a href="produtos/anel-paraiba-quadrado.html">Paraíba</a>
-                  <a href="#categorias">Prata cravejada</a>
-                </div>
-                <a class="mega-menu__feature" href="produtos/anel-coracao-esmeralda.html">
-                  <span class="ph ph--1x1" role="img" aria-label="Placeholder de anel em destaque.">
-                    <strong class="ph__title">Foto em breve</strong>
-                    <span class="ph__tag">placeholder</span>
-                  </span>
-                  <span>Escolha de presente</span>
-                </a>
-              </div>
-            </div>
-          </li>
-          <li class="main-nav__item">
-            <a class="main-nav__link" href="brincos.html">Brincos</a>
-            <div class="mega-menu" aria-label="Opções de brincos">
-              <div class="container mega-menu__inner">
-                <div class="mega-menu__col">
-                  <strong>Brincos</strong>
-                  <a href="produtos/brinco-gota-esmeralda.html">Gotas</a>
-                  <a href="produtos/argolinha-paraiba.html">Argolinhas</a>
-                  <a href="produtos/brinco-ponto-luz.html">Ponto de luz</a>
-                </div>
-                <div class="mega-menu__col">
-                  <strong>Estilo</strong>
-                  <a href="brincos.html#brincos-title">Para o dia</a>
-                  <a href="brincos.html#editorial-brincos">Para noite</a>
-                  <a href="brincos.html#brincos-title">Conjuntos</a>
-                </div>
-                <a class="mega-menu__feature" href="brincos.html">
-                  <span class="ph ph--1x1" role="img" aria-label="Placeholder de brinco em destaque.">
-                    <strong class="ph__title">Foto em breve</strong>
-                    <span class="ph__tag">placeholder</span>
-                  </span>
-                  <span>Brincos de exemplo</span>
-                </a>
-              </div>
-            </div>
-          </li>
-          <li class="main-nav__item">
-            <a class="main-nav__link" href="produtos/pulseira-riviera-prata.html">Pulseiras</a>
-            <div class="mega-menu" aria-label="Opções de pulseiras">
-              <div class="container mega-menu__inner">
-                <div class="mega-menu__col">
-                  <strong>Pulseiras</strong>
-                  <a href="produtos/pulseira-riviera-prata.html">Riviera</a>
-                  <a href="#novidades">Braceletes</a>
-                  <a href="#novidades">Delicadas</a>
-                </div>
-                <div class="mega-menu__col">
-                  <strong>Acabamento</strong>
-                  <a href="#cuidados">Prata 925</a>
-                  <a href="produtos/pulseira-riviera-prata.html">Pedras verdes</a>
-                  <a href="#presentes">Para presentear</a>
-                </div>
-                <a class="mega-menu__feature" href="produtos/pulseira-riviera-prata.html">
-                  <span class="ph ph--1x1" role="img" aria-label="Placeholder de pulseira em destaque.">
-                    <strong class="ph__title">Foto em breve</strong>
-                    <span class="ph__tag">placeholder</span>
-                  </span>
-                  <span>Pulseiras de exemplo</span>
-                </a>
-              </div>
-            </div>
-          </li>
-          <li class="main-nav__item">
-            <a class="main-nav__link" href="#colecoes">Coleções</a>
-            <div class="mega-menu" aria-label="Opções de coleções">
-              <div class="container mega-menu__inner">
-                <div class="mega-menu__col">
-                  <strong>Coleções</strong>
-                  <a href="#colecoes">Pedras verdes</a>
-                  <a href="#novidades">Favoritas da casa</a>
-                  <a href="#presentes">Presentes</a>
-                </div>
-                <div class="mega-menu__col">
-                  <strong>Por momento</strong>
-                  <a href="#mundo-title">Dia a dia</a>
-                  <a href="#nova-title">Nova coleção</a>
-                  <a href="#cuidados">Cuidados</a>
-                </div>
-                <a class="mega-menu__feature" href="#colecoes">
-                  <span class="ph ph--1x1" role="img" aria-label="Placeholder de coleção em destaque.">
-                    <strong class="ph__title">Foto em breve</strong>
-                    <span class="ph__tag">placeholder</span>
-                  </span>
-                  <span>Coleção de exemplo</span>
-                </a>
-              </div>
-            </div>
-          </li>
-          <li><a href="#presentes">Presentes</a></li>
+          <li><a href="#colecoes">Colecoes</a></li>
+          <li><a href="#novidades">Novidades</a></li>
+          <li><a href="#cuidados">Cuidados</a></li>
           <li><a href="#sobre">Sobre</a></li>
+          <li><a href="catalogo.html">Catalogo</a></li>
         </ul>
       </nav>
 
       <div class="header-actions">
-        <button class="icon-btn" type="button" aria-label="Busca em breve" aria-disabled="true" title="Busca em breve" disabled>
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5" stroke-linecap="round"/></svg>
-        </button>
         <a class="icon-btn" href="login.html" aria-label="Minha conta" title="Minha conta">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0" stroke-linecap="round"/></svg>
         </a>
@@ -199,116 +75,96 @@
   </header>
 
   <main id="main">
-    <!-- ====================== BLOCO INSTITUCIONAL (hero editorial, sem foto solta) ====================== -->
-    <section class="hero" aria-labelledby="hero-title">
-      <!-- Movimento de fundo ambiente (muito sutil) — atrás do conteúdo -->
-      <div class="hero__ambient" aria-hidden="true">
-        <span class="hero__blob hero__blob--rose"></span>
-        <span class="hero__blob hero__blob--paraiba"></span>
-        <span class="hero__blob hero__blob--blush"></span>
-        <canvas class="hero__particles" data-hero-particles></canvas>
+    <section class="home-hero" aria-labelledby="hero-title" data-home-slideshow>
+      <div class="home-hero__media" aria-hidden="true">
+        <img class="home-hero__slide is-active" src="img/anel-paraiba.webp" width="1045" height="1308" alt="" decoding="async" fetchpriority="high" data-home-slide />
+        <img class="home-hero__slide" src="img/pulseiras-riviera.webp" width="1200" height="1200" alt="" decoding="async" data-home-slide />
+        <img class="home-hero__slide" src="img/anel-coracao.webp" width="1045" height="1308" alt="" decoding="async" data-home-slide />
       </div>
-      <div class="container hero__inner reveal">
-        <p class="eyebrow">Nova coleção · Pedras verdes</p>
+      <div class="home-hero__scrim" aria-hidden="true"></div>
+      <div class="container home-hero__content" data-home-reveal>
+        <p class="eyebrow">Nova colecao - pedras verdes</p>
         <h1 id="hero-title">Joias que guardam luz.</h1>
-        <p class="hero__sub">Prata polida, pedras verdes e detalhes feitos para acompanhar seus dias — do essencial ao inesquecível.</p>
-        <div class="hero__cta">
-          <a class="btn btn--primary" href="#categorias">Ver coleção</a>
-          <a class="btn btn--secondary" href="#novidades">Descobrir novidades</a>
+        <p>Prata polida, pedras verdes e detalhes feitos para acompanhar seus dias - do essencial ao inesquecivel.</p>
+        <div class="home-hero__cta">
+          <a class="btn btn--light" href="#colecoes">Ver colecao</a>
+          <a class="btn btn--ghost-light" href="#novidades">Descobrir novidades</a>
         </div>
+      </div>
+      <div class="home-hero__controls" aria-label="Slides da vitrine">
+        <button type="button" class="is-active" aria-label="Ver anel Paraiba" data-home-dot></button>
+        <button type="button" aria-label="Ver pulseiras Riviera" data-home-dot></button>
+        <button type="button" aria-label="Ver anel coracao" data-home-dot></button>
       </div>
     </section>
 
-    <!-- ====================== COMPRE POR CATEGORIAS ====================== -->
-    <section id="categorias" class="section categories" aria-labelledby="cat-title">
-      <div class="container">
-        <div class="section-head">
-          <p class="eyebrow categories__eyebrow">Coleções</p>
-          <h2 id="cat-title" class="categories__title">Compre por categorias</h2>
-        </div>
-        <span id="colecoes" class="visually-hidden" aria-hidden="true"></span>
-        <ul class="categories__grid">
-          <li class="category-card">
-            <a class="category-card__link" href="produtos/anel-coracao-esmeralda.html">
-              <span class="category-card__media">
-                <img src="img/anel-paraiba.webp" width="900" height="900" loading="lazy" decoding="async"
-                     alt="Anel de prata com pedra Paraíba turquesa." style="object-position: center;" />
-              </span>
-              <span class="category-card__label">Anéis</span>
-            </a>
-          </li>
-          <li class="category-card">
-            <a class="category-card__link" href="produtos/pulseira-riviera-prata.html">
-              <span class="category-card__media">
-                <img src="img/pulseiras-riviera.webp" width="900" height="900" loading="lazy" decoding="async"
-                     alt="Pulseiras riviera de prata com pedras verdes." style="object-position: center;" />
-              </span>
-              <span class="category-card__label">Pulseiras</span>
-            </a>
-          </li>
-          <li class="category-card">
-            <a class="category-card__link" href="brincos.html">
-              <span class="category-card__media">
-                <span class="ph ph--1x1" role="img" aria-label="Placeholder de brincos de prata com pedra verde.">
-                  <span class="ph__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M8 11v7M16 11v7"/><path d="M6.5 18h3M14.5 18h3" stroke-linecap="round"/></svg>
-                  </span>
-                  <strong class="ph__title">Foto em breve</strong>
-                  <span class="ph__tag">placeholder</span>
-                </span>
-              </span>
-              <span class="category-card__label">Brincos</span>
-            </a>
-          </li>
-          <li class="category-card">
-            <!-- PLACEHOLDER visual: crop reaproveitado da foto das pulseiras p/ "Presentes" -->
-            <a class="category-card__link" href="#presentes">
-              <span class="category-card__media">
-                <img src="img/pulseiras-riviera.webp" width="900" height="900" loading="lazy" decoding="async"
-                     alt="Seleção de semi joias para presentear." style="object-position: left center;" />
-              </span>
-              <span class="category-card__label">Presentes</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- ====================== FAIXA DE SELOS ====================== -->
     <section class="trust-strip" aria-label="Diferenciais da loja">
       <div class="container">
         <ul>
-          <li>Prata 925 · garantia de 1 ano</li>
-          <li>Troca fácil em 7 dias</li>
-          <li>Compra 100% segura</li>
+          <li>Prata 925</li>
+          <li>Troca facil em 7 dias</li>
+          <li>Compra segura</li>
           <li>Embalagem para presente</li>
         </ul>
       </div>
     </section>
 
-    <!-- ====================== MAIS DESEJADOS ====================== -->
-    <section id="novidades" class="section" aria-labelledby="best-title">
-      <div class="container">
+    <section id="colecoes" class="section categories" aria-labelledby="cat-title">
+      <div class="container" data-home-reveal>
         <div class="section-head">
-          <h2 id="best-title">As favoritas da casa</h2>
-          <p><span class="badge-demo">Exemplo</span> Nomes e preços abaixo são fictícios (placeholder).</p>
+          <p class="eyebrow categories__eyebrow">Colecoes</p>
+          <h2 id="cat-title" class="categories__title">Compre por categorias</h2>
         </div>
-        <div class="product-grid reveal" data-product-grid="featured">
+        <ul class="categories__grid">
+          <li class="category-card">
+            <a class="category-card__link" href="produtos/anel-paraiba-quadrado.html">
+              <span class="category-card__media"><img src="img/anel-paraiba.webp" width="900" height="900" loading="lazy" decoding="async" alt="Anel de prata com pedra Paraiba turquesa." /></span>
+              <span class="category-card__label">Aneis</span>
+            </a>
+          </li>
+          <li class="category-card">
+            <a class="category-card__link" href="produtos/pulseira-riviera-prata.html">
+              <span class="category-card__media"><img src="img/pulseiras-riviera.webp" width="900" height="900" loading="lazy" decoding="async" alt="Pulseiras riviera de prata com pedras verdes." /></span>
+              <span class="category-card__label">Pulseiras</span>
+            </a>
+          </li>
+          <li class="category-card">
+            <a class="category-card__link" href="produtos/anel-coracao-esmeralda.html">
+              <span class="category-card__media"><img src="img/anel-coracao.webp" width="900" height="900" loading="lazy" decoding="async" alt="Anel coracao esmeralda em prata." /></span>
+              <span class="category-card__label">Presentes</span>
+            </a>
+          </li>
+          <li class="category-card">
+            <a class="category-card__link" href="brincos.html">
+              <span class="category-card__media category-card__media--empty">
+                <span>Brincos</span>
+              </span>
+              <span class="category-card__label">Brincos</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="novidades" class="section" aria-labelledby="best-title">
+      <div class="container" data-home-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Favoritas da casa</p>
+          <h2 id="best-title">Pedras verdes em prata clara</h2>
+          <p>Uma selecao curta de pecas com brilho delicado, pensadas para presente ou uso diario.</p>
+        </div>
+        <div class="product-grid" data-product-grid="featured">
           <article class="product-card">
             <a class="product-card__link" href="produtos/anel-coracao-esmeralda.html">
-              <span class="product-card__media">
-                <img src="img/anel-coracao.webp" width="800" height="1000" loading="lazy" decoding="async" alt="Anel coração esmeralda em prata." style="object-position: center 58%;" />
-              </span>
-              <span class="product-card__name">Anel Coração Esmeralda</span>
+              <span class="product-card__media"><img src="img/anel-coracao.webp" width="800" height="1000" loading="lazy" decoding="async" alt="Anel coracao esmeralda em prata." /></span>
+              <span class="product-card__name">Anel Coracao Esmeralda</span>
             </a>
             <span class="price">R$ 189</span>
             <span class="product-card__parcela">ou 6x de R$ 31,50 sem juros</span>
           </article>
           <article class="product-card">
             <a class="product-card__link" href="produtos/pulseira-riviera-prata.html">
-              <span class="product-card__media">
-                <img src="img/pulseiras-riviera.webp" width="800" height="1000" loading="lazy" decoding="async" alt="Pulseira riviera de prata." />
-              </span>
+              <span class="product-card__media"><img src="img/pulseiras-riviera.webp" width="800" height="1000" loading="lazy" decoding="async" alt="Pulseira riviera de prata." /></span>
               <span class="product-card__name">Pulseira Riviera Prata</span>
             </a>
             <span class="price">R$ 159</span>
@@ -316,10 +172,8 @@
           </article>
           <article class="product-card">
             <a class="product-card__link" href="produtos/anel-paraiba-quadrado.html">
-              <span class="product-card__media">
-                <img src="img/anel-paraiba.webp" width="800" height="1000" loading="lazy" decoding="async" alt="Anel quadrado com pedra Paraíba." />
-              </span>
-              <span class="product-card__name">Anel Paraíba Quadrado</span>
+              <span class="product-card__media"><img src="img/anel-paraiba.webp" width="800" height="1000" loading="lazy" decoding="async" alt="Anel quadrado com pedra Paraiba." /></span>
+              <span class="product-card__name">Anel Paraiba Quadrado</span>
             </a>
             <span class="price">R$ 219</span>
             <span class="product-card__parcela">ou 6x de R$ 36,50 sem juros</span>
@@ -328,157 +182,64 @@
       </div>
     </section>
 
-    <!-- ====================== NOVA COLEÇÃO — banner de campanha full-bleed ====================== -->
     <section class="campaign" aria-labelledby="nova-title">
       <img class="campaign__bg" src="img/anel-paraiba.webp" width="1045" height="1308" alt="" aria-hidden="true" loading="lazy" decoding="async" />
       <div class="campaign__scrim" aria-hidden="true"></div>
-      <div class="container campaign__content reveal">
-        <p class="eyebrow campaign__eyebrow">Nova coleção</p>
+      <div class="container campaign__content" data-home-reveal>
+        <p class="eyebrow campaign__eyebrow">Nova colecao</p>
         <h2 id="nova-title" class="campaign__title">Verde que permanece</h2>
-        <p class="campaign__sub">Esmeralda e Paraíba em peças que marcam presença — do dia ao essencial.</p>
+        <p class="campaign__sub">Esmeralda e Paraiba em pecas que marcam presenca - do dia ao essencial.</p>
         <div class="campaign__cta">
-          <a class="btn btn--light" href="#categorias">Comprar agora</a>
-          <a class="btn btn--ghost-light" href="#categorias">Descobrir</a>
+          <a class="btn btn--light" href="catalogo.html">Comprar agora</a>
+          <a class="btn btn--ghost-light" href="#sobre">Descobrir</a>
         </div>
       </div>
     </section>
 
-    <!-- ====================== MUNDO DRUZA — intro editorial ====================== -->
-    <section id="sobre" class="section" aria-labelledby="mundo-title">
-      <div class="container">
-        <div class="section-head reveal">
+    <section id="sobre" class="section home-story" aria-labelledby="story-title">
+      <div class="container home-story__grid" data-home-reveal>
+        <div>
           <p class="eyebrow">Mundo Druza</p>
-          <h2 id="mundo-title">Detalhes que ficam</h2>
-          <p>Prata trabalhada com cuidado e pedras escolhidas pela cor. Conheça o que está por trás de cada peça.</p>
-          <p><a class="btn btn--secondary" href="sobre.html">Conheça a Druza</a></p>
+          <h2 id="story-title">Detalhes que ficam</h2>
+          <p>A Druza trabalha a prata como base luminosa para pedras verdes, com pecas delicadas no traco e presentes na memoria.</p>
+          <a class="btn btn--secondary" href="sobre.html">Conheca a Druza</a>
+        </div>
+        <div class="home-story__media">
+          <img src="img/pulseiras-riviera.webp" width="900" height="900" loading="lazy" decoding="async" alt="Pulseiras riviera de prata sobre fundo claro." />
         </div>
       </div>
     </section>
 
-    <!-- ====================== MUNDO DRUZA — 3 colunas editoriais ====================== -->
-    <section class="section" aria-label="Histórias da Druza">
-      <div class="container">
-        <div class="editorial-grid">
-          <article class="editorial-card reveal">
-            <a class="editorial-card__media" href="produtos/anel-paraiba-quadrado.html">
-              <img src="img/anel-paraiba.webp" width="800" height="1000" loading="lazy" decoding="async" alt="Anel de prata com pedra Paraíba turquesa." />
-            </a>
-            <h3 class="editorial-card__title">Pedras que guardam cor</h3>
-            <p>Esmeralda e Paraíba escolhidas pelo tom — o verde que dá vida à prata e acompanha você em qualquer ocasião.</p>
-          </article>
-          <article class="editorial-card reveal">
-            <a class="editorial-card__media" href="#cuidados">
-              <img src="img/pulseiras-riviera.webp" width="800" height="1000" loading="lazy" decoding="async" alt="Pulseiras riviera de prata com pedras verdes." />
-            </a>
-            <h3 class="editorial-card__title">Prata feita para durar</h3>
-            <p>Prata 925 com acabamento cuidadoso e brilho que resiste ao tempo. Delicada no traço, marcante na presença.</p>
-          </article>
-          <article class="editorial-card reveal">
-            <a class="editorial-card__media" href="#presentes">
-              <img src="img/anel-coracao.webp" width="800" height="1000" loading="lazy" decoding="async" alt="Anel coração com pedra esmeralda." style="object-position: center 58%;" />
-            </a>
-            <h3 class="editorial-card__title">Para presentear quem importa</h3>
-            <p>Cada peça chega pronta para emocionar, na embalagem Druza — do gesto pequeno ao momento inesquecível.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- ====================== PRESENTE (Fase 2c) ====================== -->
-    <section id="presentes" class="section" aria-labelledby="gift-title">
-      <div class="container container--narrow">
-        <h2 id="gift-title">Chega pronta para entregar</h2>
-        <!-- PLACEHOLDER: embalagem real + CTA "Montar presente" -->
-        <div class="ph ph--16x9 ph--blush" role="img" aria-label="Foto em breve da embalagem premium da Druza para presente.">
-          <span class="ph__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7h16v12H4z"/><path d="M12 7v12"/><path d="M4 11h16"/><path d="M9.5 7C8 7 7 6.2 7 5.2 7 4 8 3 9.5 3c1.4 0 2.2.9 2.5 2.3C12.3 3.9 13.1 3 14.5 3 16 3 17 4 17 5.2 17 6.2 16 7 14.5 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </span>
-          <strong class="ph__title">Foto em breve</strong>
-          <p class="ph__desc">Entrará uma foto real da embalagem premium de presente com caixa, fita e acabamento da marca.</p>
-          <span class="ph__tag">placeholder</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ====================== PROVA SOCIAL (Fase 2c) ====================== -->
-    <section class="section" aria-labelledby="rev-title">
-      <div class="container">
-        <h2 id="rev-title">Histórias reais</h2>
-        <p><span class="badge-demo">Exemplo</span> Avaliações e fotos abaixo serão de clientes reais.</p>
-        <!-- PLACEHOLDER: depoimentos + fotos de clientes -->
-        <div class="ph ph--16x9" role="img" aria-label="Foto em breve de clientes usando peças Druza em contexto real.">
-          <span class="ph__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 18h18"/><path d="M7 14a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/><path d="M17 12a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z"/><path d="M4 18a4 4 0 0 1 6-3.5"/><path d="M13 18a4 4 0 0 1 7-2.5" stroke-linecap="round"/></svg>
-          </span>
-          <strong class="ph__title">Foto em breve</strong>
-          <p class="ph__desc">Entrarão fotos reais de clientes e prova social validada, mantendo os dados fictícios fora da publicação final.</p>
-          <span class="ph__tag">placeholder</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ====================== CUIDADOS (Fase 2c) ====================== -->
     <section id="cuidados" class="section section--warm" aria-labelledby="care-title">
-      <div class="container container--narrow">
+      <div class="container container--narrow" data-home-reveal>
         <div class="section-head">
           <p class="eyebrow">Cuidados</p>
           <h2 id="care-title">Para durar bonito</h2>
         </div>
         <ol class="care-list">
-          <li>
-            <div>
-              <h3>Guarde separadamente</h3>
-              <p>Evite atrito entre peças e mantenha a prata seca, em saquinhos ou caixas individuais.</p>
-            </div>
-          </li>
-          <li>
-            <div>
-              <h3>Retire antes da água</h3>
-              <p>Perfume, piscina, banho e produtos de limpeza aceleram oxidação e perda de brilho.</p>
-            </div>
-          </li>
-          <li>
-            <div>
-              <h3>Limpeza suave</h3>
-              <p>Use flanela macia e seca. <!-- PLACEHOLDER: rotina oficial de limpeza da marca --></p>
-            </div>
-          </li>
-          <li>
-            <div>
-              <h3>Revise periodicamente</h3>
-              <p>Cravações e fechos devem ser conferidos com uso contínuo. <!-- PLACEHOLDER: política de manutenção --></p>
-            </div>
-          </li>
+          <li><div><h3>Guarde separadamente</h3><p>Evite atrito entre pecas e mantenha a prata seca, em saquinhos ou caixas individuais.</p></div></li>
+          <li><div><h3>Retire antes da agua</h3><p>Perfume, piscina, banho e produtos de limpeza aceleram oxidacao e perda de brilho.</p></div></li>
+          <li><div><h3>Limpeza suave</h3><p>Use flanela macia e seca para preservar o acabamento da peca.</p></div></li>
+          <li><div><h3>Revise periodicamente</h3><p>Cravacoes e fechos devem ser conferidos com uso continuo.</p></div></li>
         </ol>
       </div>
     </section>
 
-    <!-- ====================== PROMO + NEWSLETTER + SERVIÇOS (estilo editorial) ====================== -->
-    <section class="promo-band" aria-label="Oferta de boas-vindas">
-      <div class="container">
-        <div class="promo-band__card reveal">
-          <p class="promo-band__title">Entre para a Druza e ganhe <strong>10% na primeira compra</strong></p>
-          <p class="promo-band__note"><span class="badge-demo">Exemplo</span> Use o cupom <strong>PRIMEIRADRUZA</strong> no checkout. Aplicam-se termos.</p>
-        </div>
-      </div>
-    </section>
-
     <section class="section newsletter" aria-labelledby="news-title">
-      <div class="container newsletter__grid reveal">
+      <div class="container newsletter__grid" data-home-reveal>
         <div class="newsletter__media">
-          <img src="img/pulseiras-riviera.webp" width="900" height="720" loading="lazy" decoding="async" alt="Pulseiras e anel de prata da Druza." />
+          <img src="img/anel-coracao.webp" width="900" height="720" loading="lazy" decoding="async" alt="Anel coracao esmeralda em prata." />
         </div>
         <div class="newsletter__body">
           <p class="eyebrow">Newsletter</p>
-          <h2 id="news-title">As novas coleções chegam primeiro a você</h2>
-          <p>Sem excessos — só o essencial: lançamentos, edições limitadas e cuidados com suas peças.</p>
-          <!-- PLACEHOLDER: integração real de e-mail -->
+          <h2 id="news-title">As novas colecoes chegam primeiro a voce</h2>
+          <p>Sem excessos - so o essencial: lancamentos, edicoes limitadas e cuidados com suas pecas.</p>
           <form class="newsletter-form" data-newsletter novalidate>
             <label class="visually-hidden" for="news-email">Seu e-mail</label>
-            <input id="news-email" type="email" name="email" autocomplete="email" placeholder="Digite seu e-mail…" required />
+            <input id="news-email" type="email" name="email" autocomplete="email" placeholder="Digite seu e-mail" required />
             <label class="newsletter__consent">
               <input id="news-consent" type="checkbox" name="consent" required />
-              <span>Li e concordo com a <a href="privacidade.html">Política de Privacidade</a>.</span>
+              <span>Li e concordo com a <a href="privacidade.html">Politica de Privacidade</a>.</span>
             </label>
             <button class="btn btn--primary" type="submit">Quero receber</button>
             <p class="form-feedback" data-newsletter-feedback aria-live="polite" aria-atomic="true"></p>
@@ -486,44 +247,20 @@
         </div>
       </div>
     </section>
-
-    <!-- ====================== SERVIÇOS (pré-footer) ====================== -->
-    <section id="atendimento" class="services" aria-label="Serviços e vantagens">
-      <div class="container services__grid">
-        <div class="service">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v8H3z"/><path d="M14 10h4l3 3v2h-7z"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17.5" cy="17.5" r="1.6"/></svg>
-          <div><strong>Frete grátis</strong><span>acima de R$ 199</span></div>
-        </div>
-        <div class="service">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9a8 8 0 0 1 13.5-3.5L20 8"/><path d="M20 4v4h-4"/><path d="M20 15a8 8 0 0 1-13.5 3.5L4 16"/><path d="M4 20v-4h4"/></svg>
-          <div><strong>Troca fácil</strong><span>em até 30 dias</span></div>
-        </div>
-        <div class="service">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-4 4z"/></svg>
-          <div><strong>Atendimento</strong><span>no WhatsApp</span></div>
-        </div>
-        <div class="service">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 5 13h6l-1 8 8-10h-6z"/></svg>
-          <div><strong>Pague com Pix</strong><span>rápido e seguro</span></div>
-        </div>
-      </div>
-    </section>
   </main>
 
-  <!-- ====================== FOOTER ====================== -->
-  <footer class="site-footer">
+  <footer class="site-footer site-footer--dark">
     <div class="container footer-grid">
-      <div class="footer__col">
-        <span class="logo__name">Druza</span>
-        <p>Semi joias femininas em prata. <!-- PLACEHOLDER: descrição/redes --></p>
+      <div class="footer__col footer__brand">
+        <img src="img/druza-logo-white.png" width="226" height="246" loading="lazy" decoding="async" alt="Druza Semi Joias Prata" />
+        <p>Semi joias femininas em prata, com brilho delicado e pedras verdes.</p>
       </div>
-      <div class="footer__col"><h3>Loja</h3><ul><li><a href="produtos/anel-coracao-esmeralda.html">Anéis</a></li><li><a href="brincos.html">Brincos</a></li><li><a href="produtos/pulseira-riviera-prata.html">Pulseiras</a></li><li><a href="#colecoes">Coleções</a></li></ul></div>
-      <div class="footer__col"><h3>Ajuda</h3><ul><li><a href="trocas.html">Trocas e devoluções</a></li><li><a href="produtos/anel-coracao-esmeralda.html#faq-title">Perguntas frequentes</a></li><li><a href="contato.html">Contato</a></li></ul></div>
-      <div class="footer__col"><h3>Atendimento</h3><ul><li><a href="https://wa.me/5511966074268" rel="noopener noreferrer">WhatsApp</a></li><li><a href="cuidados.html">Cuidados com as peças</a></li></ul></div>
+      <div class="footer__col"><h3>Loja</h3><ul><li><a href="#colecoes">Colecoes</a></li><li><a href="catalogo.html">Catalogo</a></li><li><a href="brincos.html">Brincos</a></li></ul></div>
+      <div class="footer__col"><h3>Ajuda</h3><ul><li><a href="trocas.html">Trocas e devolucoes</a></li><li><a href="contato.html">Contato</a></li><li><a href="cuidados.html">Cuidados</a></li></ul></div>
+      <div class="footer__col"><h3>Atendimento</h3><ul><li><a href="https://wa.me/5511966074268" rel="noopener noreferrer">WhatsApp</a></li><li><a href="privacidade.html">Privacidade</a></li></ul></div>
     </div>
   </footer>
 
-  <!-- ====================== DRAWERS + OVERLAY ====================== -->
   <div class="overlay" data-overlay hidden></div>
 
   <aside class="drawer cart-drawer" id="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title" aria-hidden="true" tabindex="-1">
@@ -538,52 +275,20 @@
       <div class="cart-panel" data-cart-panel></div>
       <form class="checkout-form" data-checkout-form novalidate>
         <h3>Checkout simulado</h3>
-        <p class="checkout-note">Protótipo sem cobrança real. Nenhum dado é enviado para servidor.</p>
-
-        <label>
-          Nome completo
-          <input type="text" name="name" autocomplete="name" required />
-        </label>
-        <label>
-          E-mail
-          <input type="email" name="email" autocomplete="email" required />
-        </label>
-        <label>
-          WhatsApp
-          <input type="tel" name="phone" autocomplete="tel" required />
-        </label>
+        <p class="checkout-note">Prototipo sem cobranca real. Nenhum dado e enviado para servidor.</p>
+        <label>Nome completo <input type="text" name="name" autocomplete="name" required /></label>
+        <label>E-mail <input type="email" name="email" autocomplete="email" required /></label>
+        <label>WhatsApp <input type="tel" name="phone" autocomplete="tel" required /></label>
         <div class="checkout-form__row">
-          <label>
-            CEP
-            <input type="text" name="cep" inputmode="numeric" autocomplete="postal-code" maxlength="9" required />
-          </label>
-          <label>
-            Número
-            <input type="text" name="number" autocomplete="address-line2" required />
-          </label>
+          <label>CEP <input type="text" name="cep" inputmode="numeric" autocomplete="postal-code" maxlength="9" required /></label>
+          <label>Numero <input type="text" name="number" autocomplete="address-line2" required /></label>
         </div>
-        <label>
-          Endereço
-          <input type="text" name="address" autocomplete="street-address" required />
-        </label>
+        <label>Endereco <input type="text" name="address" autocomplete="street-address" required /></label>
         <div class="checkout-form__row">
-          <label>
-            Cidade
-            <input type="text" name="city" autocomplete="address-level2" required />
-          </label>
-          <label>
-            UF
-            <input type="text" name="state" autocomplete="address-level1" maxlength="2" required />
-          </label>
+          <label>Cidade <input type="text" name="city" autocomplete="address-level2" required /></label>
+          <label>UF <input type="text" name="state" autocomplete="address-level1" maxlength="2" required /></label>
         </div>
-        <label>
-          Pagamento
-          <select name="payment" required>
-            <option value="">Escolha uma forma</option>
-            <option value="pix">Pix simulado</option>
-            <option value="card">Cartão simulado</option>
-          </select>
-        </label>
+        <label>Pagamento <select name="payment" required><option value="">Escolha uma forma</option><option value="pix">Pix simulado</option><option value="card">Cartao simulado</option></select></label>
         <div class="checkout-review" data-checkout-review aria-live="polite"></div>
         <button class="btn btn--primary" type="submit">Finalizar pedido simulado</button>
         <p class="form-feedback" data-checkout-feedback aria-live="polite" aria-atomic="true"></p>
@@ -599,18 +304,18 @@
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke-linecap="round"/></svg>
       </button>
     </div>
-    <nav aria-label="Menu móvel">
-      <a href="produtos/anel-coracao-esmeralda.html">Anéis</a>
-      <a href="brincos.html">Brincos</a>
-      <a href="produtos/pulseira-riviera-prata.html">Pulseiras</a>
-      <a href="#colecoes">Coleções</a>
-      <a href="#presentes">Presentes</a>
+    <nav aria-label="Menu movel">
+      <a href="#colecoes">Colecoes</a>
+      <a href="#novidades">Novidades</a>
+      <a href="#cuidados">Cuidados</a>
       <a href="#sobre">Sobre</a>
+      <a href="catalogo.html">Catalogo</a>
     </nav>
   </div>
 
   <script src="js/config.js" defer></script>
   <script src="js/catalog.js" defer></script>
   <script src="js/main.js" defer></script>
+  <script src="js/home.js" defer></script>
 </body>
 </html>

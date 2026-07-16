@@ -56,9 +56,10 @@ das pedras, **nunca** logo ou símbolo principal.
 
 ## 5. Logo
 
-Selo **rosé** com lótus branca (recriado em SVG) + wordmark **Druza** em grafite, com
-“Semi Joias · Prata” em Jost espaçado. Versões: header (38px) e footer. _(a expandir: versão
-monocromática para fundos especiais, favicon SVG.)_
+Selo **rosé** com a flor branca extraída do logo original (`img/druza-mark-white.png`) +
+wordmark **Druza** em grafite, com “Semi Joias · Prata” em Jost espaçado. Versões: header
+(38px) e footer escuro com logo branco completo (`img/druza-logo-white.png`). _(a expandir:
+favicon SVG.)_
 
 ## 6. Voz & copywriting
 

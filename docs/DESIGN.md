@@ -64,6 +64,9 @@ Pareamento por contraste: serifa display + sans humanista.
 
 ## Components
 
+- **Logo:** header usa `img/druza-mark-white.png`, a flor branca extraída do logo original
+  dentro do círculo rosé. Footer escuro usa `img/druza-logo-white.png`, versão branca
+  completa e transparente.
 - **Botões:** primário tinta `--ink`; secundário ghost rosé `--rose` (borda + texto);
   `--light` (branco sobre imagem); `--ghost-light` (sobre imagem escura).
 - **Card de produto:** mídia 4:5 com hover scale(1.05), nome serifado, preço tabular,
@@ -96,6 +99,8 @@ Pareamento por contraste: serifa display + sans humanista.
 
 - 3 fotos reais otimizadas (≤1200px, JPEG q82): `anel-paraiba.jpg`,
   `pulseiras-riviera.jpg`, `anel-coracao.jpg`. ~279KB total (~92% menor que originais).
+- Assets de marca transparentes: `druza-mark-white.png` para o selo do header e
+  `druza-logo-white.png` para o footer.
 - Onde falta foto real → placeholder `.ph` premium (sistema explícito).
 - **Não usar:** banco de imagem, foto fake, mesma foto repetida muitas vezes.
 - Pendente: variantes responsivas (`srcset`/`sizes`), conversão WebP/AVIF, OG image

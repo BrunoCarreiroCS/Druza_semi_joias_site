@@ -1,0 +1,30 @@
+<style>
+  .druza-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:28px}
+  .druza-card{border:1px solid #e9e4e5;background:#fff;cursor:pointer;overflow:hidden;min-height:430px;transition:.2s ease}
+  .druza-card:hover{transform:translateY(-3px);border-color:#c98b90}
+  .druza-preview{padding:22px;background:linear-gradient(145deg,#fff 45%,#fbf0f1);min-height:205px;border-bottom:1px solid #e9e4e5}
+  .druza-kicker{font:500 10px/1.2 Arial,sans-serif;letter-spacing:.19em;text-transform:uppercase;color:#b97981}
+  .druza-title{font:500 30px/1.05 Georgia,serif;color:#2b2b2d;margin:16px 0 10px}
+  .druza-rule{height:2px;width:48px;background:#c98b90;margin:18px 0}
+  .druza-lines{display:grid;gap:7px}.druza-lines i{display:block;height:5px;background:#e9e4e5}.druza-lines i:nth-child(2){width:76%}.druza-lines i:nth-child(3){width:58%}
+  .druza-body{padding:20px}.druza-body h3{margin:0 0 8px;color:#2b2b2d}.druza-body p{margin:0 0 13px;color:#6b6669;line-height:1.5}
+  .tag{display:inline-block;padding:5px 9px;border:1px solid #c98b90;color:#5c3a3f;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+  .recommended{position:relative}.recommended:before{content:'RECOMENDADO';position:absolute;z-index:2;right:0;top:0;padding:7px 10px;background:#5c3a3f;color:#fff;font:600 10px Arial;letter-spacing:.12em}
+  @media(max-width:850px){.druza-grid{grid-template-columns:1fr}.druza-card{min-height:0}}
+</style>
+<h2>Qual arquitetura deve orientar o guia interno?</h2>
+<p class="subtitle">As três opções usam a identidade atual da Druza. A diferença é o equilíbrio entre inspiração, operação e estratégia.</p>
+<div class="druza-grid">
+  <div class="druza-card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="druza-preview"><span class="druza-kicker">A · Brand bible</span><div class="druza-title">A marca como<br><em>universo visual</em></div><div class="druza-rule"></div><div class="druza-lines"><i></i><i></i><i></i></div></div>
+    <div class="druza-body"><h3>Manifesto editorial</h3><p>Prioriza narrativa, identidade, paleta, tipografia, fotografia e tom de voz. É marcante, mas menos útil para decisões operacionais e comerciais.</p><span class="tag">Mais inspiracional</span></div>
+  </div>
+  <div class="druza-card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="druza-preview"><span class="druza-kicker">B · Playbook</span><div class="druza-title">Padrões claros.<br>Execução consistente.</div><div class="druza-rule"></div><div class="druza-lines"><i></i><i></i><i></i></div></div>
+    <div class="druza-body"><h3>Manual de execução</h3><p>Prioriza checklists, aprovações, especificações, fluxos, métricas e roadmap. Muito prático, porém pode subrepresentar o valor emocional da marca.</p><span class="tag">Mais operacional</span></div>
+  </div>
+  <div class="druza-card recommended" data-choice="c" onclick="toggleSelect(this)">
+    <div class="druza-preview"><span class="druza-kicker">C · Sistema integrado</span><div class="druza-title">Desejo com<br><em>disciplina comercial</em></div><div class="druza-rule"></div><div class="druza-lines"><i></i><i></i><i></i></div></div>
+    <div class="druza-body"><h3>Brand & business guide</h3><p>Une essência, sistema visual, experiência digital, fotografia, operação, modelo de negócio, aquisição, retenção, KPIs e plano de 90 dias.</p><span class="tag">Equilíbrio recomendado</span></div>
+  </div>
+</div>
