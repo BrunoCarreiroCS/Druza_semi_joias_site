@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Direção visual Druza</title>
+  <style>
+    @font-face{font-family:"Cormorant Garamond";font-weight:500;src:url("../../../../fonts/cormorant-garamond-500-latin.woff2") format("woff2")}
+    @font-face{font-family:"Cormorant Garamond";font-weight:600;src:url("../../../../fonts/cormorant-garamond-600-latin.woff2") format("woff2")}
+    @font-face{font-family:"Jost";font-weight:400;src:url("../../../../fonts/jost-400-latin.woff2") format("woff2")}
+    @font-face{font-family:"Jost";font-weight:500;src:url("../../../../fonts/jost-500-latin.woff2") format("woff2")}
+    :root{--white:#fff;--soft:#fdf8f8;--blush:#fbf0f1;--rose:#c98b90;--rose-deep:#5c3a3f;--ink:#2b2b2d;--text:#4c4849;--line:#e9e4e5;--night:#151113}
+    *{box-sizing:border-box}
+    body{margin:0;background:#ece8e9;color:var(--text);font-family:"Jost",sans-serif;letter-spacing:0}
+    img{display:block;max-width:100%}
+    h1,h2,h3,p{margin:0;letter-spacing:0}
+    h1,h2,h3{font-family:"Cormorant Garamond",serif;color:var(--ink);font-weight:600}
+    .board{width:1440px;margin:0 auto;padding:72px;background:#ece8e9}
+    .board-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:30px}
+    .board-head h1{font-size:48px;line-height:1}
+    .board-head p{max-width:54ch;font-size:16px;line-height:1.6;text-align:right}
+    .sheet{overflow:hidden;margin-bottom:32px;background:var(--white);box-shadow:0 8px 24px rgba(43,43,45,.08)}
+    .label{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--night);color:#fff;font-size:14px}
+    .label strong{font-weight:500}
+    .label span{color:#d8cfd1}
+    .about{display:grid;grid-template-columns:1.08fr .92fr;min-height:620px}
+    .about-media{position:relative;overflow:hidden;background:var(--night)}
+    .about-media>img:first-child{width:100%;height:100%;object-fit:cover;object-position:center 43%}
+    .about-media:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(21,17,19,.18),rgba(21,17,19,.68))}
+    .about-logo{position:absolute;z-index:1;top:38px;left:40px;width:118px;height:auto}
+    .about-caption{position:absolute;z-index:1;left:40px;right:40px;bottom:42px;color:#fff;font-family:"Cormorant Garamond",serif;font-size:34px;line-height:1.12}
+    .about-copy{display:flex;flex-direction:column;justify-content:center;padding:64px;background:var(--soft)}
+    .about-copy h2{max-width:11ch;font-size:58px;line-height:.98}
+    .about-copy>p{max-width:45ch;margin-top:24px;font-size:17px;line-height:1.72}
+    .principles{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:42px;padding-top:28px;border-top:1px solid var(--line)}
+    .principles strong{display:block;color:var(--rose-deep);font-size:15px;font-weight:500}
+    .principles span{display:block;margin-top:8px;font-size:13px;line-height:1.5}
+    .social{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:34px;padding:40px 50px;background:#fff}
+    .social-mark{display:grid;place-items:center;width:86px;height:86px;border-radius:50%;background:var(--rose)}
+    .social-mark img{width:54px}
+    .social h2{font-size:38px;line-height:1.04}
+    .social p{margin-top:8px;font-size:16px;line-height:1.55}
+    .social a{padding:14px 22px;border:1px solid var(--rose-deep);color:var(--rose-deep);font-size:15px;text-decoration:none}
+    .earrings{padding:58px;background:var(--soft)}
+    .earrings-head{display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin-bottom:34px}
+    .earrings-head h2{max-width:12ch;font-size:54px;line-height:1}
+    .earrings-head p{max-width:48ch;font-size:16px;line-height:1.65}
+    .families{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;align-items:stretch}
+    .family{display:grid;grid-template-rows:auto 1fr auto;background:#fff}
+    .family-art{position:relative;display:grid;place-items:center;aspect-ratio:4/5;overflow:hidden;background:var(--rose)}
+    .family-art:before{content:"";position:absolute;inset:18px;border:1px solid rgba(255,255,255,.58)}
+    .family-art img{width:116px;opacity:.94}
+    .family-art span{position:absolute;right:24px;bottom:22px;left:24px;color:#fff;font-size:13px;text-align:center}
+    .family-copy{padding:22px 22px 18px}
+    .family-copy h3{font-size:31px;line-height:1}
+    .family-copy p{margin-top:10px;font-size:15px;line-height:1.62}
+    .family-foot{padding:0 22px 22px;color:var(--rose-deep);font-size:13px}
+    .waitlist{display:flex;align-items:center;justify-content:space-between;gap:32px;margin-top:26px;padding:26px 30px;background:var(--night);color:#fff}
+    .waitlist strong{font-family:"Cormorant Garamond",serif;font-size:28px;font-weight:600}
+    .waitlist span{display:block;margin-top:5px;color:#d8cfd1;font-size:14px}
+    .waitlist a{padding:14px 22px;background:#fff;color:var(--ink);font-size:14px;text-decoration:none}
+  </style>
+</head>
+<body>
+  <main class="board">
+    <header class="board-head">
+      <h1>Direção visual Druza</h1>
+      <p>Prancha de implementação: ativos reais, logo explícito, hierarquia legível e placeholders alinhados.</p>
+    </header>
+
+    <section class="sheet">
+      <div class="label"><strong>01 · Página Sobre</strong><span>Logo oficial + fotografia real + manifesto próprio</span></div>
+      <div class="about">
+        <div class="about-media">
+          <img src="../../../../img/anel-paraiba.webp" alt="Anel de prata com pedra Paraíba">
+          <img class="about-logo" src="../../../../img/druza-logo-white.png" alt="Druza Semi Joias Prata">
+          <p class="about-caption">A pedra guarda a cor.<br>A prata devolve a luz.</p>
+        </div>
+        <div class="about-copy">
+          <h2>A luz não precisa de excesso para ser lembrada.</h2>
+          <p>A Druza reúne o brilho frio da prata e a presença das pedras verdes em peças que acompanham o cotidiano sem perder intenção.</p>
+          <div class="principles">
+            <div><strong>Matéria</strong><span>Prata clara, brilho preciso e pedras que sustentam a composição.</span></div>
+            <div><strong>Presença</strong><span>Detalhes que aparecem sem disputar espaço com quem os usa.</span></div>
+            <div><strong>Permanência</strong><span>Formas delicadas para atravessar ocasiões e combinações.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sheet">
+      <div class="label"><strong>02 · Faixa social da home</strong><span>Perfil real, sem números ou depoimentos simulados</span></div>
+      <div class="social">
+        <div class="social-mark"><img src="../../../../img/druza-mark-white.png" alt=""></div>
+        <div>
+          <h2>A Druza acontece também entre um detalhe e outro.</h2>
+          <p>No @druzaoficial, você acompanha novas peças, escolhas de pedras e os próximos lançamentos.</p>
+        </div>
+        <a href="https://www.instagram.com/druzaoficial/">Ver @druzaoficial</a>
+      </div>
+    </section>
+
+    <section class="sheet">
+      <div class="label"><strong>03 · Brincos em preparação</strong><span>Três artes próprias, mesma proporção e mesmo alinhamento</span></div>
+      <div class="earrings">
+        <div class="earrings-head">
+          <h2>Brincos que iluminam o rosto.</h2>
+          <p>A coleção está sendo preparada em três gestos. Enquanto as fotografias não chegam, cada família recebe uma arte Druza identificável, sem sugerir um produto já disponível.</p>
+        </div>
+        <div class="families">
+          <article class="family">
+            <div class="family-art"><img src="../../../../img/druza-mark-white.png" alt=""><span>Retrato da família Gotas em produção</span></div>
+            <div class="family-copy"><h3>Gotas</h3><p>Pedras próximas ao rosto, com movimento contido e presença de cor.</p></div>
+            <div class="family-foot">Coleção em preparação</div>
+          </article>
+          <article class="family">
+            <div class="family-art"><img src="../../../../img/druza-mark-white.png" alt=""><span>Retrato da família Argolas em produção</span></div>
+            <div class="family-copy"><h3>Argolas</h3><p>Um contorno de prata pensado para acompanhar o ritmo de todos os dias.</p></div>
+            <div class="family-foot">Coleção em preparação</div>
+          </article>
+          <article class="family">
+            <div class="family-art"><img src="../../../../img/druza-mark-white.png" alt=""><span>Retrato da família Pontos de luz em produção</span></div>
+            <div class="family-copy"><h3>Pontos de luz</h3><p>Escala mínima, brilho preciso e uma pedra verde como ponto de atenção.</p></div>
+            <div class="family-foot">Coleção em preparação</div>
+          </article>
+        </div>
+        <div class="waitlist">
+          <div><strong>Seja avisada quando os brincos chegarem.</strong><span>A conversa abre com a mensagem da lista de espera já preenchida.</span></div>
+          <a href="https://wa.me/5511966074268">Entrar pelo WhatsApp</a>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

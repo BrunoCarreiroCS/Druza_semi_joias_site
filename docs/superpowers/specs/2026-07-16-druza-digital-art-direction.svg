@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">Prancha visual da direção editorial Druza</title>
+  <desc id="desc">Composição com logo Druza, monograma, placeholders de brincos e regras de alinhamento visual em branco, rosa e preto.</desc>
+  <rect width="1200" height="760" fill="#151113"/>
+  <rect x="34" y="34" width="1132" height="692" fill="none" stroke="#5c3a3f" stroke-width="1"/>
+  <circle cx="1080" cy="120" r="92" fill="#c98b90" opacity=".14"/>
+  <circle cx="1080" cy="120" r="54" fill="none" stroke="#c98b90" stroke-width="1" opacity=".7"/>
+  <path d="M1080 75c-9 18-12 33 0 45 12-12 9-27 0-45Zm-29 13c3 21 11 31 29 32-4-18-13-28-29-32Zm58 0c-16 4-25 14-29 32 18-1 26-11 29-32Z" fill="#fff" opacity=".9"/>
+  <text x="72" y="90" fill="#f4e3e5" font-family="Arial, sans-serif" font-size="12" letter-spacing="4">DIREÇÃO DIGITAL · DRUZA</text>
+  <text x="72" y="165" fill="#fff" font-family="Georgia, serif" font-size="74" letter-spacing="1">Joias que</text>
+  <text x="72" y="235" fill="#fff" font-family="Georgia, serif" font-size="74" letter-spacing="1">guardam <tspan fill="#c98b90" font-style="italic">luz.</tspan></text>
+  <text x="75" y="278" fill="#dcd4d6" font-family="Arial, sans-serif" font-size="13" letter-spacing="1">matéria · presença · permanência</text>
+  <rect x="72" y="330" width="238" height="284" fill="#fbf0f1"/>
+  <rect x="88" y="346" width="206" height="252" fill="#fff" stroke="#e9e4e5"/>
+  <text x="106" y="380" fill="#b97981" font-family="Arial, sans-serif" font-size="10" letter-spacing="2">PLACEHOLDER</text>
+  <text x="106" y="416" fill="#2b2b2d" font-family="Georgia, serif" font-size="28">Gotas</text>
+  <text x="106" y="570" fill="#6b6669" font-family="Arial, sans-serif" font-size="11">4 : 5 · centro óptico</text>
+  <rect x="332" y="330" width="238" height="284" fill="#fbf0f1"/>
+  <rect x="348" y="346" width="206" height="252" fill="#fff" stroke="#e9e4e5"/>
+  <text x="366" y="380" fill="#b97981" font-family="Arial, sans-serif" font-size="10" letter-spacing="2">PLACEHOLDER</text>
+  <text x="366" y="416" fill="#2b2b2d" font-family="Georgia, serif" font-size="28">Argolas</text>
+  <text x="366" y="570" fill="#6b6669" font-family="Arial, sans-serif" font-size="11">4 : 5 · centro óptico</text>
+  <rect x="592" y="330" width="238" height="284" fill="#fbf0f1"/>
+  <rect x="608" y="346" width="206" height="252" fill="#fff" stroke="#e9e4e5"/>
+  <text x="626" y="380" fill="#b97981" font-family="Arial, sans-serif" font-size="10" letter-spacing="2">PLACEHOLDER</text>
+  <text x="626" y="416" fill="#2b2b2d" font-family="Georgia, serif" font-size="28">Pontos de luz</text>
+  <text x="626" y="570" fill="#6b6669" font-family="Arial, sans-serif" font-size="11">4 : 5 · centro óptico</text>
+  <rect x="852" y="330" width="254" height="284" fill="#c98b90"/>
+  <image x="876" y="353" width="206" height="136" preserveAspectRatio="xMidYMid meet" xlink:href="../../../img/druza-logo-white.png"/>
+  <text x="876" y="535" fill="#fff" font-family="Arial, sans-serif" font-size="10" letter-spacing="2">MARCA EXPLÍCITA</text>
+  <text x="876" y="568" fill="#fff" font-family="Georgia, serif" font-size="22">rosa da Druza</text>
+  <line x1="72" y1="652" x2="1106" y2="652" stroke="#5c3a3f"/>
+  <text x="72" y="685" fill="#dcd4d6" font-family="Arial, sans-serif" font-size="11" letter-spacing="1">Logo real · monograma real · proporções estáveis · textos curtos e específicos</text>
+</svg>
