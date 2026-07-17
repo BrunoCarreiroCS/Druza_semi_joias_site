@@ -8,30 +8,47 @@
   <meta name="robots" content="noindex" />
   <link rel="icon" href="img/druza-logo.png" />
   <link rel="stylesheet" href="css/fonts.css" />
+  <link rel="stylesheet" href="css/druza.css?v=2" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/account.css" />
   <script src="js/analytics.js" defer></script>
 </head>
-<body>
+<body class="has-pinned">
   <a class="skip-link" href="#main">Pular para o conteudo</a>
-  <header class="site-header"><div class="container site-header__inner">
-    <a class="logo" href="index.html" aria-label="Druza Semi Joias - pagina inicial">
-      <svg class="logo__seal" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-        <circle cx="24" cy="24" r="23" fill="var(--rose)" />
-        <g transform="translate(24,33) scale(0.42)" fill="#FFFFFF">
-          <path transform="rotate(-52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
-          <path transform="rotate(-26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
-          <path d="M0,0 C -9,-16 -6,-44 0,-54 C 6,-44 9,-16 0,0 Z" />
-          <path transform="rotate(26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
-          <path transform="rotate(52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
-        </g>
-      </svg>
-      <span class="logo__word">
-        <span class="logo__name">Druza</span>
-        <span class="logo__sub">Semi Joias · Prata</span>
-      </span>
-    </a>
-  </div></header>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Menu mobile" aria-hidden="true">
+    <a href="catalogo.html">Cole&ccedil;&otilde;es <span>Ver tudo</span></a>
+    <a href="catalogo.html?cat=aneis">An&eacute;is <span>Prata 925</span></a>
+    <a href="brincos.html">Brincos <span>Em breve</span></a>
+    <a href="catalogo.html?cat=pulseiras">Pulseiras <span>Riviera</span></a>
+    <a href="sobre.html">Sobre <span>Mundo Druza</span></a>
+  </nav>
+
+  <aside class="quick-nav is-pinned" data-quick-nav>
+    <button class="quick-nav__trigger" type="button" aria-label="Abrir navega&ccedil;&atilde;o" aria-expanded="false" aria-controls="quick-nav-panel" data-quick-nav-open>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round"/></svg>
+    </button>
+    <div class="quick-nav__panel" id="quick-nav-panel" aria-hidden="true">
+      <div class="quick-nav__head"><strong>Navegar</strong><button class="quick-nav__close" type="button" aria-label="Fechar menu" data-quick-nav-close>&times;</button></div>
+      <nav class="quick-nav__links" aria-label="Acesso r&aacute;pido">
+        <a href="index.html">In&iacute;cio</a><a href="catalogo.html">Cole&ccedil;&otilde;es</a><a href="brincos.html">Brincos</a><a href="sobre.html">Sobre</a><a href="cuidados.html">Cuidados</a><a href="contato.html">Contato</a><a href="trocas.html">Trocas</a><a href="privacidade.html">Privacidade</a><a href="conta.html">Minha conta</a><a href="checkout.html">Sacola</a>
+        <a href="https://wa.me/5511966074268" target="_blank" rel="noopener noreferrer">WhatsApp</a><a href="https://www.instagram.com/druzaoficial/" target="_blank" rel="noopener noreferrer">Instagram</a>
+      </nav>
+    </div>
+  </aside>
+
+  <header class="head head--floating head--pinned">
+    <div class="head__brand">
+      <a class="head__logo logo" href="index.html" aria-label="Druza &mdash; in&iacute;cio">
+        <span class="logo__seal" aria-hidden="true"><img src="img/druza-mark-white.png" width="226" height="181" alt=""></span>
+        <span class="logo__word"><span class="logo__name">Druza</span><span class="logo__sub">Semi Joias &middot; Prata</span></span>
+      </a>
+    </div>
+    <div class="head__icons">
+      <a href="catalogo.html" aria-label="Buscar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5" stroke-linecap="round"/></svg></a>
+      <a href="conta.html" aria-label="Conta"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0" stroke-linecap="round"/></svg></a>
+      <a class="head__bag" href="checkout.html" aria-label="Sacola"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8a3 3 0 0 1 6 0" stroke-linecap="round"/></svg></a>
+    </div>
+  </header>
   <main id="main" class="auth-wrap">
     <div class="auth-card">
       <div class="auth-card__head">
@@ -60,6 +77,16 @@
       </div>
     </div>
   </main>
+
+  <footer class="foot">
+    <div class="wrap--wide foot__grid" style="max-width:1480px">
+      <div class="foot__logo"><img src="img/druza-logo-white.png" alt="Druza Semi Joias" style="width:82px;height:auto;opacity:.95"></div>
+      <div><h4>Loja</h4><div class="foot__col"><a href="catalogo.html?cat=aneis">An&eacute;is</a><a href="brincos.html">Brincos</a><a href="catalogo.html?cat=pulseiras">Pulseiras</a><a href="catalogo.html">Cole&ccedil;&otilde;es</a></div></div>
+      <div><h4>Ajuda</h4><div class="foot__col"><a href="trocas.html">Trocas e devolu&ccedil;&otilde;es</a><a href="contato.html">Perguntas frequentes</a><a href="contato.html">Contato</a></div></div>
+      <div><h4>Atendimento</h4><div class="foot__col"><a href="https://wa.me/5511966074268" target="_blank" rel="noopener noreferrer">WhatsApp</a><a href="https://www.instagram.com/druzaoficial/" target="_blank" rel="noopener noreferrer">Instagram</a><a href="cuidados.html">Cuidados com as pe&ccedil;as</a></div></div>
+    </div>
+    <div class="wrap--wide foot__legal" style="max-width:1480px">&copy; 2026 Druza Semi Joias &middot; Todos os direitos reservados</div>
+  </footer>
 
   <script src="js/config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js" integrity="sha384-dGnL7r9uccC9TdSdE05clTJ6esxMU42XBQ1/BWLzKQOBi7qR1aCMRIi0LzUmexIg" crossorigin="anonymous"></script>
@@ -108,5 +135,6 @@
       });
     })();
   </script>
+  <script src="js/druza.js" defer></script>
 </body>
 </html>

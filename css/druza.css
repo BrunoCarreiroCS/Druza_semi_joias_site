@@ -340,17 +340,47 @@ body.has-pinned{padding-top:72px;}
 .home-social__cta{white-space:nowrap;}
 
 /* ===== Overrides mobile do cabeçalho (posicionados no fim para vencer a cascata) ===== */
-@media (max-width:640px){
-  /* marca deixa de ser centralizada e vai para a esquerda, ao lado do menu */
+/* Layout aplicado em celulares E tablets: a marca sai do centro e vai para a
+   esquerda (ao lado do menu ☰), evitando que a marca centralizada colida com
+   os ícones da direita em qualquer largura de mão/tablet. */
+@media (max-width:900px){
   .head--floating .head__brand{position:static;left:auto;top:auto;transform:none;margin-left:64px;}
   .head--floating{justify-content:flex-start;padding:0 16px;}
+  /* apenas a sacola à direita; busca e conta ficam no menu ☰ */
+  .head--floating .head__icons{right:12px;gap:0;}
+  .head--floating .head__icons a:not(.head__bag){display:none !important;}
+  .quick-nav{left:12px;}
+}
+/* Redução de tamanho da marca só em telas realmente pequenas (celular) */
+@media (max-width:640px){
   .head--floating .logo__seal{width:36px;height:36px;}
   .head--floating .logo__name{font-size:1.15rem;letter-spacing:.06em;}
   .head--floating .logo__sub{font-size:.42rem;letter-spacing:.14em;}
-  /* apenas a sacola à direita; busca e conta ficam no menu ☰ */
-  .head--floating .head__icons{right:12px;gap:0;}
-  .head--floating .head__icons a{display:none !important;}
-  .quick-nav{left:12px;}
   .quick-nav__trigger{width:44px;height:44px;}
+}
+
+/* ===== Correções gerais de layout mobile ============================
+   Vários blocos usam estilos inline (grid de 2 colunas, padding lateral
+   de 56px, linhas de botões) que não colapsavam no celular. Estes overrides
+   seguem os seletores de atributo já usados nesta folha (ex.: [style*=...]). */
+@media (max-width:760px){
+  /* grids editoriais de 2 colunas (definidos inline) empilham no celular */
+  main [style*="grid-template-columns:1fr 1fr"],
+  main [style*="grid-template-columns:.85fr"],
+  main [style*="grid-template-columns:1.15fr"],
+  main [style*="grid-template-columns:1.1fr"],
+  main [style*="grid-template-columns:.9fr"]{
+    grid-template-columns:1fr!important;
+    gap:32px!important;
+  }
+}
+@media (max-width:640px){
+  /* seções/blocos com padding lateral grande (inline "…px 56px"/"…px 72px") respiram */
+  main [style*="px 56px"],
+  main [style*="px 72px"]{padding-left:24px!important;padding-right:24px!important;}
+  /* linhas flex com gap (botões, dots, etc.) quebram em vez de estourar a tela */
+  main div[style*="display:flex"][style*="gap:"]{flex-wrap:wrap;}
+  /* botões de destaque do hero ocupam a linha inteira quando quebram */
+  .hero__foot .btn{flex:1 1 auto;justify-content:center;}
 }
 
