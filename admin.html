@@ -89,6 +89,7 @@
               <select id="status-filter">
                 <option value="">Todos</option>
                 <option value="pending">Aguardando</option>
+                <option value="processing">Processando</option>
                 <option value="paid">Pago</option>
                 <option value="shipped">Enviado</option>
                 <option value="delivered">Entregue</option>
@@ -145,9 +146,8 @@
               <input type="checkbox" name="active" checked />
               <span>Ativo (aparece no site e pode ser comprado)</span>
             </label>
-            <label class="field field--check">
-              <input type="checkbox" name="in_stock" checked />
-              <span>Em estoque</span>
+            <label class="field"><span>Quantidade disponivel</span>
+              <input type="number" name="stock_quantity" inputmode="numeric" min="0" max="100000" step="1" value="1" required />
             </label>
             <label class="field field--check">
               <input type="checkbox" name="featured" />
@@ -180,7 +180,7 @@
 
   <footer class="site-footer"><div class="container footer-grid"><div class="footer__col"><span class="logo__name">Druza</span><p>Semi joias femininas em prata.</p></div></div></footer>
 
-  <script src="js/config.js"></script>
+  <script src="js/config.public.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js" integrity="sha384-dGnL7r9uccC9TdSdE05clTJ6esxMU42XBQ1/BWLzKQOBi7qR1aCMRIi0LzUmexIg" crossorigin="anonymous"></script>
   <script src="js/auth.js"></script>
   <script src="js/admin.js"></script>
@@ -244,8 +244,7 @@
         const paidAt = new Date(order.paid_at).getTime();
         return Number.isFinite(paidAt) && (Date.now() - paidAt > 48 * 3600 * 1000);
       }
-      const STATUS_PT = { pending: 'Aguardando', paid: 'Pago', shipped: 'Enviado', delivered: 'Entregue', canceled: 'Cancelado', refunded: 'Estornado' };
-      const STATUS_OPTIONS = ['pending', 'paid', 'shipped', 'delivered', 'canceled', 'refunded'];
+      const STATUS_PT = { pending: 'Aguardando', processing: 'Processando', paid: 'Pago', shipped: 'Enviado', delivered: 'Entregue', canceled: 'Cancelado', refunded: 'Estornado' };
 
       const loadingEl = document.getElementById('loading');
       const deniedEl = document.getElementById('denied');
@@ -294,7 +293,9 @@
           const items = (o.order_items || []).map(function (it) {
             return it.qty + '× ' + esc(it.product_name);
           }).join(', ');
-          const statusOptions = STATUS_OPTIONS.map(function (s) {
+          const allowedNext = o.status === 'paid' ? ['paid', 'shipped']
+            : (o.status === 'shipped' ? ['shipped', 'delivered'] : [o.status]);
+          const statusOptions = allowedNext.map(function (s) {
             return '<option value="' + s + '"' + (s === o.status ? ' selected' : '') + '>' + STATUS_PT[s] + '</option>';
           }).join('');
           const delayedBadge = isDelayedPaidOrder(o)
@@ -368,7 +369,9 @@
           const id = row.getAttribute('data-id');
           const status = row.querySelector('[data-field="status"]').value;
           const tracking = row.querySelector('[data-field="tracking_code"]').value;
-          const { error } = await D.updateOrder({ order_id: id, status: status, tracking_code: tracking });
+          const payload = { order_id: id, tracking_code: tracking };
+          if (status !== row.getAttribute('data-orig-status')) payload.status = status;
+          const { error } = await D.updateOrder(payload);
           if (error) failures.push('Pedido ' + id.slice(0, 8) + ': ' + error);
         }
         if (failures.length) {
@@ -479,7 +482,9 @@
           const status = row.querySelector('[data-field="status"]').value;
           const tracking = row.querySelector('[data-field="tracking_code"]').value;
           saveBtn.disabled = true;
-          const { error } = await D.updateOrder({ order_id: id, status: status, tracking_code: tracking });
+          const payload = { order_id: id, tracking_code: tracking };
+          if (status !== row.getAttribute('data-orig-status')) payload.status = status;
+          const { error } = await D.updateOrder(payload);
           saveBtn.disabled = false;
           if (error) { window.alert(error); return; }
           loadOrders();
@@ -784,14 +789,14 @@
             '<div class="admin-row__main">' +
               '<div class="admin-row__title">' + esc(p.name) +
                 ' <span class="badge-status" data-status="' + (p.active ? 'paid' : 'canceled') + '">' + (p.active ? 'Ativo' : 'Inativo') + '</span>' +
-                (p.in_stock ? '' : ' <span class="badge-status" data-status="pending">Sem estoque</span>') +
+                (p.stock_quantity > 0 ? '' : ' <span class="badge-status" data-status="pending">Sem estoque</span>') +
                 (p.featured ? ' <span class="badge-status" data-status="shipped">★ Destaque</span>' : '') +
               '</div>' +
-              '<div class="admin-row__meta">' + esc(p.slug) + ' · ' + esc(p.category || '—') + ' · ' + brl(p.price_cents) + '</div>' +
+              '<div class="admin-row__meta">' + esc(p.slug) + ' · ' + esc(p.category || '—') + ' · ' + brl(p.price_cents) + ' · Estoque ' + esc(p.stock_quantity) + '</div>' +
             '</div>' +
             '<div class="admin-row__actions">' +
               '<button type="button" class="link-btn" data-action="edit-product">Editar</button>' +
-              '<button type="button" class="link-btn link-btn--danger" data-action="delete-product">Excluir</button>' +
+              '<button type="button" class="link-btn link-btn--danger" data-action="delete-product">Desativar</button>' +
             '</div>' +
           '</div>';
         }).join('');
@@ -805,7 +810,7 @@
         f.elements.category.value = p ? (p.category || '') : '';
         f.elements.price.value = p ? centsToReais(p.price_cents) : '';
         f.elements.active.checked = p ? !!p.active : true;
-        f.elements.in_stock.checked = p ? !!p.in_stock : true;
+        f.elements.stock_quantity.value = p ? Number(p.stock_quantity || 0) : 1;
         f.elements.featured.checked = p ? !!p.featured : false;
       }
 
@@ -846,7 +851,7 @@
         if (editBtn && p) {
           openProductForm(p);
         } else if (deleteBtn && p) {
-          if (!window.confirm('Excluir "' + p.name + '"? Pedidos antigos não são afetados.')) return;
+          if (!window.confirm('Desativar "' + p.name + '"?')) return;
           deleteBtn.disabled = true;
           const { error } = await D.deleteProduct(id);
           if (error) { window.alert(error); deleteBtn.disabled = false; return; }
@@ -858,9 +863,11 @@
         e.preventDefault();
         const f = productForm;
         const priceCents = reaisToCents(f.elements.price.value);
+        const stockQuantity = Number(f.elements.stock_quantity.value);
         const slug = f.elements.slug.value.trim();
         const name = f.elements.name.value.trim();
-        if (!slug || !name || !Number.isFinite(priceCents) || priceCents < 0) {
+        if (!slug || !name || !Number.isFinite(priceCents) || priceCents < 0 ||
+            !Number.isInteger(stockQuantity) || stockQuantity < 0) {
           productFeedback.className = 'auth-feedback is-error';
           productFeedback.textContent = 'Preencha slug, nome e um preço válido.';
           return;
@@ -873,7 +880,7 @@
           category: f.elements.category.value.trim() || undefined,
           price_cents: priceCents,
           active: f.elements.active.checked,
-          in_stock: f.elements.in_stock.checked,
+          stock_quantity: stockQuantity,
           featured: f.elements.featured.checked,
         });
         productSaveBtn.disabled = false;

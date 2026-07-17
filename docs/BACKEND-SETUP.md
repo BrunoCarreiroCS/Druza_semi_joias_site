@@ -23,6 +23,16 @@ precisa de servidor próprio para login/conta. Servidor só entra na **Fase 4d**
 2. Cole todo o conteúdo de [`db/schema.sql`](../db/schema.sql) e clique **Run**.
 3. Confirme em **Table Editor** que apareceram: `profiles`, `addresses`,
    `orders`, `order_items`.
+4. Rode `db/schema-payments.sql`, `db/schema-admin.sql` e por ultimo
+   [`db/security-final-hardening.sql`](../db/security-final-hardening.sql).
+5. Depois do deploy de `reconcile-stale-payments`, rode
+   [`db/schedule-payment-reconciliation.sql`](../db/schedule-payment-reconciliation.sql).
+
+> Se `security-final-hardening.sql` já havia sido aplicado antes de 17/07/2026,
+> rode também [`db/enforce-checkout-profile-completion.sql`](../db/enforce-checkout-profile-completion.sql)
+> e [`db/use-brazil-date-for-age-validation.sql`](../db/use-brazil-date-for-age-validation.sql).
+> A migração preserva perfis antigos e apenas impede novos pedidos até o titular
+> completar os dados obrigatórios em `conta.html`.
 
 > Se o banco ja existia antes do endurecimento de cadastro, rode tambem
 > [`db/security-signup-hardening.sql`](../db/security-signup-hardening.sql). Ele
@@ -39,11 +49,16 @@ No painel → **Authentication**:
 - **Password security**: use minimo de 8 caracteres e exija maiuscula,
   minuscula, numero e simbolo. Se o plano permitir, ative protecao contra
   senhas vazadas.
+- **Secure email change**, **Secure password change** e **Require current
+  password when updating**: mantenha ligados.
+- **Captcha protection**: opcionalmente conecte Cloudflare Turnstile e coloque
+  a Site Key publica em `js/config.public.js`. O secret fica apenas no Auth.
 - **URL Configuration → Site URL**: a URL do site (ex.: `https://druza.com.br`
   ou, em testes locais, `http://localhost:5510`).
 - **Redirect URLs**: adicione:
   - `https://druza.com.br/login.html`
   - `https://druza.com.br/redefinir-senha.html`
+  - `https://brunocarreirocs.github.io/Druza_semi_joias_site/**`
   - (e as versões `http://localhost:5510/...` enquanto testa local)
 - **Email Templates** (opcional agora): personalize os e-mails de confirmação e
   de recuperação com a marca Druza.
@@ -56,17 +71,17 @@ No painel → **Authentication**:
 1. No painel → **Project Settings → API**, copie:
    - **Project URL**
    - **anon public** key (pode ficar no navegador — o RLS protege os dados).
-2. Copie o arquivo de exemplo e preencha:
+2. Edite apenas a configuracao publica versionada:
    ```
-   js/config.example.js   →   js/config.js
+   js/config.public.js
    ```
    ```js
-   window.DRUZA_CONFIG = {
+   window.DRUZA_CONFIG = Object.freeze({
      SUPABASE_URL: 'https://xxxx.supabase.co',
      SUPABASE_ANON_KEY: 'eyJhbGciOi...'   // anon public
-   };
+   });
    ```
-3. `js/config.js` já está no `.gitignore` — **nunca** versione esse arquivo.
+3. URL, chave publishable/anon, MP Public Key e Turnstile Site Key sao publicas.
 4. **Nunca** use a chave `service_role` no navegador — ela ignora o RLS. Ela só
    vive no servidor de pagamento (Fase 4d).
 
@@ -84,7 +99,7 @@ No painel → **Authentication**:
 | Arquivo | Papel |
 |---|---|
 | `db/schema.sql` | Tabelas + RLS + triggers (rode no Supabase) |
-| `js/config.example.js` | Modelo de config (copie p/ `js/config.js`) |
+| `js/config.public.js` | Configuracao publica carregada pelo site estatico |
 | `js/auth.js` | Camada de auth (signup, login, reset, perfil, pedidos) |
 | `css/account.css` | Estilos de auth e da conta |
 | `cadastro.html` | Criar conta (com consentimento LGPD) |

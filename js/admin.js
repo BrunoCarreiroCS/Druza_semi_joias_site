@@ -1,7 +1,7 @@
 /* =====================================================================
    DRUZA — admin.js
    Camada de acesso ao painel administrativo. Requer, ANTES deste script:
-     <script src="js/config.js"></script>
+     <script src="js/config.public.js"></script>
      <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js" integrity="..." crossorigin="anonymous"></script>
      <script src="js/auth.js"></script>
    Expõe window.DruzaAdmin.

@@ -12,8 +12,9 @@ validado ponta a ponta em ambiente de teste.
 - **Loja**: home editorial, catálogo completo (`catalogo.html`), páginas de produto
   (fixas em `produtos/*.html` e genérica via `produto.html?slug=...`), sacola com
   persistência local, cupom e frete simulado por CEP.
-- **Contas de cliente**: cadastro, login, recuperação de senha, área da conta
-  (`conta.html`) com histórico de pedidos e CRUD de endereços.
+- **Contas de cliente**: cadastro 18+ com nome, e-mail e telefone obrigatórios,
+  login, recuperação de senha, edição segura dos dados pessoais, histórico de
+  pedidos e CRUD de endereços em `conta.html`.
 - **Checkout real**: `checkout.html` → Edge Function `create-order` (recalcula
   totais no servidor a partir da tabela `products` — nunca confia no preço do
   navegador) → Payment Brick embutido → Edge Function `process-payment` cobra
@@ -32,7 +33,7 @@ validado ponta a ponta em ambiente de teste.
 │   ├── account.css            Auth + área da conta + checkout
 │   └── admin.css              Painel administrativo
 ├── js/
-│   ├── config.example.js      Modelo → copie para js/config.js (gitignored)
+│   ├── config.public.js       Configuracao publica usada no GitHub Pages
 │   ├── catalog.js             Catálogo: conteúdo estático + preço/estoque ao vivo do banco
 │   ├── main.js                UI global (drawers, sacola, grids, frete/cupom)
 │   ├── product-page.js        Render da página de produto (por id fixo ou ?slug=)
@@ -44,45 +45,51 @@ validado ponta a ponta em ambiente de teste.
 ├── db/
 │   ├── schema.sql             Tabelas base (profiles, addresses, orders, order_items) + RLS
 │   ├── schema-payments.sql    Colunas de pagamento (MercadoPago)
-│   └── schema-admin.sql       Admin (admins, products, admin_audit_log) + RLS
+│   ├── schema-admin.sql       Admin (admins, products, admin_audit_log) + RLS
+│   ├── security-final-hardening.sql  Migracao final obrigatoria
+│   └── schedule-payment-reconciliation.sql  Job de recuperacao de pagamentos
 ├── supabase/functions/
-│   ├── _shared/               require-admin.ts (autorização + 2FA) · cors.ts · mp-status.ts
+│   ├── _shared/               Autorizacao, CORS, rate limit e validacao de pagamento
 │   ├── create-order/          Cria pedido, preços server-side (sem falar com o MP)
 │   ├── process-payment/       Cobra o pedido via Payment Brick (API MercadoPago)
 │   ├── webhook-mp/            Confirma pagamento (re-consulta autenticada na API MP)
+│   ├── reconcile-stale-payments/  Recupera tentativas interrompidas
 │   └── admin-*/               6 funções do painel (sempre passam por require-admin)
 └── docs/                      Guias e documentação (ver abaixo)
 ```
 
 ## Como rodar localmente
 
-1. Copie `js/config.example.js` → `js/config.js` e preencha `SUPABASE_URL` e
-   `SUPABASE_ANON_KEY` (nunca a service_role — o arquivo já é gitignored).
+1. Revise `js/config.public.js`. Ele contem apenas URL/chaves publicas e e
+   carregado pelo GitHub Pages. Nunca adicione `service_role` ou Access Token.
 2. Sirva a pasta (sem build):
 
 ```bash
 python -m http.server 5510
 ```
 
-3. Acesse `http://localhost:5510`. Para testar o fluxo do MercadoPago de ponta a
-   ponta é preciso um túnel público (`ngrok http 5510`) — o MP recusa `localhost`
-   nas URLs de retorno. Detalhes em [docs/MERCADOPAGO-SETUP.md](docs/MERCADOPAGO-SETUP.md).
+3. Acesse `http://localhost:5510`. A allowlist das Edge Functions aceita o
+   dominio Druza e o GitHub Pages. Para chamar as funcoes a partir do localhost,
+   inclua temporariamente essa origem em `ALLOWED_ORIGINS` e faca novo deploy.
 
 ## Modelo de segurança (resumo)
 
 A regra geral: **nunca confiar no navegador — toda decisão sensível é revalidada
 no servidor.** Detalhes e checklist de produção em [docs/SEGURANCA.md](docs/SEGURANCA.md).
 
-- **RLS em todas as tabelas** — cada cliente só lê/escreve os próprios dados.
-- **Preços recalculados no servidor** a partir da tabela `products` (o valor
-  enviado pelo navegador é ignorado).
-- **Webhook do MP** não confia na notificação: re-consulta o pagamento na API do
-  MercadoPago com o Access Token da conta + confere o valor antes de marcar "pago".
+- **RLS e privilegios minimos** — o cliente le apenas os proprios dados e nao
+  pode inserir pedidos/itens diretamente.
+- **Pedido transacional** — preco, frete, desconto, snapshot e reserva de estoque
+  sao calculados no Postgres sob lock.
+- **Pagamento idempotente** — claim atomico, valor em centavos e reconciliacao de
+  tentativas antigas evitam dupla cobranca e pedido preso.
+- **Webhook do MP** exige HMAC, reconsulta a API, confere valor e
+  `external_reference`, e trata replay como `no-op`.
 - **Admin**: tabela `admins` sem nenhuma política de escrita (promoção só manual,
   via SQL Editor) + **2FA TOTP obrigatório** verificado **no servidor** (claim
   `aal2` exigido pelas Edge Functions) + log de auditoria de toda ação.
-- **CORS restringível** por env (`ALLOWED_ORIGIN`), supabase-js **pinado com SRI**
-  nas páginas, entradas validadas/limitadas e **rate limiting por IP** nas Edge
+- **CORS restrito** por allowlist, supabase-js **pinado com SRI**
+  nas páginas, entradas validadas/limitadas e **rate limiting IP + Postgres** nas Edge
   Functions, **fontes auto-hospedadas** (zero requisições a terceiros além do
   Supabase/MP).
 
@@ -106,6 +113,7 @@ no servidor.** Detalhes e checklist de produção em [docs/SEGURANCA.md](docs/SE
 supabase functions deploy create-order
 supabase functions deploy process-payment
 supabase functions deploy webhook-mp --no-verify-jwt
+supabase functions deploy reconcile-stale-payments --no-verify-jwt
 supabase functions deploy admin-list-orders
 supabase functions deploy admin-update-order
 supabase functions deploy admin-get-order

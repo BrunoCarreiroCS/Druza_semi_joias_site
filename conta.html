@@ -74,6 +74,30 @@
           <div class="account-card__row"><span class="label">Telefone</span><span class="value" id="p-phone">—</span></div>
           <div class="account-card__row"><span class="label">Nascimento</span><span class="value" id="p-birth">—</span></div>
           <div class="account-card__row"><span class="label">Promoções por e-mail</span><span class="value" id="p-consent">—</span></div>
+          <form id="profile-form" class="auth-form" novalidate style="margin-top:var(--space-5)">
+            <label class="field"><span>Nome completo</span>
+              <input type="text" name="full_name" autocomplete="name" minlength="3" maxlength="120" required />
+            </label>
+            <label class="field"><span>Telefone</span>
+              <input type="tel" name="phone" autocomplete="tel" inputmode="tel" maxlength="20" required />
+            </label>
+            <label class="field"><span>Data de nascimento</span>
+              <input type="date" name="birth_date" autocomplete="bday" required />
+            </label>
+            <label class="field field--check">
+              <input type="checkbox" name="marketing_consent" />
+              <span>Quero receber novidades e promoções por e-mail.</span>
+            </label>
+            <p class="auth-feedback" id="profile-feedback" role="status" aria-live="polite"></p>
+            <button type="submit" class="btn btn--secondary btn--sm">Salvar dados pessoais</button>
+          </form>
+          <form id="email-change-form" class="auth-form" novalidate style="margin-top:var(--space-5)">
+            <label class="field"><span>Novo e-mail</span>
+              <input type="email" name="email" autocomplete="email" required />
+            </label>
+            <p class="auth-feedback" id="email-change-feedback" role="status" aria-live="polite"></p>
+            <button type="submit" class="btn btn--secondary btn--sm">Alterar e-mail</button>
+          </form>
         </section>
 
         <!-- Endereços -->
@@ -147,7 +171,7 @@
     <div class="wrap--wide foot__legal" style="max-width:1480px">&copy; 2026 Druza Semi Joias &middot; Todos os direitos reservados</div>
   </footer>
 
-  <script src="js/config.js"></script>
+  <script src="js/config.public.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js" integrity="sha384-dGnL7r9uccC9TdSdE05clTJ6esxMU42XBQ1/BWLzKQOBi7qR1aCMRIi0LzUmexIg" crossorigin="anonymous"></script>
   <script src="js/auth.js"></script>
   <script>
@@ -225,7 +249,104 @@
           shortcut.hidden = true;
         }
       }
-      const STATUS_PT = { pending: 'Aguardando', paid: 'Pago', shipped: 'Enviado', delivered: 'Entregue', canceled: 'Cancelado', refunded: 'Estornado' };
+      const STATUS_PT = { pending: 'Aguardando', processing: 'Processando', paid: 'Pago', shipped: 'Enviado', delivered: 'Entregue', canceled: 'Cancelado', refunded: 'Estornado' };
+
+      let currentUser = null;
+      const profileForm = document.getElementById('profile-form');
+      const profileFeedback = document.getElementById('profile-feedback');
+      profileForm.elements.birth_date.max = A.validators.maxAdultBirthDate();
+
+      function profileComplete(profile) {
+        const name = String((profile && profile.full_name) || '').trim();
+        return name.length >= 3 && name.length <= 120 && !/[\u0000-\u001f\u007f]/.test(name) &&
+          !!A.validators.normalizePhoneBR(profile && profile.phone) &&
+          A.validators.isAdultBirthDate(profile && profile.birth_date);
+      }
+
+      function renderProfile(profile, user) {
+        const safeProfile = profile || {};
+        const name = safeProfile.full_name || (user && user.email) || 'Cliente';
+        document.getElementById('greeting').textContent = 'Olá, ' + name.split(' ')[0];
+        document.getElementById('p-name').textContent = safeProfile.full_name || '—';
+        document.getElementById('p-email').textContent = (user && user.email) || '—';
+        document.getElementById('p-phone').textContent = safeProfile.phone ? A.validators.formatPhoneBR(safeProfile.phone) : '—';
+        document.getElementById('p-birth').textContent = birthDate(safeProfile.birth_date);
+        document.getElementById('p-consent').textContent = safeProfile.marketing_consent ? 'Sim' : 'Não';
+        profileForm.elements.full_name.value = safeProfile.full_name || '';
+        profileForm.elements.phone.value = safeProfile.phone ? A.validators.formatPhoneBR(safeProfile.phone) : '';
+        profileForm.elements.birth_date.value = safeProfile.birth_date || '';
+        profileForm.elements.marketing_consent.checked = !!safeProfile.marketing_consent;
+      }
+
+      profileForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        profileFeedback.className = 'auth-feedback';
+        profileFeedback.textContent = '';
+
+        const fullName = String(profileForm.elements.full_name.value || '').trim().replace(/\s+/g, ' ');
+        const phone = A.validators.normalizePhoneBR(profileForm.elements.phone.value);
+        const birth = String(profileForm.elements.birth_date.value || '');
+        if (fullName.length < 3 || fullName.length > 120 || /[\u0000-\u001f\u007f]/.test(fullName)) {
+          profileFeedback.classList.add('is-error');
+          profileFeedback.textContent = 'Informe seu nome completo.';
+          return;
+        }
+        if (!phone) {
+          profileFeedback.classList.add('is-error');
+          profileFeedback.textContent = 'Informe um telefone brasileiro valido com DDD.';
+          return;
+        }
+        if (!A.validators.isAdultBirthDate(birth)) {
+          profileFeedback.classList.add('is-error');
+          profileFeedback.textContent = 'Para comprar, e preciso ter 18 anos ou mais.';
+          return;
+        }
+
+        const button = profileForm.querySelector('button[type="submit"]');
+        button.disabled = true;
+        const result = await A.updateProfile({
+          full_name: fullName,
+          phone: phone,
+          birth_date: birth,
+          marketing_consent: profileForm.elements.marketing_consent.checked
+        });
+        button.disabled = false;
+        if (result.error) {
+          profileFeedback.classList.add('is-error');
+          profileFeedback.textContent = result.error;
+          return;
+        }
+
+        renderProfile(result.data, currentUser);
+        profileFeedback.classList.add('is-success');
+        profileFeedback.textContent = 'Dados pessoais atualizados com seguranca.';
+      });
+
+      const emailForm = document.getElementById('email-change-form');
+      const emailFeedback = document.getElementById('email-change-feedback');
+      emailForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const email = String(emailForm.elements.email.value || '').trim();
+        emailFeedback.className = 'auth-feedback';
+        emailFeedback.textContent = '';
+        if (!A.validators.isValidEmail(email)) {
+          emailFeedback.classList.add('is-error');
+          emailFeedback.textContent = 'Informe um e-mail valido.';
+          return;
+        }
+        const button = emailForm.querySelector('button[type="submit"]');
+        button.disabled = true;
+        const result = await A.updateEmail(email);
+        button.disabled = false;
+        if (result.error) {
+          emailFeedback.classList.add('is-error');
+          emailFeedback.textContent = result.error;
+          return;
+        }
+        emailFeedback.classList.add('is-success');
+        emailFeedback.textContent = 'Confirme a alteracao nos e-mails enviados ao endereco atual e ao novo.';
+        emailForm.reset();
+      });
 
       // -----------------------------------------------------------------
       // Endereços: estado + CRUD
@@ -398,17 +519,16 @@
         if (!session) return; // requireAuth já redirecionou
 
         const user = await A.getUser();
+        currentUser = user;
         await revealAdminShortcut(user);
 
         // Perfil
         const { data: profile } = await A.getProfile();
-        const name = (profile && profile.full_name) || (user && user.email) || 'Cliente';
-        document.getElementById('greeting').textContent = 'Olá, ' + name.split(' ')[0];
-        document.getElementById('p-name').textContent = (profile && profile.full_name) || '—';
-        document.getElementById('p-email').textContent = (user && user.email) || '—';
-        document.getElementById('p-phone').textContent = (profile && profile.phone) ? A.validators.formatPhoneBR(profile.phone) : '—';
-        document.getElementById('p-birth').textContent = birthDate(profile && profile.birth_date);
-        document.getElementById('p-consent').textContent = (profile && profile.marketing_consent) ? 'Sim' : 'Não';
+        renderProfile(profile, user);
+        if (!profileComplete(profile)) {
+          profileFeedback.className = 'auth-feedback is-error';
+          profileFeedback.textContent = 'Complete os dados obrigatorios antes de fazer um pedido.';
+        }
 
         // Endereços
         const { data: initialAddresses } = await A.listAddresses();

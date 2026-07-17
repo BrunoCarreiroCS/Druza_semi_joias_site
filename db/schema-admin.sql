@@ -57,6 +57,7 @@ create table if not exists public.products (
   price_cents  integer not null check (price_cents >= 0),
   active       boolean not null default true,   -- false = some do catálogo e do checkout
   in_stock     boolean not null default true,
+  stock_quantity integer not null default 1 check (stock_quantity >= 0),
   featured     boolean not null default false,  -- true = aparece no grid de destaque da home
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
@@ -65,6 +66,7 @@ create table if not exists public.products (
 -- Idempotente: se a tabela já existia sem a coluna (rodou uma versão
 -- anterior deste arquivo), adiciona featured sem quebrar.
 alter table public.products add column if not exists featured boolean not null default false;
+alter table public.products add column if not exists stock_quantity integer not null default 1;
 
 create index if not exists products_slug_idx on public.products(slug);
 

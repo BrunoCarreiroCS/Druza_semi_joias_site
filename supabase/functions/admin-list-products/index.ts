@@ -1,43 +1,35 @@
-// =====================================================================
-// DRUZA — Edge Function: admin-list-products
-//
-// Lista todos os produtos (inclusive inativos — o cliente comum só vê
-// produtos ativos, via RLS `products_select_active`). Só admins (ver
-// _shared/require-admin.ts).
-//
-// Deploy:  supabase functions deploy admin-list-products
-// =====================================================================
-
-import { requireAdmin, AdminAuthError } from '../_shared/require-admin.ts';
-import { CORS } from '../_shared/cors.ts';
+import { AdminAuthError, requireAdmin } from '../_shared/require-admin.ts';
+import { corsHeaders, preflight, rejectDisallowedOrigin } from '../_shared/cors.ts';
 import { rateLimit } from '../_shared/rate-limit.ts';
 
-function json(body: unknown, status = 200): Response {
+function json(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
   });
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  if (req.method === 'OPTIONS') return preflight(req);
+  const originError = rejectDisallowedOrigin(req);
+  if (originError) return originError;
+  if (req.method !== 'POST') return json(req, { error: 'Metodo nao permitido.' }, 405);
 
-  const limited = rateLimit(req, CORS, { limit: 60 });
+  const limited = rateLimit(req, corsHeaders(req), { limit: 60 });
   if (limited) return limited;
 
-  let ctx;
+  let context;
   try {
-    ctx = await requireAdmin(req);
-  } catch (err) {
-    if (err instanceof AdminAuthError) return json({ error: err.message }, err.status);
-    return json({ error: 'Erro de autorização.' }, 500);
+    context = await requireAdmin(req);
+  } catch (error) {
+    if (error instanceof AdminAuthError) return json(req, { error: error.message }, error.status);
+    return json(req, { error: 'Erro de autorizacao.' }, 500);
   }
-  const { admin } = ctx;
 
-  const { data, error } = await admin
-    .from('products').select('*').order('created_at', { ascending: true });
-  if (error) return json({ error: 'Falha ao listar produtos.', detail: error.message }, 500);
-
-  return json({ products: data || [] });
+  const { data, error } = await context.admin
+    .from('products')
+    .select('*')
+    .order('created_at', { ascending: true });
+  if (error) return json(req, { error: 'Falha ao listar produtos.' }, 500);
+  return json(req, { products: data ?? [] });
 });

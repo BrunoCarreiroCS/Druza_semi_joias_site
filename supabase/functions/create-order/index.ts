@@ -1,194 +1,233 @@
-// =====================================================================
-// DRUZA — Edge Function: create-order
-// Cria pedido (status=pending) a partir do carrinho. Não fala com o
-// MercadoPago — isso é feito depois por "process-payment", quando o
-// Payment Brick (checkout embutido) devolve os dados de pagamento.
-//
-// Variáveis de ambiente:
-//   - (nenhuma específica do MP aqui — só SUPABASE_URL/ANON_KEY, auto)
-//
-// O cliente chama esta função autenticado (JWT). Validamos o JWT, criamos
-// o pedido em nome do usuário e protegemos os totais recalculando do
-// catálogo no servidor — nunca confiamos no preço enviado pelo browser.
-// =====================================================================
+// Cria um pedido em uma transacao protegida pelo banco. Preco, desconto,
+// frete, snapshot dos itens e reserva de estoque nunca vem do navegador.
 
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { CORS } from '../_shared/cors.ts';
-import { rateLimit } from '../_shared/rate-limit.ts';
+import {
+  corsHeaders,
+  preflight,
+  rejectDisallowedOrigin,
+} from '../_shared/cors.ts';
+import { consumeDurableLimit, rateLimit } from '../_shared/rate-limit.ts';
+import { isUuid } from '../_shared/payment.ts';
+import {
+  hasSupabaseConfig,
+  SUPABASE_ADMIN_KEY,
+  SUPABASE_PUBLIC_KEY,
+  SUPABASE_URL,
+} from '../_shared/supabase-env.ts';
+const STATES = new Set([
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT',
+  'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO',
+  'RR', 'SC', 'SP', 'SE', 'TO',
+]);
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
-
-const SHIPPING_RULES: Array<{ prefixes: string[]; price_cents: number }> = [
-  { prefixes: ['01', '02', '03', '04'], price_cents: 1490 },
-  { prefixes: ['20', '21', '22', '23', '24'], price_cents: 1890 },
-];
-const SHIPPING_FALLBACK = 2190;
-const FREE_SHIPPING_THRESHOLD = 19900;
-const COUPON_CODE = 'PRIMEIRADRUZA';
-const COUPON_DISCOUNT = 0.10;
-
-function shippingFor(cep: string, subtotal: number): number {
-  if (subtotal >= FREE_SHIPPING_THRESHOLD) return 0;
-  const prefix = cep.replace(/\D/g, '').slice(0, 2);
-  const rule = SHIPPING_RULES.find((r) => r.prefixes.includes(prefix));
-  return rule ? rule.price_cents : SHIPPING_FALLBACK;
+interface BodyItem {
+  slug: string;
+  qty: number;
 }
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  });
+interface AddressInput {
+  recipient: string;
+  cep: string;
+  street: string;
+  number: string;
+  complement?: string;
+  neighborhood?: string;
+  city: string;
+  state: string;
+  label?: string;
 }
 
-interface BodyItem { slug: string; qty: number; size?: string }
-interface ReqBody {
+interface RequestBody {
   items: BodyItem[];
   address_id?: string;
-  address?: {
-    recipient: string; cep: string; street: string; number: string;
-    complement?: string; neighborhood?: string; city: string; state: string;
-    label?: string; save?: boolean;
-  };
+  address?: AddressInput;
   coupon?: string;
 }
 
+function json(req: Request, body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+  });
+}
+
+function cleanText(value: unknown, max: number): string {
+  return typeof value === 'string'
+    ? value.trim().replace(/\s+/g, ' ').slice(0, max)
+    : '';
+}
+
+function normalizeAddress(value: unknown): AddressInput | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const raw = value as Record<string, unknown>;
+  const address: AddressInput = {
+    recipient: cleanText(raw.recipient, 120),
+    cep: cleanText(raw.cep, 16).replace(/\D/g, ''),
+    street: cleanText(raw.street, 160),
+    number: cleanText(raw.number, 20),
+    complement: cleanText(raw.complement, 120) || undefined,
+    neighborhood: cleanText(raw.neighborhood, 80) || undefined,
+    city: cleanText(raw.city, 80),
+    state: cleanText(raw.state, 2).toUpperCase(),
+    label: cleanText(raw.label, 40) || 'Endereco',
+  };
+
+  if (address.recipient.length < 3 || address.street.length < 3
+      || !address.number || address.city.length < 2
+      || !/^\d{8}$/.test(address.cep) || !STATES.has(address.state)) {
+    return null;
+  }
+  return address;
+}
+
+function publicOrderError(error: { message?: string } | null): { message: string; status: number } {
+  const code = error?.message ?? '';
+  if (code.includes('profile_incomplete')) {
+    return { message: 'Complete seus dados obrigatorios em Minha conta.', status: 409 };
+  }
+  if (code.includes('insufficient_stock')) {
+    return { message: 'Um dos produtos ficou sem estoque.', status: 409 };
+  }
+  if (code.includes('inactive_product') || code.includes('invalid_product')) {
+    return { message: 'Um dos produtos nao esta mais disponivel.', status: 409 };
+  }
+  if (code.includes('active_reservation_limit')) {
+    return { message: 'Existem pagamentos em aberto. Conclua ou aguarde a expiracao.', status: 429 };
+  }
+  if (code.includes('address_not_found')) {
+    return { message: 'Endereco nao encontrado.', status: 400 };
+  }
+  return { message: 'Nao foi possivel criar o pedido.', status: 500 };
+}
+
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  if (req.method === 'OPTIONS') return preflight(req);
+  const originError = rejectDisallowedOrigin(req);
+  if (originError) return originError;
+  if (req.method !== 'POST') return json(req, { error: 'Metodo nao permitido.' }, 405);
 
-  // Rate limit conservador: cria pedido e escreve no banco — 10/min por IP
-  // é folga pra uso real e barra abuso.
-  const limited = rateLimit(req, CORS, { limit: 10 });
-  if (limited) return limited;
+  const cors = corsHeaders(req);
+  const burst = rateLimit(req, cors, { limit: 20, windowMs: 60_000 });
+  if (burst) return burst;
+  if (!hasSupabaseConfig()) {
+    return json(req, { error: 'Servico temporariamente indisponivel.' }, 503);
+  }
 
-  // 1) Autenticação do usuário via JWT do header
+  const length = Number(req.headers.get('content-length') ?? '0');
+  if (Number.isFinite(length) && length > 64_000) {
+    return json(req, { error: 'Requisicao grande demais.' }, 413);
+  }
+
   const authHeader = req.headers.get('Authorization') ?? '';
   const jwt = authHeader.replace(/^Bearer\s+/i, '');
-  if (!jwt) return json({ error: 'Não autenticado.' }, 401);
+  if (!jwt) return json(req, { error: 'Nao autenticado.' }, 401);
 
-  // Cliente com o JWT do user — respeita RLS.
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  const userClient = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
     global: { headers: { Authorization: `Bearer ${jwt}` } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
-
-  const { data: userResult, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !userResult.user) return json({ error: 'Sessão inválida.' }, 401);
+  const { data: userResult, error: userError } = await userClient.auth.getUser();
+  if (userError || !userResult.user) {
+    return json(req, { error: 'Sessao invalida.' }, 401);
+  }
   const user = userResult.user;
 
-  // 2) Validar body
-  let body: ReqBody;
-  try { body = await req.json(); } catch { return json({ error: 'JSON inválido.' }, 400); }
+  const admin = createClient(SUPABASE_URL, SUPABASE_ADMIN_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 
-  if (!Array.isArray(body.items) || body.items.length === 0) {
-    return json({ error: 'Carrinho vazio.' }, 400);
-  }
-  // Camada de sanidade: caps de tamanho (payloads absurdos são rejeitados
-  // antes de tocar o banco — defesa em profundidade, o front nunca gera isso).
-  if (body.items.length > 30) return json({ error: 'Carrinho grande demais.' }, 400);
-  const clip = (s: unknown, n: number) => String(s ?? '').trim().slice(0, n);
-
-  // 3) Resolver endereço de entrega (id salvo OU novo endereço)
-  let shippingAddressId: string | null = null;
-  let cepForShipping = '';
-
-  if (body.address_id) {
-    const { data: addr, error } = await supabase
-      .from('addresses').select('*').eq('id', body.address_id).single();
-    if (error || !addr) return json({ error: 'Endereço não encontrado.' }, 400);
-    shippingAddressId = addr.id;
-    cepForShipping = addr.cep;
-  } else if (body.address) {
-    const a = body.address;
-    if (!a.recipient || !a.cep || !a.street || !a.number || !a.city || !a.state) {
-      return json({ error: 'Endereço incompleto.' }, 400);
+  try {
+    const allowed = await consumeDurableLimit(
+      admin as any, 'create-order:user', user.id, 20, 900,
+    );
+    if (!allowed) {
+      return json(req, { error: 'Muitas tentativas. Aguarde antes de tentar novamente.' }, 429);
     }
-    const { data: newAddr, error } = await supabase
+  } catch {
+    return json(req, { error: 'Servico temporariamente indisponivel.' }, 503);
+  }
+
+  let body: RequestBody;
+  try {
+    body = await req.json();
+  } catch {
+    return json(req, { error: 'JSON invalido.' }, 400);
+  }
+
+  if (!Array.isArray(body.items) || body.items.length < 1 || body.items.length > 20) {
+    return json(req, { error: 'Carrinho invalido.' }, 400);
+  }
+  const items = body.items.map((item) => ({
+    slug: cleanText(item?.slug, 80),
+    qty: Number(item?.qty),
+  }));
+  if (items.some((item) => !/^[a-z0-9][a-z0-9-]{0,79}$/.test(item.slug)
+      || !Number.isInteger(item.qty) || item.qty < 1 || item.qty > 10)) {
+    return json(req, { error: 'Item invalido no carrinho.' }, 400);
+  }
+
+  let addressId = '';
+  if (body.address_id !== undefined) {
+    if (!isUuid(body.address_id)) {
+      return json(req, { error: 'Endereco invalido.' }, 400);
+    }
+    const { data: address, error } = await userClient
+      .from('addresses')
+      .select('id')
+      .eq('id', body.address_id)
+      .maybeSingle();
+    if (error || !address) {
+      return json(req, { error: 'Endereco nao encontrado.' }, 400);
+    }
+    addressId = address.id;
+  } else {
+    const address = normalizeAddress(body.address);
+    if (!address) return json(req, { error: 'Endereco incompleto ou invalido.' }, 400);
+
+    const { data: inserted, error } = await userClient
       .from('addresses')
       .insert({
         user_id: user.id,
-        label: clip(a.label, 40) || 'Endereço',
-        recipient: clip(a.recipient, 120),
-        cep: clip(a.cep, 9),
-        street: clip(a.street, 160),
-        number: clip(a.number, 20),
-        complement: clip(a.complement, 120) || null,
-        neighborhood: clip(a.neighborhood, 80) || null,
-        city: clip(a.city, 80),
-        state: clip(a.state, 2).toUpperCase(),
+        label: address.label,
+        recipient: address.recipient,
+        cep: address.cep,
+        street: address.street,
+        number: address.number,
+        complement: address.complement ?? null,
+        neighborhood: address.neighborhood ?? null,
+        city: address.city,
+        state: address.state,
       })
-      .select().single();
-    if (error || !newAddr) return json({ error: 'Falha ao salvar endereço.' }, 500);
-    shippingAddressId = newAddr.id;
-    cepForShipping = newAddr.cep;
-  } else {
-    return json({ error: 'Informe um endereço de entrega.' }, 400);
+      .select('id')
+      .single();
+    if (error || !inserted) {
+      const limitReached = error?.message?.includes('address_limit_reached');
+      return json(req, {
+        error: limitReached
+          ? 'Limite de enderecos atingido. Remova um endereco antigo.'
+          : 'Nao foi possivel salvar o endereco.',
+      }, limitReached ? 409 : 400);
+    }
+    addressId = inserted.id;
   }
 
-  // 4) Recalcular totais com base no catálogo oficial (anti-manipulação).
-  // Preço/disponibilidade vêm da tabela products (nunca do browser) — a
-  // mesma fonte de verdade usada pelo painel administrativo. A policy
-  // "products_select_active" só deixa ler produtos com active=true.
-  const slugs = [...new Set(body.items.map((it) => it.slug))];
-  const { data: products, error: productsErr } = await supabase
-    .from('products')
-    .select('slug, name, price_cents, in_stock')
-    .in('slug', slugs);
-  if (productsErr) return json({ error: 'Falha ao consultar catálogo.', detail: productsErr.message }, 500);
-  const catalogBySlug = new Map((products || []).map((p) => [p.slug, p]));
-
-  let subtotal = 0;
-  const resolvedItems = [] as Array<{ slug: string; name: string; price: number; qty: number }>;
-  for (const it of body.items) {
-    const cat = catalogBySlug.get(it.slug);
-    if (!cat) return json({ error: `Produto inválido: ${it.slug}` }, 400);
-    if (!cat.in_stock) return json({ error: `Produto fora de estoque: ${cat.name}` }, 400);
-    const qty = Math.max(1, Math.min(20, Number(it.qty) || 1));
-    subtotal += cat.price_cents * qty;
-    resolvedItems.push({ slug: it.slug, name: cat.name, price: cat.price_cents, qty });
-  }
-
-  const discount = body.coupon?.trim().toUpperCase() === COUPON_CODE
-    ? Math.round(subtotal * COUPON_DISCOUNT) : 0;
-  const shipping = shippingFor(cepForShipping, subtotal);
-  const total = Math.max(0, subtotal - discount + shipping);
-
-  // 5) Criar pedido (status=pending) + itens
-  const { data: order, error: orderErr } = await supabase
-    .from('orders')
-    .insert({
-      user_id: user.id,
-      status: 'pending',
-      subtotal_cents: subtotal,
-      shipping_cents: shipping,
-      discount_cents: discount,
-      total_cents: total,
-      coupon_code: discount > 0 ? COUPON_CODE : null,
-      shipping_address_id: shippingAddressId,
-    })
-    // Select explícito: "orders" tem GRANT SELECT por coluna pra
-    // authenticated (db/schema-admin.sql exclui admin_notes de propósito).
-    // Um .select() sem coluna vira "SELECT *" no PostgREST e esbarra nessa
-    // trava, retornando "permission denied for table orders".
-    .select('id, total_cents')
-    .single();
-  if (orderErr || !order) return json({ error: 'Falha ao criar pedido.', detail: orderErr?.message }, 500);
-
-  const itemsInsert = resolvedItems.map((it) => ({
-    order_id: order.id,
-    product_slug: it.slug,
-    product_name: it.name,
-    unit_price_cents: it.price,
-    qty: it.qty,
-  }));
-  const { error: itemsErr } = await supabase.from('order_items').insert(itemsInsert);
-  if (itemsErr) return json({ error: 'Falha ao registrar itens.', detail: itemsErr.message }, 500);
-
-  return json({
-    order_id: order.id,
-    total_cents: total,
+  const { data, error } = await admin.rpc('create_reserved_order', {
+    p_user_id: user.id,
+    p_address_id: addressId,
+    p_items: items,
+    p_coupon_code: cleanText(body.coupon, 40) || null,
   });
+  if (error || !data || typeof data !== 'object') {
+    const publicError = publicOrderError(error);
+    return json(req, { error: publicError.message }, publicError.status);
+  }
+
+  const result = data as Record<string, unknown>;
+  return json(req, {
+    order_id: result.order_id,
+    total_cents: result.total_cents,
+    reservation_expires_at: result.reservation_expires_at,
+  }, 201);
 });

@@ -53,13 +53,14 @@ MercadoPago → POST webhook-mp (reconsulta a API, nunca confia no corpo)
    browser — é ela que o Payment Brick usa pra inicializar.
 
 > ⚠️ Nunca exponha o Access Token no browser. Ele fica só no servidor.
-> A Public Key é segura para expor — vai em `js/config.js` (Passo 6).
+> A Public Key é segura para expor — vai em `js/config.public.js` (Passo 6).
 
 ---
 
 ## Passo 2 — Atualizar o banco
 
-No **SQL Editor do Supabase**, rode o arquivo `db/schema-payments.sql`
+No **SQL Editor do Supabase**, rode `db/schema-payments.sql` e depois
+`db/security-final-hardening.sql`
 (adiciona colunas `mp_preference_id`, `mp_payment_id` e políticas de INSERT).
 
 ---
@@ -119,7 +120,7 @@ supabase secrets set MP_WEBHOOK_SECRET=placeholder-trocar-no-passo-7
 
 ## Passo 6 — Chave pública no frontend + deploy das Edge Functions
 
-Edite `js/config.js` e troque `MP_PUBLIC_KEY` pela Public Key copiada no Passo 1:
+Edite `js/config.public.js` e troque `MP_PUBLIC_KEY` pela Public Key copiada no Passo 1:
 
 ```js
 window.DRUZA_CONFIG = {
@@ -210,7 +211,7 @@ https://hqkpgghlbwincahfwkem.supabase.co/functions/v1/webhook-mp
    supabase secrets set MP_ACCESS_TOKEN=APP_USR-sua-chave-prod
    supabase secrets set PUBLIC_SITE_URL=https://druza.com.br
    ```
-3. Troque `MP_PUBLIC_KEY` em `js/config.js` pela Public Key de produção.
+3. Troque `MP_PUBLIC_KEY` em `js/config.public.js` pela Public Key de produção.
 4. Redeploy:
    ```powershell
    supabase functions deploy create-order
@@ -227,7 +228,7 @@ https://hqkpgghlbwincahfwkem.supabase.co/functions/v1/webhook-mp
 → A `MP_WEBHOOK_SECRET` não bate. Recopie do painel MP e redeploy.
 
 **"Configuração ausente" no browser**
-→ Falta `js/config.js`. Veja `BACKEND-SETUP.md`.
+→ Falta `js/config.public.js`. Veja `BACKEND-SETUP.md`.
 
 **"Não autenticado" ao clicar em "Ir para pagamento"**
 → Sessão expirou. Faça logout e login novamente.
@@ -246,7 +247,7 @@ supabase functions logs process-payment --tail
 ```
 
 **Formulário do Payment Brick não carrega / fica em branco**
-→ Confira se `MP_PUBLIC_KEY` está preenchida em `js/config.js` e se o
+→ Confira se `MP_PUBLIC_KEY` está preenchida em `js/config.public.js` e se o
 script `https://sdk.mercadopago.com/js/v2` está sendo carregado antes de
 `js/checkout.js` (veja o console do navegador).
 
@@ -268,7 +269,7 @@ db/
 
 supabase/
   functions/
-    _shared/mp-status.ts             # mapMpStatus, usado por process-payment e webhook-mp
+    _shared/payment.ts               # centavos, UUIDs e serializacao estavel
     create-order/index.ts            # deployed no Passo 6 — cria o pedido
     process-payment/index.ts         # deployed no Passo 6 — cobra via Brick
     webhook-mp/index.ts              # deployed no Passo 6 (--no-verify-jwt)

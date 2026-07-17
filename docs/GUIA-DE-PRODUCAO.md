@@ -49,12 +49,12 @@ externos: Supabase, MercadoPago, GoDaddy/DNS, host).
    supabase functions deploy create-order
    supabase functions deploy process-payment
    ```
-   Troque também `MP_PUBLIC_KEY` em `js/config.js` pela Public Key de produção.
+   Troque também `MP_PUBLIC_KEY` em `js/config.public.js` pela Public Key de produção.
 4. 🔑 **Webhook de produção** configurado no painel do MercadoPago (mesma URL
    do Supabase, mas no ambiente "Produção" do MP — ver `docs/MERCADOPAGO-SETUP.md`).
 5. 🔑 **Restringir CORS** (a URL para de mudar assim que o domínio for fixo):
    ```powershell
-   supabase secrets set ALLOWED_ORIGIN=https://SEU-DOMINIO
+   supabase secrets set ALLOWED_ORIGINS=https://SEU-DOMINIO,https://www.SEU-DOMINIO
    # redeploy de todas as 8 Edge Functions depois
    ```
 6. 🔑 **Supabase → Authentication → URL Configuration**: trocar "Site URL" e

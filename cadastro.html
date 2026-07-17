@@ -90,6 +90,7 @@
           <input type="checkbox" name="terms" required />
           <span>Li e concordo com a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.</span>
         </label>
+        <div id="captcha-container" hidden></div>
         <p class="auth-feedback" id="feedback" role="alert" aria-live="polite"></p>
         <button type="submit" class="btn btn--primary" id="submit-btn">Criar conta</button>
       </form>
@@ -109,7 +110,7 @@
     <div class="wrap--wide foot__legal" style="max-width:1480px">&copy; 2026 Druza Semi Joias &middot; Todos os direitos reservados</div>
   </footer>
 
-  <script src="js/config.js"></script>
+  <script src="js/config.public.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js" integrity="sha384-dGnL7r9uccC9TdSdE05clTJ6esxMU42XBQ1/BWLzKQOBi7qR1aCMRIi0LzUmexIg" crossorigin="anonymous"></script>
   <script src="js/auth.js"></script>
   <script>
@@ -120,7 +121,28 @@
       const V = window.DruzaAuth.validators;
       const birthInput = form.elements.birthDate;
       const phoneInput = form.elements.phone;
+      const captchaContainer = document.getElementById('captcha-container');
+      const captchaSiteKey = (window.DRUZA_CONFIG.TURNSTILE_SITE_KEY || '').trim();
+      let captchaToken = '';
+      let captchaWidgetId = null;
       birthInput.max = V.maxAdultBirthDate();
+
+      if (captchaSiteKey) {
+        captchaContainer.hidden = false;
+        const script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.async = true;
+        script.defer = true;
+        script.onload = function () {
+          captchaWidgetId = window.turnstile.render(captchaContainer, {
+            sitekey: captchaSiteKey,
+            callback: function (token) { captchaToken = token; },
+            'expired-callback': function () { captchaToken = ''; },
+            'error-callback': function () { captchaToken = ''; }
+          });
+        };
+        document.head.appendChild(script);
+      }
 
       document.querySelectorAll('[data-pw-toggle]').forEach(function (t) {
         t.addEventListener('click', function () {
@@ -157,9 +179,14 @@
         const pwErrors = V.passwordPolicyErrors(password, { email, phone });
         if (pwErrors.length) { fb.classList.add('is-error'); fb.textContent = pwErrors[0]; return; }
         if (!terms) { fb.classList.add('is-error'); fb.textContent = 'E necessario aceitar a Politica de Privacidade.'; return; }
+        if (captchaSiteKey && !captchaToken) { fb.classList.add('is-error'); fb.textContent = 'Conclua a verificacao de seguranca.'; return; }
 
         btn.disabled = true; btn.textContent = 'Criando…';
-        const { error } = await window.DruzaAuth.signUp({ fullName, email, phone, birthDate, password, marketingConsent });
+        const { error } = await window.DruzaAuth.signUp({ fullName, email, phone, birthDate, password, marketingConsent, captchaToken });
+        if (captchaSiteKey && captchaWidgetId !== null && window.turnstile) {
+          window.turnstile.reset(captchaWidgetId);
+          captchaToken = '';
+        }
         if (error) {
           fb.classList.add('is-error'); fb.textContent = error;
           btn.disabled = false; btn.textContent = 'Criar conta';
@@ -167,7 +194,7 @@
         }
         // Supabase, com confirmação de e-mail ligada, NÃO cria sessão até confirmar.
         fb.classList.add('is-success');
-        fb.textContent = 'Conta criada! Enviamos um e-mail de confirmação. Verifique sua caixa de entrada para ativar e entrar.';
+        fb.textContent = 'Se o e-mail puder ser cadastrado, enviaremos uma confirmacao. Verifique sua caixa de entrada antes de entrar.';
         form.reset();
         btn.disabled = false; btn.textContent = 'Criar conta';
       });

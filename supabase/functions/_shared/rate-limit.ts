@@ -1,43 +1,46 @@
-// =====================================================================
-// DRUZA — _shared/rate-limit.ts
-//
-// Rate limiting por IP (janela fixa, em memória). Mitiga brute-force e
-// abuso das Edge Functions chamadas pelo navegador.
-//
-// Honestidade sobre o alcance: o contador vive na memória do isolate —
-// zera em cold start e não é compartilhado entre instâncias. Ou seja, é
-// um AMORTECEDOR (barra rajadas óbvias), não um limite exato global.
-// Para limite forte de verdade, o upgrade futuro é persistir em tabela
-// ou usar um serviço dedicado (ver docs/SEGURANCA.md §4).
-//
-// O webhook-mp NÃO usa isto de propósito: o MercadoPago manda rajadas
-// legítimas de vários IPs e um falso-positivo atrasaria confirmação de
-// pagamento (que já é protegida pela re-consulta autenticada na API).
-// =====================================================================
-
 interface Bucket {
   count: number;
   reset: number;
 }
 
+interface RpcClient {
+  rpc: (name: string, args: Record<string, unknown>) => Promise<{
+    data: unknown;
+    error: { message?: string } | null;
+  }>;
+}
+
 const buckets = new Map<string, Bucket>();
-const MAX_TRACKED_IPS = 5000; // teto de memória; ao passar, limpa expirados
+const MAX_TRACKED_IPS = 5000;
 
 function clientIp(req: Request): string {
-  // Primeiro IP do X-Forwarded-For (preenchido pelo gateway do Supabase).
-  const fwd = req.headers.get('x-forwarded-for') ?? '';
-  return fwd.split(',')[0].trim() || 'unknown';
+  const forwarded = req.headers.get('x-forwarded-for') ?? '';
+  return forwarded.split(',')[0].trim() || 'unknown';
 }
 
 function sweep(now: number): void {
-  for (const [key, b] of buckets) {
-    if (now > b.reset) buckets.delete(key);
+  for (const [key, bucket] of buckets) {
+    if (now >= bucket.reset) buckets.delete(key);
   }
 }
 
-// Retorna uma Response 429 se o IP estourou o limite na janela; senão
-// null (siga o fluxo normal). `cors` entra nos headers do 429 para o
-// navegador conseguir ler o erro.
+function enforceCapacity(): void {
+  while (buckets.size >= MAX_TRACKED_IPS) {
+    const oldestKey = buckets.keys().next().value;
+    if (typeof oldestKey !== 'string') break;
+    buckets.delete(oldestKey);
+  }
+}
+
+export async function sha256Hex(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// Amortece rajadas no isolate. O limite global fica no Postgres abaixo.
 export function rateLimit(
   req: Request,
   cors: Record<string, string>,
@@ -47,29 +50,46 @@ export function rateLimit(
   const windowMs = opts?.windowMs ?? 60_000;
   const now = Date.now();
 
-  if (buckets.size > MAX_TRACKED_IPS) sweep(now);
-
-  const ip = clientIp(req);
-  const bucket = buckets.get(ip);
-
+  const key = clientIp(req);
+  if (!buckets.has(key) && buckets.size >= MAX_TRACKED_IPS) {
+    sweep(now);
+    enforceCapacity();
+  }
+  const bucket = buckets.get(key);
   if (!bucket || now > bucket.reset) {
-    buckets.set(ip, { count: 1, reset: now + windowMs });
+    buckets.set(key, { count: 1, reset: now + windowMs });
     return null;
   }
 
-  bucket.count++;
+  bucket.count += 1;
   if (bucket.count <= limit) return null;
 
-  const retryAfterSec = Math.max(1, Math.ceil((bucket.reset - now) / 1000));
-  return new Response(
-    JSON.stringify({ error: 'Muitas requisições. Aguarde alguns instantes e tente novamente.' }),
-    {
-      status: 429,
-      headers: {
-        ...cors,
-        'Content-Type': 'application/json',
-        'Retry-After': String(retryAfterSec),
-      },
+  return new Response(JSON.stringify({
+    error: 'Muitas requisicoes. Aguarde alguns instantes e tente novamente.',
+  }), {
+    status: 429,
+    headers: {
+      ...cors,
+      'Content-Type': 'application/json',
+      'Retry-After': String(Math.max(1, Math.ceil((bucket.reset - now) / 1000))),
     },
-  );
+  });
+}
+
+export async function consumeDurableLimit(
+  admin: RpcClient,
+  scope: string,
+  rawKey: string,
+  limit: number,
+  windowSeconds: number,
+): Promise<boolean> {
+  const keyHash = await sha256Hex(rawKey);
+  const { data, error } = await admin.rpc('consume_rate_limit', {
+    p_scope: scope,
+    p_key_hash: keyHash,
+    p_limit: limit,
+    p_window_seconds: windowSeconds,
+  });
+  if (error) throw new Error('rate_limit_unavailable');
+  return data === true;
 }

@@ -14,12 +14,16 @@ sempre decididos/revalidados no servidor (Edge Functions + RLS do Postgres).
 
 ### 1.1 Dados (Postgres + RLS)
 
-- **RLS ativo em todas as tabelas.** Cliente só lê/escreve as próprias linhas
-  (`profiles`, `addresses`, `orders`, `order_items`).
+- **RLS ativo em todas as tabelas.** Cliente lê apenas o próprio perfil,
+  endereços, pedidos e itens; só atualiza os campos pessoais e endereços
+  permitidos. Pedidos e itens são inseridos exclusivamente pela RPC protegida.
 - **Cadastro endurecido em duas camadas.** O front valida e normaliza nome,
   e-mail, telefone brasileiro com DDD, data de nascimento 18+ e senha forte;
   o banco repete as travas em `profiles` via constraints/triggers, então
   chamadas diretas ao Supabase também são bloqueadas.
+- **Perfis legados incompletos não compram.** Um trigger independente bloqueia
+  qualquer novo pedido até o titular completar nome, telefone válido e data de
+  nascimento na área da conta. Nenhum dado antigo é inventado ou sobrescrito.
 - **Controle de colunas em `profiles`.** O cliente autenticado pode atualizar
   apenas `full_name`, `phone`, `birth_date` e `marketing_consent`; campos como
   `payment_customer_id`, `consent_date`, `created_at` e `updated_at` ficam fora
@@ -35,22 +39,22 @@ sempre decididos/revalidados no servidor (Edge Functions + RLS do Postgres).
 
 ### 1.2 Pagamento (MercadoPago Payment Brick)
 
-- **Preço nunca vem do navegador**: `create-order` recalcula subtotal,
-  frete, cupom e total a partir da tabela `products` no servidor;
+- **Preço nunca vem do navegador**: `create-order` chama uma RPC transacional
+  que recalcula subtotal, frete, cupom e total, grava o snapshot e reserva
+  estoque com lock nas linhas de `products`;
   `process-payment` cobra o valor gravado no pedido, nunca um valor vindo
   do payload da chamada.
-- **Cobrança exige o pedido no estado certo**: `process-payment` só cobra
-  pedidos com `status = 'pending'` pertencentes ao usuário autenticado
-  (RLS `orders_select_own`), e usa `X-Idempotency-Key` único por
-  tentativa para não duplicar cobrança em retry de rede.
+- **Claim e idempotencia atomicos**: `process-payment` conquista `pending ->
+  processing` sob lock e persiste uma chave por tentativa. Chamadas simultaneas
+  reutilizam o mesmo `X-Idempotency-Key` e apenas uma cobranca vence.
 - **Webhook não confia na notificação**: `webhook-mp` pega o id do pagamento e
   **re-consulta a API do MP** com o nosso Access Token (só devolve pagamentos da
-  nossa conta) + **confere o valor pago** contra o total do pedido antes de
-  marcar "pago". HMAC da assinatura é camada extra best-effort (o ambiente do MP
-  assina inconsistentemente — ver histórico no repositório de memória).
-- Dados de cartão **nunca** passam pelo nosso código: o Payment Brick
-  tokeniza no browser via iframe do MP (PCI fica no MP), mesmo sem
-  redirecionar para o domínio do MercadoPago.
+  nossa conta), exige HMAC valido, confere `external_reference` e compara o valor
+  em centavos inteiros. Replays ficam no ledger e viram `no-op`.
+- **Maquina de estados por whitelist** impede downgrade por evento atrasado.
+  Tentativas presas sao reconsultadas pelo job a cada cinco minutos.
+- Numero do cartao e CVV nunca chegam ao nosso servidor: o Payment Brick os
+  tokeniza no iframe. A Edge recebe apenas o token temporario e nao o registra.
 
 ### 1.3 Painel administrativo
 
@@ -70,8 +74,8 @@ sempre decididos/revalidados no servidor (Edge Functions + RLS do Postgres).
 - **supabase-js pinado com SRI**: as páginas carregam versão exata
   (`@2.45.0`) com hash `integrity` — se o CDN for comprometido ou o arquivo
   mudar, o navegador bloqueia o script em vez de executá-lo.
-- **`js/config.js` gitignored** — só URL + anon key no client (públicas por
-  design; a segurança vem do RLS). Service_role **jamais** aparece no front.
+- **`js/config.public.js` versionado** — contém só URL e chaves públicas do
+  navegador. Service_role, Access Token e secrets **jamais** aparecem no front.
 - Páginas de conta/admin com `noindex`.
 
 ### 1.5 Edge Functions
@@ -80,23 +84,20 @@ sempre decididos/revalidados no servidor (Edge Functions + RLS do Postgres).
   (`^[a-z0-9]+(-[a-z0-9]+)*$`), caps de tamanho em nome/categoria/endereço/
   rastreio, teto de preço, carrinho limitado a 30 linhas, status de pedido
   contra whitelist.
-- **CORS restringível**: `_shared/cors.ts` lê a env `ALLOWED_ORIGIN`. Sem ela,
-  usa `*` (necessário em dev, com ngrok mudando de URL); em produção, defina a
-  origem única (ver checklist).
-- **Rate limiting por IP** (`_shared/rate-limit.ts`): create-order e
-  process-payment 10/min cada, escritas admin 30/min, leituras admin 60/min.
-  É um amortecedor em memória
-  (zera em cold start, não é global entre instâncias) — barra rajadas óbvias
-  de brute-force/abuso; limite forte global fica como upgrade (§4). O
-  webhook-mp fica de fora de propósito (o MP manda rajadas legítimas).
+- **CORS restrito**: `_shared/cors.ts` aceita apenas Druza, `www` e a origem do
+  GitHub Pages, mais a lista opcional `ALLOWED_ORIGINS`. Nao existe fallback `*`.
+- **Rate limiting em duas camadas**: amortecedor por IP no isolate e contador
+  duravel por usuario no Postgres para criar pedido/cobrar. Cold start nao
+  reinicia o limite global.
 
 ### 1.6 Independência de terceiros
 
 - **Fontes auto-hospedadas** (`fonts/` + `css/fonts.css`): nenhuma requisição
   ao Google Fonts — menos um terceiro para confiar, melhor privacidade dos
   visitantes (LGPD) e menos handshakes TLS no carregamento.
-- O único código de terceiro que resta no front é o supabase-js — pinado com
-  SRI (ver 1.4).
+- Os SDKs de terceiro restantes são `supabase-js`, pinado com SRI, e o SDK
+  oficial do Mercado Pago, carregado somente no checkout. O servidor nunca
+  confia no resultado do SDK: pagamento, valor e referência são revalidados.
 
 ---
 
@@ -104,11 +105,11 @@ sempre decididos/revalidados no servidor (Edge Functions + RLS do Postgres).
 
 1. **Restringir CORS**:
    ```bash
-   supabase secrets set ALLOWED_ORIGIN=https://druza.com.br
+   supabase secrets set ALLOWED_ORIGINS=https://druza.com.br,https://www.druza.com.br
    # redeploy de todas as functions depois
    ```
 2. **Trocar credenciais MP** de teste → produção (`MP_ACCESS_TOKEN` e
-   `MP_PUBLIC_KEY` em `js/config.js`) e revalidar o fluxo com um pagamento
+   `MP_PUBLIC_KEY` em `js/config.public.js`) e revalidar o fluxo com um pagamento
    real de valor baixo.
 3. **Headers de segurança no host** (configuração do servidor/CDN onde o site
    estático for publicado — não dá para fazer via HTML):
@@ -147,13 +148,13 @@ sempre decididos/revalidados no servidor (Edge Functions + RLS do Postgres).
 
 1. **CSP estrita** — mover scripts inline para arquivos e publicar uma
    `Content-Security-Policy` com nonces; elimina de vez a classe XSS.
-2. **Rate limiting forte/global** — persistir contadores em tabela ou usar
-   serviço dedicado (o atual, em memória, zera em cold start e não é
-   compartilhado entre instâncias).
+2. **Observabilidade do rate limit** — alertar quando o contador durável indicar
+   rajadas por usuário/origem e definir retenção operacional para as métricas.
 3. **Códigos de backup do 2FA** — alternativa ao celular perdido sem passar
    pelo Studio.
 4. **Alertas** — notificação (e-mail) para eventos sensíveis: novo admin,
    rajada de erros 401/403, divergência de valor no webhook.
 5. **Monitoramento de erros** (ex.: Sentry) no front e nas functions.
-6. **Auto-hospedar o supabase-js** — último terceiro do front (hoje mitigado
-   por versão pinada + SRI).
+6. **Supply chain do checkout** — manter o domínio oficial do SDK do Mercado
+   Pago na CSP, acompanhar mudanças do provedor e avaliar pinagem quando houver
+   uma distribuição oficialmente versionada compatível.

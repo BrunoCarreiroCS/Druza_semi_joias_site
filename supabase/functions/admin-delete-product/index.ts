@@ -1,47 +1,60 @@
-// =====================================================================
-// DRUZA — Edge Function: admin-delete-product
-//
-// Exclui um produto. Seguro para o histórico: order_items guarda um
-// snapshot (product_slug/product_name/unit_price_cents) e NÃO tem FK para
-// products, então pedidos antigos continuam íntegros. Só admins.
-//
-// Deploy:  supabase functions deploy admin-delete-product
-// =====================================================================
-
-import { requireAdmin, logAdminAction, AdminAuthError } from '../_shared/require-admin.ts';
-import { CORS } from '../_shared/cors.ts';
+import {
+  AdminAuthError,
+  logAdminAction,
+  requireAdmin,
+} from '../_shared/require-admin.ts';
+import { corsHeaders, preflight, rejectDisallowedOrigin } from '../_shared/cors.ts';
 import { rateLimit } from '../_shared/rate-limit.ts';
+import { isUuid } from '../_shared/payment.ts';
 
-function json(body: unknown, status = 200): Response {
+function json(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
   });
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  if (req.method === 'OPTIONS') return preflight(req);
+  const originError = rejectDisallowedOrigin(req);
+  if (originError) return originError;
+  if (req.method !== 'POST') return json(req, { error: 'Metodo nao permitido.' }, 405);
 
-  const limited = rateLimit(req, CORS, { limit: 30 });
+  const limited = rateLimit(req, corsHeaders(req), { limit: 30 });
   if (limited) return limited;
 
-  let ctx;
+  let context;
   try {
-    ctx = await requireAdmin(req);
-  } catch (err) {
-    if (err instanceof AdminAuthError) return json({ error: err.message }, err.status);
-    return json({ error: 'Erro de autorização.' }, 500);
+    context = await requireAdmin(req);
+  } catch (error) {
+    if (error instanceof AdminAuthError) return json(req, { error: error.message }, error.status);
+    return json(req, { error: 'Erro de autorizacao.' }, 500);
   }
-  const { admin, userId } = ctx;
 
   let body: { id?: string } = {};
-  try { body = await req.json(); } catch { return json({ error: 'JSON inválido.' }, 400); }
-  if (!body.id) return json({ error: 'id é obrigatório.' }, 400);
+  try {
+    body = await req.json();
+  } catch {
+    return json(req, { error: 'JSON invalido.' }, 400);
+  }
+  if (!isUuid(body.id)) return json(req, { error: 'id invalido.' }, 400);
 
-  const { error } = await admin.from('products').delete().eq('id', body.id);
-  if (error) return json({ error: 'Falha ao excluir produto.', detail: error.message }, 500);
+  // Desativar preserva a linha necessaria para devolver reservas existentes.
+  const { data, error } = await context.admin
+    .from('products')
+    .update({ active: false, stock_quantity: 0 })
+    .eq('id', body.id)
+    .select('id')
+    .maybeSingle();
+  if (error || !data) return json(req, { error: 'Falha ao desativar produto.' }, 500);
 
-  await logAdminAction(admin, userId, 'product.delete', 'products', body.id, null);
-  return json({ ok: true });
+  await logAdminAction(
+    context.admin,
+    context.userId,
+    'product.deactivate',
+    'products',
+    body.id,
+    null,
+  );
+  return json(req, { ok: true });
 });

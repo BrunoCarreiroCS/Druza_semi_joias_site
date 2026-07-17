@@ -1,0 +1,31 @@
+project_id = "hqkpgghlbwincahfwkem"
+
+[functions.webhook-mp]
+verify_jwt = false
+
+[functions.reconcile-stale-payments]
+verify_jwt = false
+
+[functions.create-order]
+verify_jwt = true
+
+[functions.process-payment]
+verify_jwt = true
+
+[functions.admin-list-orders]
+verify_jwt = true
+
+[functions.admin-update-order]
+verify_jwt = true
+
+[functions.admin-get-order]
+verify_jwt = true
+
+[functions.admin-list-products]
+verify_jwt = true
+
+[functions.admin-upsert-product]
+verify_jwt = true
+
+[functions.admin-delete-product]
+verify_jwt = true

@@ -4,12 +4,12 @@
    ===================================================================== */
 
 /* ── Fontes auto-hospedadas ─────────────────────────────── */
-@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/cormorant-garamond-500-latin.woff2') format('woff2');}
-@font-face{font-family:'Cormorant Garamond';font-style:italic;font-weight:500;font-display:swap;src:url('fonts/cormorant-garamond-500-italic-latin.woff2') format('woff2');}
-@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/cormorant-garamond-600-latin.woff2') format('woff2');}
-@font-face{font-family:'Jost';font-style:normal;font-weight:300;font-display:swap;src:url('fonts/jost-300-latin.woff2') format('woff2');}
-@font-face{font-family:'Jost';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/jost-400-latin.woff2') format('woff2');}
-@font-face{font-family:'Jost';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/jost-500-latin.woff2') format('woff2');}
+@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:500;font-display:swap;src:url('../fonts/cormorant-garamond-500-latin.woff2') format('woff2');}
+@font-face{font-family:'Cormorant Garamond';font-style:italic;font-weight:500;font-display:swap;src:url('../fonts/cormorant-garamond-500-italic-latin.woff2') format('woff2');}
+@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:600;font-display:swap;src:url('../fonts/cormorant-garamond-600-latin.woff2') format('woff2');}
+@font-face{font-family:'Jost';font-style:normal;font-weight:300;font-display:swap;src:url('../fonts/jost-300-latin.woff2') format('woff2');}
+@font-face{font-family:'Jost';font-style:normal;font-weight:400;font-display:swap;src:url('../fonts/jost-400-latin.woff2') format('woff2');}
+@font-face{font-family:'Jost';font-style:normal;font-weight:500;font-display:swap;src:url('../fonts/jost-500-latin.woff2') format('woff2');}
 
 /* ── Tokens ─────────────────────────────────────────────── */
 :root{
@@ -383,4 +383,3 @@ body.has-pinned{padding-top:72px;}
   /* botões de destaque do hero ocupam a linha inteira quando quebram */
   .hero__foot .btn{flex:1 1 auto;justify-content:center;}
 }
-

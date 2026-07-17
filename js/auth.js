@@ -3,7 +3,7 @@
    Camada de autenticacao sobre o Supabase.
 
    Requer, antes deste script:
-     <script src="js/config.js"></script>
+     <script src="js/config.public.js"></script>
      <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js" integrity="..." crossorigin="anonymous"></script>
 
    Importante: senha fica somente no Supabase Auth. Este arquivo nunca grava
@@ -14,7 +14,7 @@
 
   const cfg = window.DRUZA_CONFIG;
   if (!cfg || !cfg.SUPABASE_URL || cfg.SUPABASE_URL.includes('SEU-PROJETO')) {
-    console.warn('[DruzaAuth] config.js ausente ou nao preenchido. Copie js/config.example.js -> js/config.js e preencha SUPABASE_URL e SUPABASE_ANON_KEY.');
+    console.warn('[DruzaAuth] configuracao publica ausente ou incompleta.');
   }
   if (!window.supabase) {
     console.error('[DruzaAuth] SDK do Supabase nao carregado. Inclua o <script> do CDN antes de auth.js.');
@@ -26,13 +26,24 @@
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   const PASSWORD_SYMBOL_RE = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/;
+  const VALID_DDDS = new Set([
+    '11','12','13','14','15','16','17','18','19','21','22','24','27','28',
+    '31','32','33','34','35','37','38','41','42','43','44','45','46','47',
+    '48','49','51','53','54','55','61','62','63','64','65','66','67','68',
+    '69','71','73','74','75','77','79','81','82','83','84','85','86','87',
+    '88','89','91','92','93','94','95','96','97','98','99'
+  ]);
+  const VALID_STATES = new Set([
+    'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA',
+    'PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'
+  ]);
 
   function mapError(error) {
     if (!error) return null;
     const msg = (error.message || '').toLowerCase();
     if (msg.includes('invalid login')) return 'E-mail ou senha incorretos.';
     if (msg.includes('email not confirmed')) return 'Confirme seu e-mail antes de entrar. Verifique a caixa de entrada.';
-    if (msg.includes('already registered') || msg.includes('already exists')) return 'Este e-mail ja tem cadastro. Tente entrar ou recuperar a senha.';
+    if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already')) return 'Nao foi possivel concluir. Tente entrar ou recuperar a senha.';
     if (msg.includes('password should be at least')) return 'A senha precisa ter no minimo 8 caracteres.';
     if (msg.includes('weak_password') || msg.includes('weak password')) return 'A senha nao atende aos requisitos de seguranca.';
     if (msg.includes('profile_phone_format')) return 'Informe um telefone brasileiro valido com DDD.';
@@ -40,7 +51,7 @@
     if (msg.includes('profile_required')) return 'Preencha todos os dados obrigatorios.';
     if (msg.includes('rate limit') || msg.includes('too many')) return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
     if (msg.includes('redirect')) return 'Erro de configuracao de URL de redirecionamento. Verifique as Redirect URLs no Supabase.';
-    return error.message || 'Ocorreu um erro. Tente novamente.';
+    return 'Nao foi possivel concluir a operacao. Tente novamente.';
   }
 
   function baseUrl() {
@@ -65,7 +76,11 @@
     if (digits.startsWith('55') && (digits.length === 12 || digits.length === 13)) {
       digits = digits.slice(2);
     }
-    if (!/^[1-9][1-9]\d{8,9}$/.test(digits)) return null;
+    if (!/^\d{10,11}$/.test(digits)) return null;
+    const ddd = digits.slice(0, 2);
+    const local = digits.slice(2);
+    if (!VALID_DDDS.has(ddd)) return null;
+    if (!/^(?:[2-5]\d{7}|9\d{8})$/.test(local)) return null;
     return '+55' + digits;
   }
 
@@ -75,6 +90,35 @@
     const d = normalized.replace(/^\+55/, '');
     if (d.length === 11) return '(' + d.slice(0, 2) + ') ' + d.slice(2, 7) + '-' + d.slice(7);
     return '(' + d.slice(0, 2) + ') ' + d.slice(2, 6) + '-' + d.slice(6);
+  }
+
+  function isUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      .test(String(value || ''));
+  }
+
+  function normalizeAddressFields(fields) {
+    const source = fields && typeof fields === 'object' ? fields : {};
+    const text = function (key, max) {
+      return String(source[key] || '').trim().replace(/\s+/g, ' ').slice(0, max);
+    };
+    const data = {
+      label: text('label', 40) || null,
+      recipient: text('recipient', 120),
+      cep: String(source.cep || '').replace(/\D/g, ''),
+      street: text('street', 160),
+      number: text('number', 20),
+      complement: text('complement', 120) || null,
+      neighborhood: text('neighborhood', 80) || null,
+      city: text('city', 80),
+      state: text('state', 2).toUpperCase(),
+      is_default: source.is_default === true
+    };
+    if (data.recipient.length < 3 || !/^\d{8}$/.test(data.cep) || data.street.length < 3 ||
+        !data.number || data.city.length < 2 || !VALID_STATES.has(data.state)) {
+      return { error: 'Preencha um endereco brasileiro valido.' };
+    }
+    return { data: data, error: null };
   }
 
   function parseBirthDate(value) {
@@ -104,7 +148,10 @@
 
   function isAdultBirthDate(value) {
     const date = parseBirthDate(value);
-    return !!date && date <= adultCutoffDate();
+    if (!date || date > adultCutoffDate()) return false;
+    const today = new Date();
+    const oldest = new Date(today.getFullYear() - 120, today.getMonth(), today.getDate());
+    return date >= oldest;
   }
 
   function passwordPolicyErrors(password, context) {
@@ -131,13 +178,15 @@
     return errors;
   }
 
-  async function signUp({ fullName, email, phone, birthDate, password, marketingConsent }) {
+  async function signUp({ fullName, email, phone, birthDate, password, marketingConsent, captchaToken }) {
     if (!client) return { error: 'Configuracao ausente.' };
     const safeName = normalizeName(fullName);
     const safeEmail = normalizeEmail(email);
     const safePhone = normalizePhoneBR(phone);
     const safeBirthDate = String(birthDate || '').trim();
-    if (safeName.length < 3) return { error: 'Informe seu nome completo.' };
+    if (safeName.length < 3 || safeName.length > 120 || /[\u0000-\u001f\u007f]/.test(safeName)) {
+      return { error: 'Informe seu nome completo.' };
+    }
     if (!isValidEmail(safeEmail)) return { error: 'Informe um e-mail valido.' };
     if (!safePhone) return { error: 'Informe um telefone brasileiro valido com DDD.' };
     if (!isAdultBirthDate(safeBirthDate)) return { error: 'Para criar conta, e preciso ter 18 anos ou mais.' };
@@ -149,6 +198,7 @@
       password,
       options: {
         emailRedirectTo: baseUrl() + 'login.html',
+        captchaToken: captchaToken || undefined,
         data: {
           full_name: safeName,
           phone: safePhone,
@@ -192,6 +242,28 @@
     return { error: mapError(error) };
   }
 
+  async function updateEmail(newEmail) {
+    if (!client) return { error: 'Configuracao ausente.' };
+    const safeEmail = normalizeEmail(newEmail);
+    if (!isValidEmail(safeEmail)) return { error: 'Informe um e-mail valido.' };
+    const user = await getUser();
+    if (!user) return { error: 'Nao autenticado.' };
+    if (normalizeEmail(user.email) === safeEmail) return { error: 'Informe um e-mail diferente do atual.' };
+
+    const { data, error } = await client.auth.updateUser(
+      { email: safeEmail },
+      { emailRedirectTo: baseUrl() + 'conta.html' }
+    );
+    if (error) {
+      const message = String(error.message || '').toLowerCase();
+      if (message.includes('already') || message.includes('exists') || message.includes('registered')) {
+        return { error: 'Este e-mail ja esta sendo utilizado.' };
+      }
+      return { error: mapError(error) };
+    }
+    return { data, error: null };
+  }
+
   async function getSession() {
     if (!client) return null;
     const { data } = await client.auth.getSession();
@@ -225,7 +297,10 @@
     const user = await getUser();
     if (!user) return { error: 'Nao autenticado.' };
     const { data, error } = await client
-      .from('profiles').select('*').eq('id', user.id).single();
+      .from('profiles')
+      .select('id, full_name, phone, birth_date, marketing_consent, consent_date, created_at, updated_at')
+      .eq('id', user.id)
+      .single();
     return { data, error: mapError(error) };
   }
 
@@ -236,6 +311,9 @@
     const allowed = {};
     if (Object.prototype.hasOwnProperty.call(fields, 'full_name')) {
       allowed.full_name = normalizeName(fields.full_name);
+      if (allowed.full_name.length < 3 || allowed.full_name.length > 120 || /[\u0000-\u001f\u007f]/.test(allowed.full_name)) {
+        return { error: 'Informe seu nome completo.' };
+      }
     }
     if (Object.prototype.hasOwnProperty.call(fields, 'phone')) {
       const safePhone = normalizePhoneBR(fields.phone);
@@ -251,14 +329,20 @@
     }
     if (!Object.keys(allowed).length) return { error: 'Nenhum campo permitido para atualizar.' };
     const { data, error } = await client
-      .from('profiles').update(allowed).eq('id', user.id).select().single();
+      .from('profiles')
+      .update(allowed)
+      .eq('id', user.id)
+      .select('id, full_name, phone, birth_date, marketing_consent, consent_date, created_at, updated_at')
+      .single();
     return { data, error: mapError(error) };
   }
 
   async function listAddresses() {
     if (!client) return { data: [], error: 'Configuracao ausente.' };
     const { data, error } = await client
-      .from('addresses').select('*').order('is_default', { ascending: false });
+      .from('addresses')
+      .select('id, user_id, label, recipient, cep, street, number, complement, neighborhood, city, state, is_default, created_at')
+      .order('is_default', { ascending: false });
     return { data: data || [], error: mapError(error) };
   }
 
@@ -266,20 +350,26 @@
     if (!client) return { error: 'Configuracao ausente.' };
     const user = await getUser();
     if (!user) return { error: 'Nao autenticado.' };
+    const safe = normalizeAddressFields(fields);
+    if (safe.error) return { error: safe.error };
     const { data, error } = await client
-      .from('addresses').insert({ ...fields, user_id: user.id }).select().single();
+      .from('addresses').insert({ ...safe.data, user_id: user.id }).select().single();
     return { data, error: mapError(error) };
   }
 
   async function updateAddress(id, fields) {
     if (!client) return { error: 'Configuracao ausente.' };
+    if (!isUuid(id)) return { error: 'Endereco invalido.' };
+    const safe = normalizeAddressFields(fields);
+    if (safe.error) return { error: safe.error };
     const { data, error } = await client
-      .from('addresses').update(fields).eq('id', id).select().single();
+      .from('addresses').update(safe.data).eq('id', id).select().single();
     return { data, error: mapError(error) };
   }
 
   async function deleteAddress(id) {
     if (!client) return { error: 'Configuracao ausente.' };
+    if (!isUuid(id)) return { error: 'Endereco invalido.' };
     const { error } = await client.from('addresses').delete().eq('id', id);
     return { error: mapError(error) };
   }
@@ -288,6 +378,7 @@
     if (!client) return { error: 'Configuracao ausente.' };
     const user = await getUser();
     if (!user) return { error: 'Nao autenticado.' };
+    if (!isUuid(id)) return { error: 'Endereco invalido.' };
     const { error: clearErr } = await client
       .from('addresses').update({ is_default: false }).eq('user_id', user.id).neq('id', id);
     if (clearErr) return { error: mapError(clearErr) };
@@ -300,7 +391,7 @@
     if (!client) return { data: [], error: 'Configuracao ausente.' };
     const { data, error } = await client
       .from('orders')
-      .select('id, status, tracking_code, total_cents, subtotal_cents, shipping_cents, discount_cents, created_at, updated_at, order_items(*)')
+      .select('id, status, tracking_code, total_cents, subtotal_cents, shipping_cents, discount_cents, created_at, updated_at, reservation_expires_at, order_items(id, product_slug, product_name, unit_price_cents, qty)')
       .order('created_at', { ascending: false });
     return { data: data || [], error: mapError(error) };
   }
@@ -335,7 +426,7 @@
   window.DruzaAuth = {
     client,
     signUp, signIn, signOut,
-    requestPasswordReset, updatePassword,
+    requestPasswordReset, updatePassword, updateEmail,
     getSession, getUser, requireAuth, onAuthChange,
     getProfile, updateProfile,
     listAddresses, createAddress, updateAddress, deleteAddress, setDefaultAddress,

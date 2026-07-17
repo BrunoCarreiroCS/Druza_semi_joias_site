@@ -14,9 +14,11 @@
 // =====================================================================
 
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+import {
+  hasSupabaseAdminConfig,
+  SUPABASE_ADMIN_KEY,
+  SUPABASE_URL,
+} from './supabase-env.ts';
 
 export class AdminAuthError extends Error {
   status: number;
@@ -52,11 +54,14 @@ function readAal(jwt: string): string | null {
 // admins, (3) 2FA na sessão. Só depois de tudo isso devolve o client
 // service_role. É a trava REAL — não confia na UI, revalida no servidor.
 export async function requireAdmin(req: Request): Promise<AdminContext> {
+  if (!hasSupabaseAdminConfig()) {
+    throw new AdminAuthError('Servico temporariamente indisponivel.', 503);
+  }
   const authHeader = req.headers.get('Authorization') ?? '';
   const jwt = authHeader.replace(/^Bearer\s+/i, '');
   if (!jwt) throw new AdminAuthError('Não autenticado.', 401);
 
-  const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+  const admin = createClient(SUPABASE_URL, SUPABASE_ADMIN_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
@@ -99,5 +104,5 @@ export async function logAdminAction(
     target_id: targetId,
     detail: detail ?? null,
   });
-  if (error) console.error('falha ao gravar admin_audit_log', { action, targetTable, targetId, error });
+  if (error) console.error('falha ao gravar admin_audit_log', { action });
 }

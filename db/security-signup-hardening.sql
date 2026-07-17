@@ -40,7 +40,10 @@ begin
   ) then
     alter table public.profiles
       add constraint profiles_birth_date_age
-      check (birth_date is not null and birth_date <= (current_date - interval '18 years')::date)
+      check (
+        birth_date is not null
+        and birth_date <= (((now() at time zone 'America/Sao_Paulo')::date - interval '18 years')::date)
+      )
       not valid;
   end if;
 end $$;
@@ -93,7 +96,7 @@ begin
     raise exception 'profile_phone_format' using errcode = '23514';
   end if;
 
-  if new.birth_date > (current_date - interval '18 years')::date then
+  if new.birth_date > (((now() at time zone 'America/Sao_Paulo')::date - interval '18 years')::date) then
     raise exception 'profile_birth_date_age' using errcode = '23514';
   end if;
 

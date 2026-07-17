@@ -6,7 +6,7 @@
      2) Tabela `products` (Supabase): preço, estoque, ativo, destaque —
         buscada ao vivo via REST para o preço exibido ser sempre o mesmo
         que o checkout cobra. Merge assíncrono via DRUZA_CATALOG_READY.
-   Requer js/config.js carregado antes (para a camada 2; sem ele, fica
+   Requer js/config.public.js carregado antes (para a camada 2; sem ele, fica
    só o estático). Consumido por main.js e product-page.js.
    ===================================================================== */
 (function () {

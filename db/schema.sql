@@ -26,7 +26,9 @@ create table if not exists public.profiles (
   updated_at          timestamptz not null default now(),
   constraint profiles_full_name_required check (length(btrim(full_name)) >= 3),
   constraint profiles_phone_format check (phone ~ '^\+55[1-9][1-9][0-9]{8,9}$'),
-  constraint profiles_birth_date_age check (birth_date <= (current_date - interval '18 years')::date)
+  constraint profiles_birth_date_age check (
+    birth_date <= (((now() at time zone 'America/Sao_Paulo')::date - interval '18 years')::date)
+  )
 );
 
 alter table public.profiles
@@ -82,7 +84,7 @@ begin
     raise exception 'profile_phone_format' using errcode = '23514';
   end if;
 
-  if new.birth_date > (current_date - interval '18 years')::date then
+  if new.birth_date > (((now() at time zone 'America/Sao_Paulo')::date - interval '18 years')::date) then
     raise exception 'profile_birth_date_age' using errcode = '23514';
   end if;
 
@@ -166,7 +168,7 @@ create table if not exists public.orders (
   id                  uuid primary key default gen_random_uuid(),
   user_id             uuid not null references auth.users(id) on delete cascade,
   status              text not null default 'pending'
-                      check (status in ('pending','paid','shipped','delivered','canceled','refunded')),
+                      check (status in ('pending','processing','paid','shipped','delivered','canceled','refunded')),
   subtotal_cents      integer not null default 0,
   shipping_cents      integer not null default 0,
   discount_cents      integer not null default 0,
@@ -174,6 +176,9 @@ create table if not exists public.orders (
   coupon_code         text,
   payment_ref         text,
   shipping_address_id uuid references public.addresses(id) on delete set null,
+  shipping_address_snapshot jsonb
+                      check (shipping_address_snapshot is null
+                             or jsonb_typeof(shipping_address_snapshot) = 'object'),
   created_at          timestamptz not null default now(),
   updated_at          timestamptz not null default now()
 );

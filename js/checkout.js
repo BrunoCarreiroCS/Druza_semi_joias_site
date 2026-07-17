@@ -3,7 +3,7 @@
    Lê o carrinho salvo (druzaCartV1), revisa, escolhe endereço, cria o
    pedido via create-order e monta o Payment Brick (checkout embutido do
    MercadoPago) para pagar sem sair do site nem precisar de conta MP.
-   Requer: js/config.js, supabase SDK, js/auth.js e o SDK do MercadoPago
+   Requer: js/config.public.js, supabase SDK, js/auth.js e o SDK do MercadoPago
    (https://sdk.mercadopago.com/js/v2) carregados antes.
    ===================================================================== */
 (function () {
@@ -66,6 +66,7 @@
   let usingNewAddress = false;
   let userEmail = null;
   let orderId = null;
+  let paymentBrickController = null;
 
   function loadCart() {
     try {
@@ -178,6 +179,26 @@
     els.feedback.textContent = '';
   }
 
+  function profileComplete(profile) {
+    const name = String((profile && profile.full_name) || '').trim();
+    return name.length >= 3 && name.length <= 120 && !/[\u0000-\u001f\u007f]/.test(name) &&
+      !!A.validators.normalizePhoneBR(profile && profile.phone) &&
+      A.validators.isAdultBirthDate(profile && profile.birth_date);
+  }
+
+  function showProfileRequirement(message) {
+    els.loading.hidden = true;
+    els.empty.hidden = false;
+    els.empty.innerHTML = '';
+    const text = document.createElement('p');
+    text.textContent = message;
+    const link = document.createElement('a');
+    link.className = 'btn btn--secondary';
+    link.href = 'conta.html';
+    link.textContent = 'Completar dados pessoais';
+    els.empty.append(text, link);
+  }
+
   function buildAddressFromForm() {
     const f = els.addressForm;
     if (!f) return null;
@@ -240,7 +261,10 @@
     const mp = new MercadoPago(window.DRUZA_CONFIG.MP_PUBLIC_KEY, { locale: 'pt-BR' });
     const bricksBuilder = mp.bricks();
     try {
-      await bricksBuilder.create('payment', 'paymentBrick_container', {
+      if (paymentBrickController && typeof paymentBrickController.unmount === 'function') {
+        await paymentBrickController.unmount();
+      }
+      paymentBrickController = await bricksBuilder.create('payment', 'paymentBrick_container', {
         initialization: {
           amount: totalCents / 100,
           payer: userEmail ? { email: userEmail } : undefined,
@@ -278,6 +302,7 @@
       ...formData,
     });
     if (error) {
+      if (/expir|novo pagamento|cancelad/i.test(error)) await resetPaymentStep(error);
       setError(error);
       throw new Error(error);
     }
@@ -298,8 +323,22 @@
     // Recusado (canceled) ou status inesperado: mostra o erro e rejeita a
     // promise pra o Brick reabilitar o formulário.
     const msg = data.detail || data.error || 'Pagamento recusado. Tente outro cartão.';
-    setError(msg);
+    await resetPaymentStep(msg);
     throw new Error(msg);
+  }
+
+  async function resetPaymentStep(message) {
+    orderId = null;
+    if (paymentBrickController && typeof paymentBrickController.unmount === 'function') {
+      try { await paymentBrickController.unmount(); } catch (_) { /* ja desmontado */ }
+    }
+    paymentBrickController = null;
+    els.brickContainer.innerHTML = '';
+    els.brickContainer.hidden = true;
+    els.goToPaymentBtn.hidden = false;
+    els.goToPaymentBtn.disabled = false;
+    els.goToPaymentBtn.textContent = 'Tentar novo pagamento';
+    setError(message);
   }
 
   function showPix(pix) {
@@ -399,6 +438,16 @@
       return;
     }
     userEmail = session.user?.email || null;
+
+    const profileResult = await A.getProfile();
+    if (profileResult.error) {
+      showProfileRequirement('Nao foi possivel validar seus dados pessoais. Tente novamente.');
+      return;
+    }
+    if (!profileComplete(profileResult.data)) {
+      showProfileRequirement('Complete nome, telefone e data de nascimento antes de finalizar a compra.');
+      return;
+    }
 
     // Carrega endereços
     const { data } = await A.listAddresses();
