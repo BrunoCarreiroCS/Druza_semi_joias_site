@@ -1,113 +1,134 @@
 # Design
 
+> **Atualização (2026):** referência de produção da home = `index.html` + `js/home.js`
+> (direção **"Cinema Editorial"**). Títulos em **Bodoni Moda**, acentos em Cormorant
+> itálico, hero cinematográfico com fotografia em movimento, seções com índice numerado.
+
 ## Theme
 
-Editorial premium em base branca. Bloom blush radial atrás do hero (transição contínua,
-sem seams). Rosa da marca como assinatura contida (selo do logo, botão secundário, badges,
-cards). Pedras esmeralda/Paraíba entram pelas fotos das peças. Hairlines em prata/cinza
-muito claro. Sombras discretas com toque rosé baixa opacidade. Mobile-first. Sem bege,
-sem faixas rosas atravessando a página, sem ouro.
+Editorial premium com **duas zonas de temperatura**: hero escuro cinematográfico no topo
+(foto da peça em movimento + scrim + vinheta + grão de filme sutil) → corpo em **base
+branca** com muito respiro. Rosa da marca como assinatura contida (selo do logo, índices,
+fios, botão secundário, CTA de card). Pedras esmeralda/Paraíba entram pelas fotos e como
+acento nos itálicos. Hairlines em cinza claro. Sombras discretas com toque rosé. Mobile-first.
+Sem bege, sem ouro, **sem tickers/marquees**, sem wordmark gigante decorativo.
 
 ## Color
 
-Paleta atual em **hex** (legado do projeto; migrar para OKLCH é tarefa futura). Branco
-domina, rosa assina, pedras em foco. Sempre texto escuro sobre fundo claro.
+Paleta em **hex** (migrar para OKLCH é tarefa futura). Branco domina o corpo; escuro
+(`--night #151113`) só no hero e na campanha; rosa assina; pedras em foco.
 
 | Token | Hex | Função |
 |---|---|---|
-| `--white` | `#FFFFFF` | Base dominante |
-| `--white-warm` | `#FDF8F8` | Profundidade sutil entre seções |
-| `--blush` | `#FBF0F1` | Bloom do hero, cards contidos, fundos macios |
-| `--rose-inst` | `#F4E3E5` | Fundo institucional pontual, badges |
-| `--rose` | `#C98B90` | **Assinatura**: selo logo, botão secundário, linhas |
-| `--rose-strong` | `#B97981` | Hover do rosa |
-| `--rose-deep` | `#5C3A3F` | Contraste forte (texto sobre blush, banda campanha) |
-| `--emerald` | `#1C6B5B` | Acento (pedra) — usado em fotos e micro-acentos |
-| `--emerald-deep` | `#15564A` | — |
-| `--paraiba` | `#5FB7A8` | Brilho/destaque (pedra) |
-| `--silver` | `#C5CAD0` | Hairline metálico / detalhe prata |
+| `--white` | `#FFFFFF` | Base dominante do corpo |
+| `--white-warm` | `#FDF8F8` | Fundo de mídia / profundidade sutil |
+| `--blush` | `#FBF0F1` | Newsletter, fundos macios |
+| `--rose-inst` | `#F4E3E5` | Placeholder, badges |
+| `--rose` | `#C98B90` | **Assinatura**: selo logo, índice, fios, botão secundário |
+| `--rose-strong` | `#B97981` | Hover do rosa · eyebrow · CTA de card |
+| `--rose-deep` | `#5C3A3F` | Banda de anúncio · texto sobre blush |
+| `--emerald` | `#1C6B5B` | Acento (pedra) |
+| `--paraiba` | `#5FB7A8` | Brilho/destaque (pedra) · itálico no escuro |
+| `--silver` | `#C5CAD0` | Hairline metálico / ícone placeholder |
 | `--line` | `#E9E4E5` | Hairline padrão |
+| `--night` | `#151113` | Hero e footer |
 | `--ink` | `#2B2B2D` | Títulos · botão primário |
 | `--text` | `#4C4849` | Corpo |
-| `--muted` | `#6B6669` | Secundário — AA ≥ 4.5:1 sobre branco |
+| `--muted` | `#6B6669` | Secundário |
 
-**Contraste:** corpo `--text` sobre `--white` ≈ 8.4:1 ✓. `--muted` sobre `--white` ≈ 5.0:1 ✓ (AA)
-— **abaixo de 4.5:1 para corpo** (passa só como large text); usar `--text` para parágrafos
-de leitura. Em fundos `--blush`/`--rose-inst`, texto deve ser `--rose-deep`.
+**Contraste:** corpo `--text` sobre `--white` ≈ 8.4:1 ✓. `--muted` sobre `--white` ≈ 5.0:1
+(usar em rótulos/large text, não em parágrafo de leitura). Sobre `--blush`/`--rose-inst`,
+texto `--rose-deep`. Sobre hero/imagem escura, branco garantido pelo scrim.
 
 ## Typography
 
-Pareamento por contraste: serifa display + sans humanista.
+Três vozes por contraste (ver `DIRECAO-DE-ARTE.md §4`):
 
-- **Display (títulos):** Cormorant Garamond (500/600), itálico em momentos editoriais.
-  Fallback: Georgia, "Times New Roman", serif.
-- **Texto / UI / preços / eyebrow:** Jost (300/400/500). Fallback: "Helvetica Neue", Arial,
-  sans-serif.
-- **Eyebrow:** Jost maiúsculas, `letter-spacing` 0.26em. _Voz da marca usa kicker apenas em
-  seções de **navegação editorial** (categorias, mundo Druza, newsletter). Não acima de
-  toda seção; isso é AI grammar._
-- **Hierarquia (clamp):** h1 `clamp(2.4rem, 6vw, 4.2rem)` · h2 `clamp(1.9rem, 4vw, 3rem)` ·
-  h3 `clamp(1.3rem, 2.4vw, 1.7rem)`.
-- **Letter-spacing display:** 0.005em. Floor seguro (não abaixo de -0.04em).
-- **Line-height:** corpo 1.6, títulos 1.08.
-- **Wrap:** `text-wrap: balance` aplicado a h1/h2/h3. Considerar `pretty` em parágrafos
-  longos.
+- **Display (títulos):** **Bodoni Moda** (500/600). `--display`. Letter-spacing −.01/−.02em.
+  Line-height **1.02–1.06** (mais folga que o Cormorant). Fallback: Cormorant, Georgia, serif.
+- **Acento (`.acc`):** Cormorant Garamond **itálico** (500), 1–2 palavras por título e em
+  citações. Fallback Georgia italic.
+- **Texto / UI / preço / eyebrow / índice:** Jost (300/400/500). `--sans`.
+- **Eyebrow / índice:** Jost maiúsculas, tracking 0.22–0.28em. Índice numerado por seção
+  (`.sindex`: número rosé + fio + eyebrow) — **é a gramática de navegação da marca**, não um
+  kicker em toda seção.
+- **Hierarquia (clamp):** h1 `clamp(2.8rem, 6vw, 5.4rem)` · h2 `clamp(1.9rem, 4vw, 3.1rem)` ·
+  h3 `clamp(1.2rem, 2.2vw, 1.35rem)`.
+- **Wrap:** `text-wrap: balance` em h1–h3; `pretty` em parágrafos.
 - **Preço:** `font-variant-numeric: tabular-nums`.
 
 ## Spacing & Layout
 
-- Escala 4px múltiplos: `--space-2/3/4/6/8/12/16/24`.
-- Container: 1200px (default) / 1040px (narrow).
-- Header sticky: `--header-h: 72px`. `[id] { scroll-margin-top: header + 16px }`.
-- Grids responsivos com breakpoints: 1col → 2col @680 → 3col @760 → 4col @1000.
-- Carrossel mobile com `scroll-snap-type: x mandatory` para categorias.
+- Container: **1312px** (home wide, para respiro nas grades de 4) / 1200px padrão / 920px
+  (texto/manifesto).
+- Seções `.block`: `padding: 84px 56px` (desktop) → `56px 24px` (mobile).
+- Hero: altura fixa 820px desktop / 640px mobile; conteúdo ancorado no rodapé do hero.
+- Grids: `.grid-4` (categorias) → 2col @1000; `.grid-3` (produtos/editorial) → 1col @1000.
+- `[id] { scroll-margin-top }` para âncoras sob header.
 
 ## Components
 
-- **Logo:** header usa `img/druza-mark-white.png`, a flor branca extraída do logo original
-  dentro do círculo rosé. Footer escuro usa `img/druza-logo-white.png`, versão branca
-  completa e transparente.
-- **Botões:** primário tinta `--ink`; secundário ghost rosé `--rose` (borda + texto);
-  `--light` (branco sobre imagem); `--ghost-light` (sobre imagem escura).
-- **Card de produto:** mídia 4:5 com hover scale(1.05), nome serifado, preço tabular,
-  parcelas em `--muted`.
-- **Card de categoria:** quadrado 1:1, label sans uppercase com tracking 0.16em.
-- **Placeholder `.ph`:** fundo `--white-warm` (ou `--blush` opcional), borda `--line`,
-  ícone linear em `--silver`, título display, descrição do asset esperado, selo "foto em
-  breve" em pill `--rose-inst` com borda `--rose`. Aspect ratios: 4:5 produto, 1:1
-  categoria, 16:9 banner.
-- **Banner de campanha (`.campaign`):** full-bleed com foto + scrim escuro + texto branco.
-  Único bloco escuro forte da página.
-- **Promo `.promo-band__card`:** card contido (max-width 720px) `--blush` + borda `--rose`,
-  não atravessa a página.
-- **Drawers (menu, sacola):** `role="dialog"`, foco preso, overlay escuro 40%.
-- **Selo demo (`.badge-demo`):** pill `--rose-inst` com borda dashed `--rose`, marca
-  dados fictícios.
+- **Botões (`.btn`):** primário `--ink`; `--light` (branco sobre imagem); `--ghost-light`
+  (borda branca sobre imagem escura); `--ghost-rose` (ghost rosé no claro). `scale(.98)` no
+  `:active`.
+- **Índice de seção (`.sindex`):** `01` em Jost rosé tabular + fio 28px + eyebrow. Substitui
+  o número itálico gigante da versão anterior.
+- **Card de produto (`.card--lift`):** mídia 4:5, hover `translateY(-6px)` + imagem
+  `scale(1.06)`, nome em `--display` 500, preço tabular, parcelas em `--muted`.
+- **Card de categoria:** mídia 1:1 + **rodapé `.cat-foot`** = nome em `--display` +
+  descritor curto (uppercase, `--muted`) + CTA `Explorar → / Avise-me →`. Fio superior
+  `--line`. (Evolução do label centralizado uppercase.)
+- **Placeholder (`.ph`):** fundo `--blush`, borda `--rose-inst`, ícone linear `--silver`,
+  "Foto em breve" em serifa, pill "placeholder" `--rose`. Para brincos, o descritor orienta:
+  "Em breve · lista de espera".
+- **Campanha:** full-bleed foto + scrim lateral escuro + texto branco + índice `03`. Único
+  bloco escuro forte do corpo.
+- **Manifesto:** citação centralizada grande em Bodoni itálico + aspas rosé + rótulo
+  "Manifesto Druza". Dá alma sem depoimento falso.
+- **Footer (`.foot`):** fundo `--night`; **logo branca centralizada** na 1ª célula; 3 colunas
+  de links; **linha de copyright discreta** (`.foot__legal`, sem wordmark gigante).
 
 ## Motion
 
-- Easing padrão: `cubic-bezier(0.22, 0.61, 0.36, 1)` (ease-out característica).
-- **Hero ambient:** três blobs radiais (rosé, Paraíba, blush) com `drift-a/b/c`
-  56–76s `infinite alternate`. Custo zero (sem `filter: blur`).
-- **Reveal:** `.reveal { opacity: 0; transform: translateY(18px) }` + IntersectionObserver
-  toggle `is-visible` (stagger nos editoriais com `transition-delay`).
-- **Hover:** imagens com `transform: scale(1.04–1.05)` em 0.7–0.8s; botões `scale(0.98)`
-  no `:active`.
-- **`prefers-reduced-motion: reduce`:** anima em 0.001ms (essencialmente off).
+- Easing padrão: `cubic-bezier(0.22, 0.61, 0.36, 1)`.
+- **Hero:** crossfade `opacity 1.2s` entre slides + `drz-ken` (scale 1→1.14, ~9–16s
+  alternate). Legenda "Em destaque" e contador atualizam por slide; dots navegáveis. Pausa
+  quando a aba está oculta.
+- **Entrada do hero:** `drz-fadeup` escalonado (eyebrow .1s → título .26s → sub .42s →
+  CTAs .56s → destaque .7s).
+- **Reveal:** `.reveal` → `.is-visible` (IntersectionObserver, threshold .14).
+- **Hover:** imagens `scale(1.06)` 0.85s; cards `translateY(-6px)` 0.55s.
+- **`prefers-reduced-motion: reduce`:** slideshow parado no 1º slide, sem Ken Burns, reveal e
+  entradas visíveis sem animação, `scroll-behavior: auto`.
 
 ## Imagery
 
-- 3 fotos reais otimizadas (≤1200px, JPEG q82): `anel-paraiba.jpg`,
-  `pulseiras-riviera.jpg`, `anel-coracao.jpg`. ~279KB total (~92% menor que originais).
-- Assets de marca transparentes: `druza-mark-white.png` para o selo do header e
-  `druza-logo-white.png` para o footer.
-- Onde falta foto real → placeholder `.ph` premium (sistema explícito).
-- **Não usar:** banco de imagem, foto fake, mesma foto repetida muitas vezes.
-- Pendente: variantes responsivas (`srcset`/`sizes`), conversão WebP/AVIF, OG image
-  dedicada 1200×630.
+- 3 fotos reais WebP: `anel-paraiba.webp`, `pulseiras-riviera.webp`, `anel-coracao.webp`
+  (versões `.jpg` mantidas como fallback).
+- Logo footer: `img/druza-logo-white.png` (flor branca sobre transparência).
+- Onde falta foto real → placeholder `.ph` premium (brincos).
+- **Não usar:** banco de imagem genérico, foto fake, repetição óbvia da mesma foto lado a
+  lado sem função.
+- Pendente: `srcset`/`sizes`, OG image 1200×630, **fotografia real dos brincos**, e (opcional)
+  **vídeo curto da marca** para o hero no lugar do slideshow.
+
+## Usabilidade (heurísticas aplicadas)
+
+- **Orientação constante:** índices numerados dão senso de progressão; cada card de
+  categoria diz o que há dentro (descritor) e o próximo passo (CTA), sem poluir.
+- **Hierarquia de ação clara:** 1 CTA primário por bloco (`--ink`/`--light`), secundário em
+  ghost. Nunca dois primários competindo.
+- **Feedback:** hover eleva o card e dá zoom na imagem; `:active` afunda o botão; dots do
+  hero mostram posição (`01 / 03`).
+- **Navegação:** header fixo transparente sobre o hero; âncoras internas (`#categorias`) e
+  links reais para `catalogo.html`, `brincos.html`, `produtos/*`, `sobre.html`, etc.
+- **Honestido:** placeholder e "lista de espera" comunicam o que ainda não existe, em vez de
+  esconder — mantém confiança.
+- **Carga cognitiva baixa:** máx. 1–2 blocos escuros; muito branco; sem banners empilhados.
 
 ## Accessibility
 
-WCAG 2.1 AA. Skip-link, foco visível com `--rose` + offset 3px, contraste verificado,
-`prefers-reduced-motion`, drawers acessíveis com foco preso, live region na sacola.
-Pendência: teste com leitor de tela real em mobile.
+WCAG 2.1 AA. Foco visível, contraste verificado, `prefers-reduced-motion`, nav por teclado,
+`aria-label` em ícones do header e dots do hero, `<label>` (oculto) no input de e-mail,
+imagens decorativas com `alt=""` e informativas com `alt` descritivo. Pendência: teste com
+leitor de tela em mobile; skip-link.

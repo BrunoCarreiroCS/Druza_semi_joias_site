@@ -87,16 +87,9 @@
     const actions = $('.site-header .header-actions');
     if (logo) {
       logo.innerHTML = `
-        <svg class="logo__seal" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-          <circle cx="24" cy="24" r="23" fill="var(--rose)" />
-          <g transform="translate(24,33) scale(0.42)" fill="#FFFFFF">
-            <path transform="rotate(-52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
-            <path transform="rotate(-26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
-            <path d="M0,0 C -9,-16 -6,-44 0,-54 C 6,-44 9,-16 0,0 Z" />
-            <path transform="rotate(26)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
-            <path transform="rotate(52)" d="M0,0 C -9,-16 -6,-38 0,-48 C 6,-38 9,-16 0,0 Z" />
-          </g>
-        </svg>
+        <span class="logo__seal" aria-hidden="true">
+          <img src="${route('img/druza-mark-white.png')}" width="226" height="181" alt="" />
+        </span>
         <span class="logo__word">
           <span class="logo__name">Druza</span>
           <span class="logo__sub">Semi Joias · Prata</span>
@@ -321,23 +314,41 @@
   function renderJsonLd() {
     const node = $('[data-product-json]');
     if (!node) return;
-    const canonical = `https://druza.com.br/produtos/${product.id}.html`;
+    const productPath = (product.url || `produtos/${product.id}.html`).replace(/^\.\.\//, '');
+    const canonical = `https://druza.com.br/${productPath}`;
+    const imageUrl = product.realImage && product.image
+      ? `https://druza.com.br/${product.image.replace(/^\.\.\//, '')}`
+      : 'https://druza.com.br/img/og-image.jpg';
     node.textContent = JSON.stringify({
       '@context': 'https://schema.org',
-      '@type': 'Product',
-      name: product.name,
-      image: product.realImage && product.image ? [`https://druza.com.br/${product.image.replace(/^\.\.\//, '')}`] : [],
-      description: product.detail || product.description,
-      brand: { '@type': 'Brand', name: 'Druza' },
-      sku: product.sku,
-      offers: {
-        '@type': 'Offer',
-        priceCurrency: 'BRL',
-        price: (product.priceCents / 100).toFixed(2),
-        availability: product.inStock === false ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
-        url: canonical,
-        seller: { '@type': 'Organization', name: 'Druza Semi Joias' }
-      }
+      '@graph': [
+        {
+          '@type': 'Organization',
+          '@id': 'https://druza.com.br/#organization',
+          name: 'Druza Semi Joias',
+          url: 'https://druza.com.br/',
+          logo: 'https://druza.com.br/img/druza-logo.png'
+        },
+        {
+          '@type': 'Product',
+          '@id': `${canonical}#product`,
+          name: product.name,
+          image: [imageUrl],
+          description: product.detail || product.description,
+          brand: { '@type': 'Brand', name: 'Druza' },
+          sku: product.sku,
+          category: product.categoryLabel || product.category,
+          material: product.material || 'Prata 925',
+          offers: {
+            '@type': 'Offer',
+            priceCurrency: 'BRL',
+            price: (product.priceCents / 100).toFixed(2),
+            availability: product.inStock === false ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+            url: canonical,
+            seller: { '@id': 'https://druza.com.br/#organization' }
+          }
+        }
+      ]
     });
   }
 

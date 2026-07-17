@@ -1,61 +1,62 @@
+/* Druza — home: slideshow do hero + reveal no scroll */
 (function () {
   'use strict';
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const slides = Array.from(document.querySelectorAll('[data-home-slide]'));
-  const dots = Array.from(document.querySelectorAll('[data-home-dot]'));
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let activeIndex = 0;
-  let timer = 0;
+  /* ── Hero slideshow ─────────────────────────────── */
+  var slides = Array.prototype.slice.call(document.querySelectorAll('[data-slide]'));
+  var dotsWrap = document.querySelector('[data-dots]');
+  var caption = document.querySelector('[data-hero-caption]');
+  var counter = document.querySelector('[data-hero-count]');
+  var meta = [
+    { cat: 'Anéis', name: 'Anel Paraíba' },
+    { cat: 'Pulseiras', name: 'Pulseira Riviera' },
+    { cat: 'Anéis', name: 'Anel Coração' }
+  ];
+  var active = 0, timer = null;
 
-  function setSlide(index) {
-    if (!slides.length) return;
-    activeIndex = (index + slides.length) % slides.length;
-    slides.forEach((slide, slideIndex) => {
-      slide.classList.toggle('is-active', slideIndex === activeIndex);
-    });
-    dots.forEach((dot, dotIndex) => {
-      dot.classList.toggle('is-active', dotIndex === activeIndex);
-      dot.setAttribute('aria-current', dotIndex === activeIndex ? 'true' : 'false');
-    });
-  }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
 
-  function stop() {
-    window.clearInterval(timer);
-    timer = 0;
-  }
-
-  function start() {
-    if (reducedMotion || timer || slides.length < 2) return;
-    timer = window.setInterval(() => setSlide(activeIndex + 1), 5200);
-  }
-
-  dots.forEach((dot, index) => {
-    dot.addEventListener('click', () => {
-      setSlide(index);
-      stop();
-      start();
-    });
-  });
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) stop();
-    else start();
-  });
-
-  const revealEls = Array.from(document.querySelectorAll('[data-home-reveal]'));
-  if ('IntersectionObserver' in window && revealEls.length) {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add('is-visible');
-        observer.unobserve(entry.target);
+  function render() {
+    slides.forEach(function (s, i) { s.classList.toggle('is-active', i === active); });
+    if (dotsWrap) {
+      Array.prototype.forEach.call(dotsWrap.children, function (d, i) {
+        d.classList.toggle('is-active', i === active);
       });
-    }, { threshold: 0.12, rootMargin: '0px 0px -48px 0px' });
-    revealEls.forEach((el) => observer.observe(el));
-  } else {
-    revealEls.forEach((el) => el.classList.add('is-visible'));
+    }
+    if (caption) caption.innerHTML = meta[active].cat + ' · <span class="acc">' + meta[active].name + '</span>';
+    if (counter) counter.textContent = pad(active + 1) + ' / ' + pad(slides.length);
   }
 
-  setSlide(0);
-  start();
+  function go(i) { active = (i + slides.length) % slides.length; render(); restart(); }
+  function next() { go(active + 1); }
+  function restart() { if (timer) clearInterval(timer); if (!reduce && slides.length > 1) timer = setInterval(next, 4200); }
+
+  if (slides.length && dotsWrap) {
+    slides.forEach(function (_, i) {
+      var b = document.createElement('button');
+      b.className = 'hero__dot' + (i === 0 ? ' is-active' : '');
+      b.setAttribute('aria-label', 'Ir para o slide ' + (i + 1));
+      b.addEventListener('click', function () { go(i); });
+      dotsWrap.appendChild(b);
+    });
+    render();
+    restart();
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) { if (timer) clearInterval(timer); } else { restart(); }
+    });
+  }
+
+  /* ── Reveal no scroll ───────────────────────────── */
+  var els = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if (reduce || !('IntersectionObserver' in window)) {
+    els.forEach(function (e) { e.classList.add('is-visible'); });
+    return;
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('is-visible'); io.unobserve(en.target); }
+    });
+  }, { threshold: 0.14, rootMargin: '0px 0px -8% 0px' });
+  els.forEach(function (e) { io.observe(e); });
 })();

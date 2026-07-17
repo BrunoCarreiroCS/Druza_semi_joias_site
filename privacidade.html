@@ -1,49 +1,100 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Politica de Privacidade - Druza Semi Joias</title>
-  <meta name="description" content="Politica de privacidade de exemplo para o prototipo estatico da Druza Semi Joias." />
-  <link rel="canonical" href="https://druza.com.br/privacidade.html" />
-  <link rel="icon" href="img/druza-logo.png" />
-  <link rel="stylesheet" href="css/fonts.css" />
-  <link rel="stylesheet" href="css/styles.css" />
-  <script src="js/analytics.js" defer></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Política de Privacidade — Druza Semi Joias</title>
+<meta name="description" content="Política de privacidade da Druza Semi Joias.">
+<link rel="canonical" href="https://druza.com.br/privacidade.html">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;1,6..96,500;1,6..96,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/druza.css">
 </head>
-<body>
-  <a class="skip-link" href="#main">Pular para o conteudo</a>
-  <header class="site-header">
-    <div class="container site-header__inner">
-      <a class="logo" href="index.html" aria-label="Druza Semi Joias - pagina inicial"><span class="logo__name">Druza</span></a>
-      <nav class="content-nav" aria-label="Navegacao principal"><a href="index.html">Inicio</a><a href="produtos/anel-coracao-esmeralda.html">Aneis</a><a href="sobre.html">Sobre</a><a href="cuidados.html">Cuidados</a><a href="contato.html">Contato</a></nav>
+<body class="has-pinned">
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+<nav class="mobile-nav" id="mobile-nav" aria-label="Menu mobile" aria-hidden="true">
+  <a href="catalogo.html">Coleções <span>Ver tudo</span></a>
+  <a href="catalogo.html?cat=aneis">Anéis <span>Prata 925</span></a>
+  <a href="brincos.html">Brincos <span>Em breve</span></a>
+  <a href="catalogo.html?cat=pulseiras">Pulseiras <span>Riviera</span></a>
+  <a href="sobre.html">Sobre <span>Mundo Druza</span></a>
+</nav>
+
+<aside class="quick-nav is-pinned" data-quick-nav>
+  <button class="quick-nav__trigger" type="button" aria-label="Abrir navegação" aria-expanded="false" aria-controls="quick-nav-panel" data-quick-nav-open>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round"/></svg>
+  </button>
+  <div class="quick-nav__panel" id="quick-nav-panel" aria-hidden="true">
+    <div class="quick-nav__head"><strong>Navegar</strong><button class="quick-nav__close" type="button" aria-label="Fechar menu" data-quick-nav-close>&times;</button></div>
+    <nav class="quick-nav__links" aria-label="Acesso rápido">
+      <a href="index.html">Início</a><a href="catalogo.html">Coleções</a><a href="brincos.html">Brincos</a><a href="sobre.html">Sobre</a><a href="cuidados.html">Cuidados</a><a href="contato.html">Contato</a><a href="trocas.html">Trocas</a><a href="privacidade.html">Privacidade</a><a href="conta.html">Minha conta</a><a href="checkout.html">Sacola</a>
+      <a href="https://wa.me/5511966074268" target="_blank" rel="noopener noreferrer">WhatsApp</a><a href="https://www.instagram.com/druzaoficial/" target="_blank" rel="noopener noreferrer">Instagram</a>
+    </nav>
+  </div>
+</aside>
+
+<header class="head head--floating head--pinned">
+  <div class="head__brand">
+    <a class="head__logo logo" href="index.html" aria-label="Druza — início">
+      <span class="logo__seal" aria-hidden="true"><img src="img/druza-mark-white.png" width="226" height="181" alt=""></span>
+      <span class="logo__word"><span class="logo__name">Druza</span><span class="logo__sub">Semi Joias · Prata</span></span>
+    </a>
+  </div>
+  <div class="head__icons">
+    <a href="catalogo.html" aria-label="Buscar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5" stroke-linecap="round"/></svg></a>
+    <a href="conta.html" aria-label="Conta"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0" stroke-linecap="round"/></svg></a>
+    <button data-open="cart" aria-label="Abrir sacola"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8a3 3 0 0 1 6 0" stroke-linecap="round"/></svg><span class="head__count" data-cart-count style="display:none">0</span></button>
+  </div>
+</header>
+
+<main id="conteudo">
+
+  <section class="block wrap" style="max-width:900px">
+    <div class="reveal">
+      <div class="sindex"><span class="sindex__rule"></span><span class="eyebrow">Privacidade</span></div>
+      <h1 style="font-size:clamp(2.4rem,4vw,3.4rem);max-width:18ch">Política de Privacidade</h1>
+      <p style="margin-top:18px;color:var(--text);line-height:1.7;max-width:56ch;font-size:1.05rem">Como os seus dados são tratados ao navegar e comprar na Druza.</p>
     </div>
-  </header>
-  <main id="main">
-    <section class="section section--blush">
-      <div class="container container--narrow">
-        <p class="eyebrow">Privacidade</p>
-        <h1>Politica de Privacidade</h1>
-        <p><span class="badge-demo">Exemplo</span> Esta pagina existe para documentar o fluxo do prototipo. O texto juridico final deve ser revisado antes da publicacao da loja real.</p>
-      </div>
-    </section>
-    <section class="section">
-      <div class="container container--narrow">
-        <h2>Dados no prototipo</h2>
-        <p>Nenhum dado de checkout, newsletter ou contato e enviado para servidor. A sacola usa apenas `localStorage` do navegador para simular itens, cupom e frete.</p>
-        <details open><summary>Newsletter</summary><p>O formulario valida e-mail e consentimento localmente, mas nao grava nem envia cadastro.</p></details>
-        <details><summary>Checkout simulado</summary><p>Os campos existem apenas para demonstrar experiencia de compra. Nenhuma cobranca e feita e nenhum pedido real e criado.</p></details>
-        <details><summary>WhatsApp</summary><p>Links de WhatsApp direcionam para o numero oficial da marca: +55 (11) 96607-4268.</p></details>
-      </div>
-    </section>
-    <section class="section section--blush">
-      <div class="container container--narrow">
-        <h2>Responsavel pelos dados</h2>
-        <p>DRUZA SEMI JOIAS — CNPJ 19.600.917/0001-55</p>
-        <p>Para duvidas ou solicitacoes sobre seus dados pessoais, entre em contato via WhatsApp: <a href="https://wa.me/5511966074268">+55 (11) 96607-4268</a>.</p>
-      </div>
-    </section>
-  </main>
-  <footer class="site-footer"><div class="container footer-grid"><div class="footer__col"><span class="logo__name">Druza</span><p>Semi joias femininas em prata.</p></div></div></footer>
+    <div class="reveal" style="margin-top:36px">
+      <details class="acc-item" open><summary>Dados de navegação</summary><div class="acc-item__body">A sacola usa apenas o armazenamento local do navegador para guardar itens, cupom e frete — nada é enviado a servidores sem a sua ação.</div></details>
+      <details class="acc-item"><summary>Newsletter</summary><div class="acc-item__body">O formulário valida e-mail e consentimento antes de registrar o cadastro para envio de novidades.</div></details>
+      <details class="acc-item"><summary>Checkout</summary><div class="acc-item__body">Os dados de pagamento são processados com segurança pelo provedor de pagamento; a Druza não armazena dados de cartão.</div></details>
+      <details class="acc-item"><summary>WhatsApp</summary><div class="acc-item__body">Os links de WhatsApp direcionam para o número oficial da marca: +55 (11) 96607-4268.</div></details>
+    </div>
+  </section>
+  <section style="background:var(--blush);padding:64px 56px">
+    <div class="wrap" style="max-width:900px">
+      <p class="eyebrow" style="margin-bottom:10px">Responsável pelos dados</p>
+      <p style="color:var(--rose-deep);font-size:1.05rem">DRUZA SEMI JOIAS · CNPJ 19.600.917/0001-55</p>
+      <p style="color:var(--rose-deep);opacity:.85;margin-top:8px">Para dúvidas ou solicitações sobre seus dados pessoais, fale com a gente no WhatsApp: <a href="https://wa.me/5511966074268" style="color:var(--rose-deep);border-bottom:1px solid var(--rose)">+55 (11) 96607-4268</a>.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__grid" style="max-width:1480px">
+    <div class="foot__logo"><img src="img/druza-logo-white.png" alt="Druza Semi Joias" style="width:82px;height:auto;opacity:.95"></div>
+    <div><h4>Loja</h4><div class="foot__col"><a href="catalogo.html?cat=aneis">Anéis</a><a href="brincos.html">Brincos</a><a href="catalogo.html?cat=pulseiras">Pulseiras</a><a href="catalogo.html">Coleções</a></div></div>
+    <div><h4>Ajuda</h4><div class="foot__col"><a href="trocas.html">Trocas e devoluções</a><a href="contato.html">Perguntas frequentes</a><a href="contato.html">Contato</a></div></div>
+    <div><h4>Atendimento</h4><div class="foot__col"><a href="https://wa.me/5511966074268" target="_blank" rel="noopener noreferrer">WhatsApp</a><a href="https://www.instagram.com/druzaoficial/" target="_blank" rel="noopener noreferrer">Instagram</a><a href="cuidados.html">Cuidados com as peças</a></div></div>
+  </div>
+  <div class="wrap foot__legal" style="max-width:1480px">© 2026 Druza Semi Joias · CNPJ 19.600.917/0001-55 · Todos os direitos reservados</div>
+</footer>
+
+<div class="overlay" data-overlay></div>
+<aside class="drawer drawer--right" data-drawer="cart" aria-hidden="true" aria-label="Sacola">
+  <div class="drawer__head"><h3>Sua sacola</h3><button class="drawer__close" data-close aria-label="Fechar">✕</button></div>
+  <div class="cart-ship"><span class="cart-ship__msg" data-ship-msg>Frete grátis acima de <b>R$ 199,00</b></span><span class="cart-ship__bar"><span class="cart-ship__fill" data-ship-fill></span></span></div>
+  <div class="drawer__body" data-cart-body></div>
+  <div class="drawer__foot" data-cart-foot style="display:none">
+    <div class="cart-sum"><span>Subtotal</span><b data-cart-total>R$ 0,00</b></div>
+    <a href="checkout.html" class="btn btn--ink btn--block">Finalizar compra</a>
+  </div>
+</aside>
+
+<script src="js/druza.js" defer></script>
 </body>
 </html>
