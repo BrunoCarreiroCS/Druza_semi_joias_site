@@ -19,7 +19,7 @@
   function addToCart(item) {
     var c = readCart();
     var found = c.find(function (i) { return i.id === item.id && i.size === item.size; });
-    if (found) found.qty += item.qty || 1; else c.push({ id: item.id, name: item.name, price: item.price, img: item.img, size: item.size || '', qty: item.qty || 1 });
+    if (found) found.qty += item.qty || 1; else c.push({ id: item.id, name: item.name, price: item.price, img: (item.img || '').replace(/^(\.\.\/)+/, '').replace(/^\/+/, ''), size: item.size || '', qty: item.qty || 1 });
     writeCart(c);
     toast('Adicionado à sacola');
     openDrawer('cart');
@@ -45,7 +45,7 @@
       if (!c.length) { body.innerHTML = '<p class="cart-empty">Sua sacola está vazia.<br>Descubra as favoritas da Druza.</p>'; }
       else {
         body.innerHTML = c.map(function (i, idx) {
-          return '<div class="cart-line"><img src="' + i.img + '" alt=""><div style="flex:1">' +
+          return '<div class="cart-line"><img src="' + (i.img || '').replace(/^(\.\.\/)+/, '').replace(/^\/+/, '') + '" alt=""><div style="flex:1">' +
             '<div class="cart-line__name">' + i.name + '</div>' +
             '<div class="cart-line__meta">' + (i.size ? 'Tam. ' + i.size + ' · ' : '') + i.qty + '× ' + BRL(i.price) + '</div>' +
             '<button class="cart-line__rm" data-rm="' + idx + '">Remover</button></div>' +
