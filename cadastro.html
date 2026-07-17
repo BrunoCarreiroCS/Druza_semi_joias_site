@@ -66,16 +66,21 @@
           <input type="email" name="email" autocomplete="email" required />
         </label>
         <label class="field">
-          <span>Telefone (opcional)</span>
-          <input type="tel" name="phone" autocomplete="tel" inputmode="tel" />
+          <span>Telefone</span>
+          <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="(11) 99999-9999" required />
+        </label>
+        <label class="field">
+          <span>Data de nascimento</span>
+          <input type="date" name="birthDate" autocomplete="bday" required />
+          <span class="field__hint">Cadastro permitido apenas para maiores de 18 anos.</span>
         </label>
         <label class="field">
           <span>Senha</span>
           <span class="pw-wrap">
-            <input type="password" name="password" autocomplete="new-password" minlength="8" required />
+            <input type="password" name="password" autocomplete="new-password" minlength="8" maxlength="72" required />
             <button type="button" class="pw-toggle" data-pw-toggle aria-label="Mostrar senha">ver</button>
           </span>
-          <span class="field__hint">Mínimo de 8 caracteres.</span>
+          <span class="field__hint">Minimo de 8 caracteres, com maiuscula, minuscula, numero e simbolo.</span>
         </label>
         <label class="field field--check">
           <input type="checkbox" name="marketingConsent" />
@@ -112,6 +117,10 @@
       const form = document.getElementById('signup-form');
       const fb = document.getElementById('feedback');
       const btn = document.getElementById('submit-btn');
+      const V = window.DruzaAuth.validators;
+      const birthInput = form.elements.birthDate;
+      const phoneInput = form.elements.phone;
+      birthInput.max = V.maxAdultBirthDate();
 
       document.querySelectorAll('[data-pw-toggle]').forEach(function (t) {
         t.addEventListener('click', function () {
@@ -125,6 +134,10 @@
 
       window.DruzaAuth.getSession().then(function (s) { if (s) location.replace('conta.html'); });
 
+      phoneInput.addEventListener('blur', function () {
+        phoneInput.value = V.formatPhoneBR(phoneInput.value);
+      });
+
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
         fb.className = 'auth-feedback'; fb.textContent = '';
@@ -132,16 +145,21 @@
         const fullName = (fd.get('fullName') || '').trim();
         const email = (fd.get('email') || '').trim();
         const phone = (fd.get('phone') || '').trim();
+        const birthDate = (fd.get('birthDate') || '').trim();
         const password = fd.get('password') || '';
         const marketingConsent = fd.get('marketingConsent') === 'on';
         const terms = fd.get('terms') === 'on';
 
-        if (!fullName || !email || !password) { fb.classList.add('is-error'); fb.textContent = 'Preencha nome, e-mail e senha.'; return; }
-        if (password.length < 8) { fb.classList.add('is-error'); fb.textContent = 'A senha precisa ter no mínimo 8 caracteres.'; return; }
-        if (!terms) { fb.classList.add('is-error'); fb.textContent = 'É necessário aceitar a Política de Privacidade.'; return; }
+        if (!fullName || !email || !phone || !birthDate || !password) { fb.classList.add('is-error'); fb.textContent = 'Preencha nome, e-mail, telefone, nascimento e senha.'; return; }
+        if (!V.isValidEmail(email)) { fb.classList.add('is-error'); fb.textContent = 'Informe um e-mail valido.'; return; }
+        if (!V.normalizePhoneBR(phone)) { fb.classList.add('is-error'); fb.textContent = 'Informe um telefone brasileiro valido com DDD.'; return; }
+        if (!V.isAdultBirthDate(birthDate)) { fb.classList.add('is-error'); fb.textContent = 'Para criar conta, e preciso ter 18 anos ou mais.'; return; }
+        const pwErrors = V.passwordPolicyErrors(password, { email, phone });
+        if (pwErrors.length) { fb.classList.add('is-error'); fb.textContent = pwErrors[0]; return; }
+        if (!terms) { fb.classList.add('is-error'); fb.textContent = 'E necessario aceitar a Politica de Privacidade.'; return; }
 
         btn.disabled = true; btn.textContent = 'Criando…';
-        const { data, error } = await window.DruzaAuth.signUp({ fullName, email, phone, password, marketingConsent });
+        const { error } = await window.DruzaAuth.signUp({ fullName, email, phone, birthDate, password, marketingConsent });
         if (error) {
           fb.classList.add('is-error'); fb.textContent = error;
           btn.disabled = false; btn.textContent = 'Criar conta';

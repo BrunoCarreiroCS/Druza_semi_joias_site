@@ -20,9 +20,15 @@ precisa de servidor próprio para login/conta. Servidor só entra na **Fase 4d**
 ## 2. Rodar o schema do banco
 
 1. No painel do projeto → **SQL Editor** → **New query**.
-2. Cole todo o conteúdo de [`db/schema.sql`](db/schema.sql) e clique **Run**.
+2. Cole todo o conteúdo de [`db/schema.sql`](../db/schema.sql) e clique **Run**.
 3. Confirme em **Table Editor** que apareceram: `profiles`, `addresses`,
    `orders`, `order_items`.
+
+> Se o banco ja existia antes do endurecimento de cadastro, rode tambem
+> [`db/security-signup-hardening.sql`](../db/security-signup-hardening.sql). Ele
+> adiciona `birth_date`, telefone obrigatorio, maioridade 18+, controle de
+> colunas em `profiles` e policies/grants mais restritos sem apagar usuarios
+> antigos.
 
 ## 3. Configurar autenticação
 
@@ -30,6 +36,9 @@ No painel → **Authentication**:
 
 - **Providers → Email**: deixe habilitado. Mantenha **Confirm email** LIGADO
   (segurança: evita cadastro com e-mail de terceiros).
+- **Password security**: use minimo de 8 caracteres e exija maiuscula,
+  minuscula, numero e simbolo. Se o plano permitir, ative protecao contra
+  senhas vazadas.
 - **URL Configuration → Site URL**: a URL do site (ex.: `https://druza.com.br`
   ou, em testes locais, `http://localhost:5510`).
 - **Redirect URLs**: adicione:
@@ -90,6 +99,8 @@ No painel → **Authentication**:
 - **Confirmação de e-mail** ligada: impede cadastro com e-mail alheio.
 - **Anti-enumeração**: a tela de recuperação não revela se um e-mail existe.
 - **Consentimento explícito** de marketing no cadastro, com data registrada.
+- **Telefone obrigatório**, data de nascimento obrigatória e bloqueio de menores
+  de 18 anos no front e no banco.
 - **Senhas** nunca trafegam/armazenam em texto — o Supabase faz hash (bcrypt).
 - **Sem dados de cartão** no banco: pagamento será tokenizado pelo gateway (4d).
 

@@ -72,6 +72,7 @@
           <div class="account-card__row"><span class="label">Nome</span><span class="value" id="p-name">—</span></div>
           <div class="account-card__row"><span class="label">E-mail</span><span class="value" id="p-email">—</span></div>
           <div class="account-card__row"><span class="label">Telefone</span><span class="value" id="p-phone">—</span></div>
+          <div class="account-card__row"><span class="label">Nascimento</span><span class="value" id="p-birth">—</span></div>
           <div class="account-card__row"><span class="label">Promoções por e-mail</span><span class="value" id="p-consent">—</span></div>
         </section>
 
@@ -159,6 +160,12 @@
       function dt(iso) {
         try { return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }); }
         catch (e) { return iso; }
+      }
+      function birthDate(value) {
+        if (!value) return '—';
+        const parts = String(value).split('-').map(Number);
+        if (parts.length !== 3) return '—';
+        return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('pt-BR');
       }
       function esc(s) {
         return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -399,7 +406,8 @@
         document.getElementById('greeting').textContent = 'Olá, ' + name.split(' ')[0];
         document.getElementById('p-name').textContent = (profile && profile.full_name) || '—';
         document.getElementById('p-email').textContent = (user && user.email) || '—';
-        document.getElementById('p-phone').textContent = (profile && profile.phone) || '—';
+        document.getElementById('p-phone').textContent = (profile && profile.phone) ? A.validators.formatPhoneBR(profile.phone) : '—';
+        document.getElementById('p-birth').textContent = birthDate(profile && profile.birth_date);
         document.getElementById('p-consent').textContent = (profile && profile.marketing_consent) ? 'Sim' : 'Não';
 
         // Endereços

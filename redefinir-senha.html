@@ -60,14 +60,14 @@
         <label class="field">
           <span>Nova senha</span>
           <span class="pw-wrap">
-            <input type="password" name="password" autocomplete="new-password" minlength="8" required />
+            <input type="password" name="password" autocomplete="new-password" minlength="8" maxlength="72" required />
             <button type="button" class="pw-toggle" data-pw-toggle aria-label="Mostrar senha">ver</button>
           </span>
-          <span class="field__hint">Mínimo de 8 caracteres.</span>
+          <span class="field__hint">Minimo de 8 caracteres, com maiuscula, minuscula, numero e simbolo.</span>
         </label>
         <label class="field">
           <span>Confirmar nova senha</span>
-          <input type="password" name="confirm" autocomplete="new-password" minlength="8" required />
+          <input type="password" name="confirm" autocomplete="new-password" minlength="8" maxlength="72" required />
         </label>
         <p class="auth-feedback" id="feedback" role="alert" aria-live="polite"></p>
         <button type="submit" class="btn btn--primary" id="submit-btn">Salvar nova senha</button>
@@ -96,6 +96,7 @@
       const form = document.getElementById('newpw-form');
       const fb = document.getElementById('feedback');
       const btn = document.getElementById('submit-btn');
+      const V = window.DruzaAuth.validators;
 
       document.querySelectorAll('[data-pw-toggle]').forEach(function (t) {
         t.addEventListener('click', function () {
@@ -120,7 +121,8 @@
         const fd = new FormData(form);
         const password = fd.get('password') || '';
         const confirm = fd.get('confirm') || '';
-        if (password.length < 8) { fb.classList.add('is-error'); fb.textContent = 'A senha precisa ter no mínimo 8 caracteres.'; return; }
+        const pwErrors = V.passwordPolicyErrors(password);
+        if (pwErrors.length) { fb.classList.add('is-error'); fb.textContent = pwErrors[0]; return; }
         if (password !== confirm) { fb.classList.add('is-error'); fb.textContent = 'As senhas não coincidem.'; return; }
 
         btn.disabled = true; btn.textContent = 'Salvando…';

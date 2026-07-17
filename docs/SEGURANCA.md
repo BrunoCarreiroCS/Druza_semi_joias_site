@@ -16,6 +16,14 @@ sempre decididos/revalidados no servidor (Edge Functions + RLS do Postgres).
 
 - **RLS ativo em todas as tabelas.** Cliente só lê/escreve as próprias linhas
   (`profiles`, `addresses`, `orders`, `order_items`).
+- **Cadastro endurecido em duas camadas.** O front valida e normaliza nome,
+  e-mail, telefone brasileiro com DDD, data de nascimento 18+ e senha forte;
+  o banco repete as travas em `profiles` via constraints/triggers, então
+  chamadas diretas ao Supabase também são bloqueadas.
+- **Controle de colunas em `profiles`.** O cliente autenticado pode atualizar
+  apenas `full_name`, `phone`, `birth_date` e `marketing_consent`; campos como
+  `payment_customer_id`, `consent_date`, `created_at` e `updated_at` ficam fora
+  do alcance do navegador.
 - **`products`**: leitura pública só de produtos `active = true`; **nenhuma
   escrita via client** — só as Edge Functions admin (service_role) escrevem.
 - **`admins`**: só `select` da própria linha. **Zero política de escrita** — não
@@ -110,8 +118,10 @@ sempre decididos/revalidados no servidor (Edge Functions + RLS do Postgres).
    - `Referrer-Policy: strict-origin-when-cross-origin`
    - CSP completa é desejável, mas exige mover os scripts inline das páginas
      para arquivos próprios primeiro (ver ideias futuras).
-4. **Supabase Auth**: conferir senha mínima ≥ 8, confirmação de e-mail ativa,
-   e **Redirect URLs** limitadas ao domínio real (remover ngrok/localhost).
+4. **Supabase Auth**: conferir senha mínima ≥ 8, exigir maiúscula, minúscula,
+   número e símbolo, ativar proteção contra senhas vazadas quando o plano
+   permitir, manter confirmação de e-mail ativa, e **Redirect URLs** limitadas
+   ao domínio real (remover ngrok/localhost).
 5. **Backups**: ativar/verificar backup automático do banco no plano do Supabase.
 6. **Revisar quem está em `admins`** (deve ser só o dono) e testar o fluxo 2FA
    completo no domínio final.

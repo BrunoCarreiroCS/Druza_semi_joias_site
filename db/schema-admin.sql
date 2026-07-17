@@ -30,11 +30,18 @@ create table if not exists public.admins (
 
 alter table public.admins enable row level security;
 
+revoke all on public.admins from anon;
+grant select on public.admins to authenticated;
+grant select, insert, update, delete on public.admins to service_role;
+
 -- Só permite o usuário ver a PRÓPRIA linha (pra o painel checar acesso).
 -- NÃO existe policy de insert/update/delete: promoção a admin só é
 -- feita manualmente por quem tem acesso direto ao banco (SQL Editor).
+drop policy if exists "admins_select_own" on public.admins;
 create policy "admins_select_own"
-  on public.admins for select using (auth.uid() = user_id);
+  on public.admins for select
+  to authenticated
+  using ((select auth.uid()) = user_id);
 
 -- ---------------------------------------------------------------------
 -- 2) PRODUCTS — catálogo operacional (preço/estoque/visibilidade).
@@ -63,9 +70,15 @@ create index if not exists products_slug_idx on public.products(slug);
 
 alter table public.products enable row level security;
 
+grant select on public.products to anon, authenticated;
+grant select, insert, update, delete on public.products to service_role;
+
 -- Leitura pública, mas só de produtos ativos (frontend/checkout).
+drop policy if exists "products_select_active" on public.products;
 create policy "products_select_active"
-  on public.products for select using (active = true);
+  on public.products for select
+  to anon, authenticated
+  using (active = true);
 
 -- Nenhuma policy de insert/update/delete pro client: toda escrita passa
 -- pelas Edge Functions admin-list-products / admin-upsert-product, que
@@ -140,6 +153,8 @@ create table if not exists public.admin_audit_log (
 create index if not exists admin_audit_log_admin_idx on public.admin_audit_log(admin_user_id);
 
 alter table public.admin_audit_log enable row level security;
+revoke all on public.admin_audit_log from anon, authenticated;
+grant select, insert, update, delete on public.admin_audit_log to service_role;
 -- Nenhuma policy: zero acesso via client (nem select). Só a service_role
 -- (dentro das Edge Functions) escreve; consulta é direto no Supabase
 -- Studio, pelo dono do projeto.

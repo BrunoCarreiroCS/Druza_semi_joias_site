@@ -14,6 +14,11 @@ alter table public.orders
 
 create index if not exists orders_mp_preference_id_idx on public.orders(mp_preference_id);
 
+-- A Edge Function create-order usa o JWT do cliente e respeita RLS. Em
+-- projetos Supabase novos, grants para Data API precisam ser explicitos.
+grant insert on public.orders to authenticated;
+grant insert on public.order_items to authenticated;
+
 -- ---------------------------------------------------------------------
 -- Política: usuário cria seu próprio pedido em status 'pending'
 --
@@ -25,8 +30,9 @@ create index if not exists orders_mp_preference_id_idx on public.orders(mp_prefe
 drop policy if exists "orders_insert_own_pending" on public.orders;
 create policy "orders_insert_own_pending"
   on public.orders for insert
+  to authenticated
   with check (
-    auth.uid() = user_id
+    (select auth.uid()) = user_id
     and status = 'pending'
   );
 
@@ -36,10 +42,11 @@ create policy "orders_insert_own_pending"
 drop policy if exists "order_items_insert_own" on public.order_items;
 create policy "order_items_insert_own"
   on public.order_items for insert
+  to authenticated
   with check (
     exists (
       select 1 from public.orders o
       where o.id = order_items.order_id
-        and o.user_id = auth.uid()
+        and o.user_id = (select auth.uid())
     )
   );
