@@ -43,6 +43,7 @@
 .field input[type="text"],
 .field input[type="email"],
 .field input[type="tel"],
+.field input[type="date"],
 .field input[type="password"] {
   width: 100%;
   min-height: 48px;
@@ -74,6 +75,7 @@
 .pw-toggle {
   position: absolute; right: 0.4rem; top: 50%; transform: translateY(-50%);
   font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase;
+  min-width: 44px; min-height: 44px;
   color: var(--rose-strong); padding: 0.4rem 0.6rem;
 }
 .pw-toggle:hover { color: var(--rose-deep); }

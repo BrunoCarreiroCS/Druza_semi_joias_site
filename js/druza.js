@@ -21,7 +21,6 @@
     var found = c.find(function (i) { return i.id === item.id && i.size === item.size; });
     if (found) found.qty += item.qty || 1; else c.push({ id: item.id, name: item.name, price: item.price, img: (item.img || '').replace(/^(\.\.\/)+/, '').replace(/^\/+/, ''), size: item.size || '', qty: item.qty || 1 });
     writeCart(c);
-    toast('Adicionado à sacola');
     openDrawer('cart');
   }
   function removeFromCart(idx) { var c = readCart(); c.splice(idx, 1); writeCart(c); }
@@ -78,14 +77,6 @@
     var rm = e.target.closest && e.target.closest('[data-rm]');
     if (rm) removeFromCart(parseInt(rm.getAttribute('data-rm'), 10));
   });
-
-  /* ── Toast ──────────────────────────────────────────────── */
-  var toastEl;
-  function toast(msg) {
-    if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'toast'; document.body.appendChild(toastEl); }
-    toastEl.textContent = msg; toastEl.classList.add('is-visible');
-    clearTimeout(toastEl._t); toastEl._t = setTimeout(function () { toastEl.classList.remove('is-visible'); }, 2200);
-  }
 
   /* ── Header sólido ao rolar (sobre hero) ────────────────── */
   var head = $('.head');
