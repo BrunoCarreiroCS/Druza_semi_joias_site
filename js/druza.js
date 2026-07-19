@@ -10,16 +10,78 @@
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
 
-  /* ── Sacola (localStorage) ──────────────────────────────── */
-  var CART_KEY = 'druza_cart';
-  function readCart() { try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch (e) { return []; } }
-  function writeCart(c) { localStorage.setItem(CART_KEY, JSON.stringify(c)); paint(); }
+  /* ── Sacola (localStorage) ──────────────────────────────────
+     Chave canônica única do site: druzaCartV1, formato
+     { items:[{ id(slug), name, priceCents, image, size, quantity }], coupon, shipping }
+     — o mesmo que js/checkout.js e a Edge Function create-order esperam.
+     Internamente este arquivo trabalha com array em reais ({price, qty, img})
+     e traduz só na fronteira de leitura/escrita. */
+  var CART_KEY = 'druzaCartV1';
+  var LEGACY_CART_KEY = 'druza_cart';
+  /* Imagens ficam salvas relativas à raiz do site; páginas em subpastas
+     (produtos/) precisam do prefixo ../ na hora de exibir. */
+  var IMG_BASE = /\/produtos\//.test(window.location.pathname) ? '../' : '';
+  function rootImgPath(src) { return (src || '').replace(/^(\.\.\/)+/, '').replace(/^\/+/, ''); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  }
+  function fromCanonical(saved) {
+    var items = saved && Array.isArray(saved.items) ? saved.items : [];
+    return items.map(function (i) {
+      return {
+        id: i && i.id, name: (i && i.name) || '',
+        price: (Number(i && i.priceCents) || 0) / 100,
+        img: rootImgPath(i && i.image), size: (i && i.size) || '',
+        qty: Number(i && i.quantity) || 1
+      };
+    }).filter(function (i) { return i.id && i.qty > 0; });
+  }
+  function toCanonicalItems(c) {
+    return c.map(function (i) {
+      return {
+        id: i.id, name: i.name,
+        priceCents: Math.round((Number(i.price) || 0) * 100),
+        image: rootImgPath(i.img), size: i.size || '',
+        quantity: i.qty || 1
+      };
+    });
+  }
+  function readSaved() { try { return JSON.parse(localStorage.getItem(CART_KEY)) || null; } catch (e) { return null; } }
+  function readCart() { return fromCanonical(readSaved()); }
+  function writeCart(c) {
+    var saved = readSaved() || {};
+    try {
+      localStorage.setItem(CART_KEY, JSON.stringify({
+        items: toCanonicalItems(c),
+        coupon: saved.coupon || null,
+        shipping: saved.shipping || null
+      }));
+    } catch (e) { /* storage cheio/indisponível: segue só com a pintura */ }
+    paint();
+  }
+  /* Migração one-shot da sacola legada (druza_cart: array em reais). */
+  (function migrateLegacyCart() {
+    try {
+      var legacy = JSON.parse(localStorage.getItem(LEGACY_CART_KEY) || 'null');
+      if (Array.isArray(legacy) && legacy.length && !readCart().length) {
+        localStorage.setItem(CART_KEY, JSON.stringify({
+          items: toCanonicalItems(legacy.map(function (i) {
+            return { id: i.id, name: i.name, price: i.price, img: i.img, size: i.size, qty: i.qty };
+          }).filter(function (i) { return i.id && i.qty > 0; })),
+          coupon: null, shipping: null
+        }));
+      }
+      localStorage.removeItem(LEGACY_CART_KEY);
+    } catch (e) { /* sacola legada corrompida: ignora */ }
+  })();
   function cartTotal(c) { return c.reduce(function (s, i) { return s + i.price * i.qty; }, 0); }
   function cartCount(c) { return c.reduce(function (s, i) { return s + i.qty; }, 0); }
   function addToCart(item) {
     var c = readCart();
     var found = c.find(function (i) { return i.id === item.id && i.size === item.size; });
-    if (found) found.qty += item.qty || 1; else c.push({ id: item.id, name: item.name, price: item.price, img: (item.img || '').replace(/^(\.\.\/)+/, '').replace(/^\/+/, ''), size: item.size || '', qty: item.qty || 1 });
+    if (found) found.qty += item.qty || 1; else c.push({ id: item.id, name: item.name, price: item.price, img: rootImgPath(item.img), size: item.size || '', qty: item.qty || 1 });
     writeCart(c);
     openDrawer('cart');
   }
@@ -44,9 +106,9 @@
       if (!c.length) { body.innerHTML = '<p class="cart-empty">Sua sacola está vazia.<br>Descubra as favoritas da Druza.</p>'; }
       else {
         body.innerHTML = c.map(function (i, idx) {
-          return '<div class="cart-line"><img src="' + (i.img || '').replace(/^(\.\.\/)+/, '').replace(/^\/+/, '') + '" alt=""><div style="flex:1">' +
-            '<div class="cart-line__name">' + i.name + '</div>' +
-            '<div class="cart-line__meta">' + (i.size ? 'Tam. ' + i.size + ' · ' : '') + i.qty + '× ' + BRL(i.price) + '</div>' +
+          return '<div class="cart-line"><img src="' + esc(i.img ? IMG_BASE + i.img : '') + '" alt=""><div style="flex:1">' +
+            '<div class="cart-line__name">' + esc(i.name) + '</div>' +
+            '<div class="cart-line__meta">' + (i.size ? 'Tam. ' + esc(i.size) + ' · ' : '') + i.qty + '× ' + BRL(i.price) + '</div>' +
             '<button class="cart-line__rm" data-rm="' + idx + '">Remover</button></div>' +
             '<div style="font-variant-numeric:tabular-nums;color:var(--ink)">' + BRL(i.price * i.qty) + '</div></div>';
         }).join('');
