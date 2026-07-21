@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Painel administrativo - Druza Semi Joias</title>
-  <meta name="description" content="Painel administrativo Druza: pedidos e produtos." />
+  <meta name="description" content="Painel administrativo Druza: pedidos, produtos, estoque e envios." />
   <meta name="robots" content="noindex" />
   <link rel="icon" href="img/druza-logo.png" />
   <link rel="stylesheet" href="css/fonts.css" />
@@ -31,18 +31,11 @@
         <span class="logo__sub">Semi Joias · Prata</span>
       </span>
     </a>
-    <nav class="content-nav" aria-label="Navegacao principal"><a href="index.html">Início</a><a href="conta.html">Minha conta</a></nav>
+    <nav class="content-nav" aria-label="Navegacao principal"><a href="index.html">Ver a loja</a><a href="conta.html">Minha conta</a></nav>
   </div></header>
 
   <main id="main" class="section">
     <div class="container">
-      <div class="account-header">
-        <div>
-          <p class="eyebrow">Painel</p>
-          <h1>Administração</h1>
-        </div>
-        <button type="button" class="btn btn--ghost" id="logout-btn">Sair</button>
-      </div>
 
       <div id="loading" class="empty-state"><p>Verificando acesso…</p></div>
 
@@ -77,94 +70,509 @@
       </div>
 
       <div id="content" hidden>
-        <div class="admin-tabs">
-          <button type="button" class="admin-tab is-active" data-tab="orders">Pedidos</button>
-          <button type="button" class="admin-tab" data-tab="products">Produtos</button>
+        <div class="admin-topbar">
+          <button type="button" class="admin-menu-btn" id="nav-toggle" aria-expanded="false" aria-controls="admin-nav">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round"/></svg>
+            Menu
+          </button>
+          <div>
+            <p class="eyebrow">Painel</p>
+            <h1 id="section-title">Visão geral</h1>
+          </div>
+          <button type="button" class="btn btn--secondary btn--sm" id="help-toggle">
+            <span aria-hidden="true">?</span> Ajuda
+          </button>
+          <button type="button" class="btn btn--ghost btn--sm" id="logout-btn">Sair</button>
         </div>
 
-        <!-- Pedidos -->
-        <section id="panel-orders" class="account-card account-card--full">
-          <div class="admin-filter-bar">
-            <label class="field"><span>Status</span>
-              <select id="status-filter">
-                <option value="">Todos</option>
-                <option value="pending">Aguardando</option>
-                <option value="processing">Processando</option>
-                <option value="paid">Pago</option>
-                <option value="shipped">Enviado</option>
-                <option value="delivered">Entregue</option>
-                <option value="canceled">Cancelado</option>
-                <option value="refunded">Estornado</option>
-              </select>
-            </label>
-            <label class="field"><span>Buscar (id do pedido ou e-mail)</span>
-              <input type="text" id="order-search" placeholder="ex.: cliente@email.com" />
-            </label>
-            <label class="field"><span>De</span>
-              <input type="date" id="order-date-from" />
-            </label>
-            <label class="field"><span>Até</span>
-              <input type="date" id="order-date-to" />
-            </label>
-            <button type="button" class="btn btn--secondary" id="order-search-btn">Buscar</button>
-            <button type="button" class="btn btn--ghost" id="order-export-csv">Exportar CSV</button>
-          </div>
-          <div class="admin-bulk-bar">
-            <span class="field__hint" id="bulk-save-status">Nenhuma alteração pendente.</span>
-            <div class="admin-bulk-actions">
-              <button type="button" class="btn btn--ghost btn--sm" id="sender-settings-btn">Remetente</button>
-              <button type="button" class="btn btn--secondary btn--sm" id="print-paid-btn">Imprimir etiquetas pagas</button>
-              <button type="button" class="btn btn--primary btn--sm" id="save-all-btn" disabled>Salvar todas as alterações</button>
-            </div>
-          </div>
-          <div id="orders-list"><p class="field__hint">Carregando…</p></div>
-        </section>
+        <div class="admin-shell">
+          <nav class="admin-nav" id="admin-nav" aria-label="Seções do painel">
+            <button type="button" class="admin-nav__link is-active" data-section="overview">Visão geral</button>
+            <button type="button" class="admin-nav__link" data-section="orders">Pedidos<span class="admin-nav__badge" data-badge="orders" hidden>0</span></button>
+            <button type="button" class="admin-nav__link" data-section="products">Produtos</button>
+            <button type="button" class="admin-nav__link" data-section="inventory">Estoque<span class="admin-nav__badge admin-nav__badge--warn" data-badge="inventory" hidden>0</span></button>
+            <button type="button" class="admin-nav__link" data-section="categories">Categorias</button>
+            <button type="button" class="admin-nav__link" data-section="customers">Clientes</button>
+            <button type="button" class="admin-nav__link" data-section="shipping">Envios<span class="admin-nav__badge" data-badge="shipping" hidden>0</span></button>
+            <button type="button" class="admin-nav__link" data-section="audit">Histórico</button>
+          </nav>
+          <div class="admin-nav__scrim" id="nav-scrim" hidden></div>
 
-        <!-- Produtos -->
-        <section id="panel-products" class="account-card account-card--full" hidden>
-          <div class="account-card__head">
-            <h2>Produtos</h2>
-            <button type="button" class="btn btn--ghost btn--sm" id="product-add-btn">+ Novo produto</button>
-          </div>
-          <div id="products-list"><p class="field__hint">Carregando…</p></div>
+          <div class="admin-content">
 
-          <form id="product-form" class="auth-form" hidden novalidate>
-            <input type="hidden" name="id" />
-            <label class="field"><span>Slug (identificador único, sem espaços)</span>
-              <input type="text" name="slug" required />
-            </label>
-            <label class="field"><span>Nome</span>
-              <input type="text" name="name" required />
-            </label>
-            <label class="field"><span>Categoria</span>
-              <input type="text" name="category" placeholder="aneis, brincos, pulseiras…" />
-            </label>
-            <label class="field"><span>Preço (R$)</span>
-              <input type="text" name="price" inputmode="decimal" placeholder="189,00" required />
-            </label>
-            <label class="field field--check">
-              <input type="checkbox" name="active" checked />
-              <span>Ativo (aparece no site e pode ser comprado)</span>
-            </label>
-            <label class="field"><span>Quantidade disponivel</span>
-              <input type="number" name="stock_quantity" inputmode="numeric" min="0" max="100000" step="1" value="1" required />
-            </label>
-            <label class="field field--check">
-              <input type="checkbox" name="featured" />
-              <span>Destaque na página inicial</span>
-            </label>
-            <p class="auth-feedback" id="product-feedback"></p>
-            <div style="display:flex; gap: var(--space-3);">
-              <button type="submit" class="btn btn--primary" id="product-save-btn">Criar produto</button>
-              <button type="button" class="btn btn--ghost" id="product-cancel-btn">Cancelar</button>
-            </div>
-          </form>
-        </section>
+            <!-- ============ VISÃO GERAL ============ -->
+            <section class="admin-panel" data-panel="overview">
+              <div class="admin-quick-actions">
+                <button type="button" class="btn btn--primary" data-goto="products" data-action="new-product">+ Cadastrar produto</button>
+                <button type="button" class="btn btn--secondary" data-goto="inventory" data-action="new-entry">Registrar entrada de estoque</button>
+                <button type="button" class="btn btn--ghost" data-goto="shipping">Pedidos aguardando envio</button>
+              </div>
+
+              <div class="stat-grid" id="overview-stats">
+                <p class="field__hint">Carregando…</p>
+              </div>
+
+              <div class="admin-columns">
+                <section class="account-card">
+                  <div class="account-card__head"><h2>Produtos com estoque baixo</h2>
+                    <button type="button" class="link-btn" data-goto="inventory">Ver estoque</button>
+                  </div>
+                  <div id="overview-low-stock"><p class="field__hint">Carregando…</p></div>
+                </section>
+
+                <section class="account-card">
+                  <div class="account-card__head"><h2>Pedidos aguardando envio</h2>
+                    <button type="button" class="link-btn" data-goto="shipping">Ver envios</button>
+                  </div>
+                  <div id="overview-shipping"><p class="field__hint">Carregando…</p></div>
+                </section>
+
+                <section class="account-card">
+                  <div class="account-card__head"><h2>Pedidos recentes</h2>
+                    <button type="button" class="link-btn" data-goto="orders">Ver pedidos</button>
+                  </div>
+                  <div id="overview-orders"><p class="field__hint">Carregando…</p></div>
+                </section>
+
+                <section class="account-card">
+                  <div class="account-card__head"><h2>Movimentações recentes</h2>
+                    <button type="button" class="link-btn" data-goto="inventory">Ver histórico</button>
+                  </div>
+                  <div id="overview-movements"><p class="field__hint">Carregando…</p></div>
+                </section>
+              </div>
+            </section>
+
+            <!-- ============ PEDIDOS ============ -->
+            <section class="admin-panel" data-panel="orders" hidden>
+              <div class="admin-filter-bar">
+                <label class="field"><span>Situação</span>
+                  <select id="order-status-filter">
+                    <option value="">Todas</option>
+                    <option value="pending">Aguardando pagamento</option>
+                    <option value="processing">Processando pagamento</option>
+                    <option value="paid">Pago</option>
+                    <option value="shipped">Enviado</option>
+                    <option value="delivered">Entregue</option>
+                    <option value="canceled">Cancelado</option>
+                    <option value="refunded">Estornado</option>
+                  </select>
+                </label>
+                <label class="field" data-help="pedidos-busca"><span>Buscar por nome, e-mail, telefone ou nº</span>
+                  <input type="search" id="order-search" placeholder="ex.: maria, cliente@email.com" />
+                </label>
+                <label class="field"><span>De</span><input type="date" id="order-date-from" /></label>
+                <label class="field"><span>Até</span><input type="date" id="order-date-to" /></label>
+                <label class="field"><span>Ordenar</span>
+                  <select id="order-sort">
+                    <option value="recentes">Mais recentes</option>
+                    <option value="antigos">Mais antigos</option>
+                    <option value="maior_valor">Maior valor</option>
+                    <option value="menor_valor">Menor valor</option>
+                  </select>
+                </label>
+                <button type="button" class="btn btn--secondary" id="order-search-btn">Buscar</button>
+                <button type="button" class="btn btn--ghost" id="order-export-csv" data-help="pedidos-planilha">Baixar planilha</button>
+              </div>
+              <div id="orders-list"><p class="field__hint">Carregando…</p></div>
+              <div class="admin-pager" id="orders-pager" hidden>
+                <button type="button" class="btn btn--ghost btn--sm" data-page="prev">Anteriores</button>
+                <span class="field__hint" data-page-info></span>
+                <button type="button" class="btn btn--ghost btn--sm" data-page="next">Próximos</button>
+              </div>
+            </section>
+
+            <!-- ============ PRODUTOS ============ -->
+            <section class="admin-panel" data-panel="products" hidden>
+              <div id="products-browser">
+                <div class="admin-filter-bar">
+                  <label class="field"><span>Buscar por nome ou código</span>
+                    <input type="search" id="product-search" placeholder="ex.: anel paraíba" />
+                  </label>
+                  <label class="field"><span>Categoria</span>
+                    <select id="product-category-filter"><option value="">Todas</option></select>
+                  </label>
+                  <label class="field"><span>Situação</span>
+                    <select id="product-status-filter">
+                      <option value="">Ativos e inativos</option>
+                      <option value="active">À venda</option>
+                      <option value="inactive">Fora da loja</option>
+                      <option value="archived">Arquivados</option>
+                    </select>
+                  </label>
+                  <label class="field"><span>Disponibilidade</span>
+                    <select id="product-availability-filter">
+                      <option value="">Todas</option>
+                      <option value="in_stock">Com estoque</option>
+                      <option value="out_of_stock">Sem estoque</option>
+                      <option value="low_stock">Estoque baixo</option>
+                    </select>
+                  </label>
+                  <label class="field"><span>Ordenar</span>
+                    <select id="product-sort">
+                      <option value="recentes">Mais recentes</option>
+                      <option value="nome">Nome (A–Z)</option>
+                      <option value="preco_menor">Menor preço</option>
+                      <option value="preco_maior">Maior preço</option>
+                      <option value="estoque_menor">Menor estoque</option>
+                      <option value="estoque_maior">Maior estoque</option>
+                    </select>
+                  </label>
+                  <button type="button" class="btn btn--primary" id="product-add-btn">+ Novo produto</button>
+                </div>
+                <div id="products-list"><p class="field__hint">Carregando…</p></div>
+                <div class="admin-pager" id="products-pager" hidden>
+                  <button type="button" class="btn btn--ghost btn--sm" data-page="prev">Anteriores</button>
+                  <span class="field__hint" data-page-info></span>
+                  <button type="button" class="btn btn--ghost btn--sm" data-page="next">Próximos</button>
+                </div>
+              </div>
+
+              <!-- Formulário de produto (etapas) -->
+              <form id="product-form" class="admin-form" hidden novalidate>
+                <div class="admin-form__head">
+                  <div>
+                    <p class="eyebrow" id="product-form-eyebrow">Novo produto</p>
+                    <h2 id="product-form-title">Cadastrar produto</h2>
+                  </div>
+                  <button type="button" class="link-btn" id="product-back-btn">← Voltar para a lista</button>
+                </div>
+
+                <input type="hidden" name="id" />
+
+                <fieldset class="admin-fieldset">
+                  <legend data-help="produto-basico">1. O básico</legend>
+                  <p class="admin-fieldset__hint">O nome e o preço são o mínimo para a peça entrar na loja.</p>
+                  <label class="field"><span>Nome da peça *</span>
+                    <input type="text" name="name" maxlength="120" placeholder="ex.: Anel Coração Esmeralda" required />
+                  </label>
+                  <div class="field-row">
+                    <label class="field" data-help="produto-preco"><span>Preço de venda *</span>
+                      <input type="text" name="price" inputmode="decimal" placeholder="189,00" required />
+                    </label>
+                    <label class="field" data-help="produto-categoria"><span>Categoria</span>
+                      <select name="category_id"><option value="">Sem categoria</option></select>
+                    </label>
+                  </div>
+                  <label class="field" data-help="produto-situacao"><span>Situação</span>
+                    <select name="status">
+                      <option value="active">À venda — aparece na loja</option>
+                      <option value="inactive">Fora da loja — guardado para depois</option>
+                      <option value="archived">Arquivado — encerrado</option>
+                    </select>
+                  </label>
+                  <label class="field field--check" data-help="produto-destaque">
+                    <input type="checkbox" name="featured" />
+                    <span>Mostrar em destaque na página inicial</span>
+                  </label>
+                </fieldset>
+
+                <fieldset class="admin-fieldset">
+                  <legend data-help="produto-fotos">2. Fotos</legend>
+                  <p class="admin-fieldset__hint">A primeira foto é a que aparece no catálogo. Arraste para reordenar não é preciso: use os botões de cada foto. Aceita JPG, PNG, WebP ou AVIF de até 5 MB.</p>
+                  <div class="image-upload">
+                    <label class="btn btn--secondary btn--sm" for="product-image-input">Escolher fotos</label>
+                    <input type="file" id="product-image-input" accept="image/jpeg,image/png,image/webp,image/avif" multiple hidden />
+                    <span class="field__hint" id="product-image-status"></span>
+                  </div>
+                  <div class="image-grid" id="product-images"></div>
+                </fieldset>
+
+                <fieldset class="admin-fieldset">
+                  <legend data-help="produto-descricao">3. Descrição</legend>
+                  <label class="field"><span>Resumo curto</span>
+                    <input type="text" name="short_description" maxlength="280" placeholder="Aparece logo abaixo do nome da peça" />
+                  </label>
+                  <label class="field"><span>Descrição completa</span>
+                    <textarea name="long_description" rows="6" maxlength="4000" placeholder="Conte a história da peça, o material, para quem combina…"></textarea>
+                  </label>
+                </fieldset>
+
+                <fieldset class="admin-fieldset">
+                  <legend data-help="produto-caracteristicas">4. Características da peça</legend>
+                  <p class="admin-fieldset__hint">Preencha só o que fizer sentido. O que ficar em branco não aparece no site.</p>
+                  <div class="field-row">
+                    <label class="field"><span>Tipo</span><input type="text" name="attr_tipo_peca" maxlength="60" placeholder="anel, brinco, colar…" /></label>
+                    <label class="field"><span>Material</span><input type="text" name="attr_material" maxlength="60" placeholder="Prata 925" /></label>
+                  </div>
+                  <div class="field-row">
+                    <label class="field"><span>Banho</span><input type="text" name="attr_banho" maxlength="60" placeholder="Ródio, ouro 18k…" /></label>
+                    <label class="field"><span>Cor</span><input type="text" name="attr_cor" maxlength="40" placeholder="Prateado" /></label>
+                  </div>
+                  <div class="field-row">
+                    <label class="field"><span>Pedra</span><input type="text" name="attr_pedra" maxlength="60" placeholder="Esmeralda, Paraíba…" /></label>
+                    <label class="field"><span>Acabamento</span><input type="text" name="attr_acabamento" maxlength="60" placeholder="Polido" /></label>
+                  </div>
+                  <div class="field-row">
+                    <label class="field"><span>Dimensões</span><input type="text" name="attr_dimensoes" maxlength="80" placeholder="7 mm" /></label>
+                    <label class="field"><span>Comprimento</span><input type="text" name="attr_comprimento" maxlength="40" placeholder="45 cm" /></label>
+                  </div>
+                  <div class="field-row">
+                    <label class="field"><span>Peso</span><input type="text" name="attr_peso" maxlength="40" placeholder="3,2 g" /></label>
+                    <label class="field" data-help="produto-tamanhos"><span>Tamanhos</span><input type="text" name="attr_tamanho" maxlength="60" placeholder="14, 16, 18, 20" /></label>
+                  </div>
+                  <p class="field__hint">Separe os tamanhos por vírgula. Com dois ou mais, a loja mostra o seletor de tamanho.</p>
+                  <div class="check-row">
+                    <label class="field field--check"><input type="checkbox" name="attr_ajustavel" /><span>Regulável</span></label>
+                    <label class="field field--check"><input type="checkbox" name="attr_hipoalergenico" /><span>Hipoalergênico</span></label>
+                    <label class="field field--check"><input type="checkbox" name="attr_sem_niquel" /><span>Não contém níquel</span></label>
+                  </div>
+                  <label class="field"><span>Como conservar</span>
+                    <textarea name="attr_conservacao" rows="3" maxlength="600" placeholder="Guarde em local seco, longe de perfumes…"></textarea>
+                  </label>
+                  <div class="field-row">
+                    <label class="field"><span>Garantia</span><input type="text" name="attr_garantia" maxlength="200" placeholder="1 ano contra defeitos de fabricação" /></label>
+                    <label class="field"><span>Observações</span><input type="text" name="attr_observacoes" maxlength="600" /></label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="admin-fieldset">
+                  <legend data-help="produto-estoque-precos">5. Estoque e preços especiais</legend>
+                  <div class="field-row" id="initial-stock-row">
+                    <label class="field" data-help="produto-estoque-inicial"><span>Quantidade inicial em estoque</span>
+                      <input type="number" name="initial_stock" min="0" max="100000" step="1" value="0" />
+                    </label>
+                    <label class="field" data-help="produto-estoque-minimo"><span>Avisar quando o estoque chegar em</span>
+                      <input type="number" name="min_stock" min="0" max="100000" step="1" value="0" />
+                    </label>
+                  </div>
+                  <p class="field__hint" id="stock-edit-note" hidden>
+                    Para mudar a quantidade de um produto já cadastrado, use a seção
+                    <strong>Estoque</strong>. Assim toda alteração fica registrada no histórico.
+                  </p>
+                  <div class="field-row">
+                    <label class="field" data-help="produto-promo"><span>Preço promocional</span>
+                      <input type="text" name="promo_price" inputmode="decimal" placeholder="deixe vazio se não houver" />
+                    </label>
+                    <label class="field" data-help="produto-preco-anterior"><span>Preço anterior (o “de”)</span>
+                      <input type="text" name="compare_at_price" inputmode="decimal" placeholder="opcional" />
+                    </label>
+                  </div>
+                  <div class="field-row">
+                    <label class="field"><span>Promoção começa em</span><input type="datetime-local" name="promo_starts_at" /></label>
+                    <label class="field"><span>Promoção termina em</span><input type="datetime-local" name="promo_ends_at" /></label>
+                  </div>
+                  <div class="field-row">
+                    <label class="field" data-help="produto-custo"><span>Custo da peça (só você vê)</span>
+                      <input type="text" name="cost" inputmode="decimal" placeholder="opcional" />
+                    </label>
+                    <div class="field"><span>Margem estimada</span>
+                      <output class="margin-output" id="product-margin">—</output>
+                    </div>
+                  </div>
+                </fieldset>
+
+                <fieldset class="admin-fieldset">
+                  <legend data-help="produto-endereco-seo">6. Endereço no site e busca (opcional)</legend>
+                  <div class="field-row">
+                    <label class="field" data-help="produto-slug"><span>Endereço no site</span>
+                      <input type="text" name="slug" maxlength="60" placeholder="gerado a partir do nome" />
+                    </label>
+                    <label class="field" data-help="produto-sku"><span>Código interno (SKU)</span>
+                      <input type="text" name="sku" maxlength="40" placeholder="gerado automaticamente" />
+                    </label>
+                  </div>
+                  <div class="field-row">
+                    <label class="field" data-help="produto-colecao"><span>Coleção</span><input type="text" name="collection" maxlength="60" placeholder="ex.: Verão 2026" /></label>
+                    <label class="field" data-help="produto-tags"><span>Etiquetas</span><input type="text" name="tags" maxlength="300" placeholder="presente, lançamento" /></label>
+                  </div>
+                  <label class="field"><span>Título para o Google</span>
+                    <input type="text" name="seo_title" maxlength="70" placeholder="deixe vazio para usar o nome da peça" />
+                  </label>
+                  <label class="field"><span>Descrição para o Google</span>
+                    <input type="text" name="seo_description" maxlength="180" />
+                  </label>
+                </fieldset>
+
+                <p class="auth-feedback" id="product-feedback"></p>
+                <div class="admin-form__actions">
+                  <button type="submit" class="btn btn--primary" id="product-save-btn">Salvar produto</button>
+                  <button type="button" class="btn btn--ghost" id="product-cancel-btn">Cancelar</button>
+                </div>
+              </form>
+            </section>
+
+            <!-- ============ ESTOQUE ============ -->
+            <section class="admin-panel" data-panel="inventory" hidden>
+              <div class="admin-columns admin-columns--stock">
+                <section class="account-card">
+                  <div class="account-card__head"><h2 data-help="estoque-movimentacao">Registrar movimentação</h2></div>
+                  <form id="inventory-form" class="auth-form" novalidate>
+                    <div class="field combo-field">
+                      <span>Produto *</span>
+                      <div class="combo" data-combo>
+                        <input type="text" class="combo__input" id="inventory-product-input"
+                          autocomplete="off" placeholder="Digite o nome do produto…"
+                          role="combobox" aria-expanded="false" aria-autocomplete="list"
+                          aria-controls="inventory-product-listbox" aria-haspopup="listbox" />
+                        <input type="hidden" name="product_id" required />
+                        <ul class="combo__listbox" id="inventory-product-listbox" role="listbox" hidden></ul>
+                      </div>
+                    </div>
+                    <p class="field__hint" id="inventory-current"></p>
+                    <label class="field" data-help="estoque-tipo"><span>O que aconteceu? *</span>
+                      <select name="movement_type" required>
+                        <optgroup label="Entrou no estoque">
+                          <option value="entrada">Entrada de mercadoria</option>
+                          <option value="devolucao">Devolução de cliente</option>
+                          <option value="troca">Troca (peça voltou)</option>
+                          <option value="ajuste_positivo">Ajuste para mais</option>
+                        </optgroup>
+                        <optgroup label="Saiu do estoque">
+                          <option value="perda">Perda</option>
+                          <option value="avaria">Peça danificada</option>
+                          <option value="ajuste_negativo">Ajuste para menos</option>
+                        </optgroup>
+                        <optgroup label="Conferência">
+                          <option value="inventario">Corrigir para a quantidade contada</option>
+                        </optgroup>
+                      </select>
+                    </label>
+                    <label class="field" data-help="estoque-quantidade"><span id="inventory-qty-label">Quantidade *</span>
+                      <input type="number" name="quantity" min="0" max="100000" step="1" required />
+                    </label>
+                    <label class="field" id="inventory-reason-field" data-help="estoque-motivo"><span>Motivo</span>
+                      <input type="text" name="reason" maxlength="120" placeholder="ex.: peça riscada na vitrine" />
+                    </label>
+                    <div class="field-row" id="inventory-entry-fields">
+                      <label class="field" data-help="estoque-custo"><span>Custo por peça</span>
+                        <input type="text" name="unit_cost" inputmode="decimal" placeholder="opcional" />
+                      </label>
+                      <label class="field"><span>Fornecedor</span>
+                        <input type="text" name="supplier" maxlength="120" placeholder="opcional" />
+                      </label>
+                    </div>
+                    <label class="field"><span>Observação</span>
+                      <textarea name="note" rows="2" maxlength="500" placeholder="opcional"></textarea>
+                    </label>
+                    <p class="auth-feedback" id="inventory-feedback"></p>
+                    <button type="submit" class="btn btn--primary" id="inventory-save-btn">Confirmar movimentação</button>
+                  </form>
+                </section>
+
+                <section class="account-card">
+                  <div class="account-card__head"><h2 data-help="estoque-baixo">Estoque baixo</h2></div>
+                  <div id="inventory-low"><p class="field__hint">Carregando…</p></div>
+                </section>
+              </div>
+
+              <section class="account-card account-card--full">
+                <div class="account-card__head"><h2 data-help="estoque-historico">Histórico de movimentações</h2></div>
+                <div class="admin-filter-bar">
+                  <label class="field"><span>Produto</span>
+                    <select id="inventory-filter-product"><option value="">Todos</option></select>
+                  </label>
+                  <label class="field"><span>Tipo</span>
+                    <select id="inventory-filter-type"><option value="">Todos</option></select>
+                  </label>
+                  <label class="field"><span>De</span><input type="date" id="inventory-date-from" /></label>
+                  <label class="field"><span>Até</span><input type="date" id="inventory-date-to" /></label>
+                </div>
+                <div id="inventory-history"><p class="field__hint">Carregando…</p></div>
+                <div class="admin-pager" id="inventory-pager" hidden>
+                  <button type="button" class="btn btn--ghost btn--sm" data-page="prev">Anteriores</button>
+                  <span class="field__hint" data-page-info></span>
+                  <button type="button" class="btn btn--ghost btn--sm" data-page="next">Próximos</button>
+                </div>
+              </section>
+            </section>
+
+            <!-- ============ CATEGORIAS ============ -->
+            <section class="admin-panel" data-panel="categories" hidden>
+              <div class="admin-columns admin-columns--stock">
+                <section class="account-card">
+                  <div class="account-card__head"><h2 id="category-form-title" data-help="categoria-form">Nova categoria</h2></div>
+                  <form id="category-form" class="auth-form" novalidate>
+                    <input type="hidden" name="id" />
+                    <label class="field"><span>Nome *</span>
+                      <input type="text" name="name" maxlength="80" placeholder="ex.: Tornozeleiras" required />
+                    </label>
+                    <label class="field"><span>Descrição</span>
+                      <textarea name="description" rows="3" maxlength="600"></textarea>
+                    </label>
+                    <div class="field-row">
+                      <label class="field" data-help="categoria-superior"><span>Categoria superior</span>
+                        <select name="parent_id"><option value="">Nenhuma</option></select>
+                      </label>
+                      <label class="field" data-help="categoria-ordem"><span>Ordem de exibição</span>
+                        <input type="number" name="sort_order" min="0" max="10000" step="10" value="0" />
+                      </label>
+                    </div>
+                    <label class="field"><span>Endereço no site</span>
+                      <input type="text" name="slug" maxlength="60" placeholder="gerado a partir do nome" />
+                    </label>
+                    <label class="field field--check">
+                      <input type="checkbox" name="active" checked />
+                      <span>Ativa (aparece nos filtros da loja)</span>
+                    </label>
+                    <p class="auth-feedback" id="category-feedback"></p>
+                    <div class="admin-form__actions">
+                      <button type="submit" class="btn btn--primary" id="category-save-btn">Criar categoria</button>
+                      <button type="button" class="btn btn--ghost" id="category-cancel-btn" hidden>Cancelar edição</button>
+                    </div>
+                  </form>
+                </section>
+
+                <section class="account-card">
+                  <div class="account-card__head"><h2 data-help="categoria-lista">Categorias cadastradas</h2></div>
+                  <div id="categories-list"><p class="field__hint">Carregando…</p></div>
+                </section>
+              </div>
+            </section>
+
+            <!-- ============ CLIENTES ============ -->
+            <section class="admin-panel" data-panel="customers" hidden>
+              <div class="admin-filter-bar">
+                <label class="field" data-help="clientes-tela"><span>Buscar por nome, e-mail ou telefone</span>
+                  <input type="search" id="customer-search" placeholder="ex.: maria" />
+                </label>
+                <button type="button" class="btn btn--secondary" id="customer-search-btn">Buscar</button>
+              </div>
+              <div id="customers-list"><p class="field__hint">Carregando…</p></div>
+            </section>
+
+            <!-- ============ ENVIOS ============ -->
+            <section class="admin-panel" data-panel="shipping" hidden>
+              <div class="admin-bulk-bar">
+                <span class="field__hint" id="shipping-hint" data-help="envios-como">Pedidos pagos que ainda não foram postados.</span>
+                <div class="admin-bulk-actions">
+                  <button type="button" class="btn btn--ghost btn--sm" id="sender-settings-btn" data-help="envios-remetente">Remetente</button>
+                  <button type="button" class="btn btn--secondary btn--sm" id="print-labels-btn" data-help="envios-etiquetas">Imprimir etiquetas</button>
+                </div>
+              </div>
+              <div class="admin-filter-bar">
+                <label class="field"><span>Mostrar</span>
+                  <select id="shipping-filter">
+                    <option value="sem_rastreio">Aguardando envio (sem rastreio)</option>
+                    <option value="paid">Todos os pagos</option>
+                    <option value="shipped">Enviados</option>
+                    <option value="delivered">Entregues</option>
+                  </select>
+                </label>
+              </div>
+              <div id="shipping-list"><p class="field__hint">Carregando…</p></div>
+            </section>
+
+            <!-- ============ HISTÓRICO ============ -->
+            <section class="admin-panel" data-panel="audit" hidden>
+              <p class="field__hint" data-help="historico-tela" style="margin-bottom:var(--space-4)">
+                Tudo que foi feito no painel: quem fez, o que mudou e quando.
+              </p>
+              <div id="audit-list"><p class="field__hint">Carregando…</p></div>
+              <div class="admin-pager" id="audit-pager" hidden>
+                <button type="button" class="btn btn--ghost btn--sm" data-page="prev">Anteriores</button>
+                <span class="field__hint" data-page-info></span>
+                <button type="button" class="btn btn--ghost btn--sm" data-page="next">Próximos</button>
+              </div>
+            </section>
+
+          </div>
+        </div>
       </div>
     </div>
   </main>
 
-  <!-- Modal de detalhe do pedido (logística) -->
+  <!-- Modal de detalhe do pedido -->
   <div class="admin-modal" id="order-modal" hidden>
     <div class="admin-modal__backdrop" data-close-modal></div>
     <div class="admin-modal__panel" role="dialog" aria-modal="true" aria-labelledby="order-modal-title">
@@ -178,814 +586,16 @@
     </div>
   </div>
 
+  <!-- Aviso flutuante de confirmação -->
+  <div class="admin-toast" id="toast" hidden role="status" aria-live="polite"></div>
+
   <footer class="site-footer"><div class="container footer-grid"><div class="footer__col"><span class="logo__name">Druza</span><p>Semi joias femininas em prata.</p></div></div></footer>
 
   <script src="js/config.public.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js" integrity="sha384-dGnL7r9uccC9TdSdE05clTJ6esxMU42XBQ1/BWLzKQOBi7qR1aCMRIi0LzUmexIg" crossorigin="anonymous"></script>
   <script src="js/auth.js"></script>
   <script src="js/admin.js"></script>
-  <script>
-    (function () {
-      const A = window.DruzaAuth;
-      const D = window.DruzaAdmin;
-
-      function brl(cents) {
-        return (Number(cents || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-      }
-      function esc(s) {
-        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-        });
-      }
-      function centsToReais(cents) {
-        return (Number(cents || 0) / 100).toFixed(2).replace('.', ',');
-      }
-      function reaisToCents(str) {
-        const n = Number(String(str || '').trim().replace(/\./g, '').replace(',', '.'));
-        return Number.isFinite(n) ? Math.round(n * 100) : NaN;
-      }
-      function isCorreiosCode(code) {
-        return /^[A-Z]{2}\d{9}BR$/.test(String(code || '').trim().toUpperCase());
-      }
-      function renderTracking(code) {
-        const normalized = String(code || '').trim().toUpperCase();
-        if (!normalized) return '<span class="muted">-</span>';
-        const codeHtml = isCorreiosCode(normalized)
-          ? '<a href="https://rastreamento.correios.com.br/app/index.php?objetos=' + encodeURIComponent(normalized) + '" target="_blank" rel="noopener">' + esc(normalized) + '</a>'
-          : '<span>' + esc(normalized) + '</span>';
-        return '<span class="tracking-inline">' + codeHtml +
-          '<button type="button" class="link-btn" data-copy-tracking="' + esc(normalized) + '">Copiar</button>' +
-          '</span>';
-      }
-      async function copyText(text) {
-        try {
-          if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(text);
-            return true;
-          }
-        } catch (_) { /* fallback abaixo */ }
-        try {
-          const ta = document.createElement('textarea');
-          ta.value = text;
-          ta.setAttribute('readonly', '');
-          ta.style.position = 'fixed';
-          ta.style.opacity = '0';
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          ta.remove();
-          return true;
-        } catch (_) {
-          return false;
-        }
-      }
-      function isDelayedPaidOrder(order) {
-        if (!order || order.status !== 'paid' || !order.paid_at) return false;
-        const paidAt = new Date(order.paid_at).getTime();
-        return Number.isFinite(paidAt) && (Date.now() - paidAt > 48 * 3600 * 1000);
-      }
-      const STATUS_PT = { pending: 'Aguardando', processing: 'Processando', paid: 'Pago', shipped: 'Enviado', delivered: 'Entregue', canceled: 'Cancelado', refunded: 'Estornado' };
-
-      const loadingEl = document.getElementById('loading');
-      const deniedEl = document.getElementById('denied');
-      const contentEl = document.getElementById('content');
-
-      // ---------------------------------------------------------------
-      // Abas
-      // ---------------------------------------------------------------
-      const tabButtons = document.querySelectorAll('.admin-tab');
-      const panels = {
-        orders: document.getElementById('panel-orders'),
-        products: document.getElementById('panel-products'),
-      };
-      tabButtons.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          tabButtons.forEach(function (b) { b.classList.remove('is-active'); });
-          btn.classList.add('is-active');
-          Object.keys(panels).forEach(function (k) { panels[k].hidden = (k !== btn.getAttribute('data-tab')); });
-        });
-      });
-
-      // ---------------------------------------------------------------
-      // Pedidos
-      // ---------------------------------------------------------------
-      const ordersListEl = document.getElementById('orders-list');
-      const statusFilterEl = document.getElementById('status-filter');
-      const searchEl = document.getElementById('order-search');
-      const searchBtn = document.getElementById('order-search-btn');
-      const dateFromEl = document.getElementById('order-date-from');
-      const dateToEl = document.getElementById('order-date-to');
-      const exportCsvBtn = document.getElementById('order-export-csv');
-      const senderSettingsBtn = document.getElementById('sender-settings-btn');
-      const printPaidBtn = document.getElementById('print-paid-btn');
-      const saveAllBtn = document.getElementById('save-all-btn');
-      const bulkSaveStatusEl = document.getElementById('bulk-save-status');
-      let currentOrders = [];
-
-      function renderOrders(orders) {
-        currentOrders = orders.slice();
-        if (!orders.length) {
-          ordersListEl.innerHTML = '<p class="field__hint">Nenhum pedido encontrado.</p>';
-          refreshBulkBar();
-          return;
-        }
-        ordersListEl.innerHTML = orders.map(function (o) {
-          const items = (o.order_items || []).map(function (it) {
-            return it.qty + '× ' + esc(it.product_name);
-          }).join(', ');
-          const allowedNext = o.status === 'paid' ? ['paid', 'shipped']
-            : (o.status === 'shipped' ? ['shipped', 'delivered'] : [o.status]);
-          const statusOptions = allowedNext.map(function (s) {
-            return '<option value="' + s + '"' + (s === o.status ? ' selected' : '') + '>' + STATUS_PT[s] + '</option>';
-          }).join('');
-          const delayedBadge = isDelayedPaidOrder(o)
-            ? ' <span class="badge-status" data-status="atrasado">Atrasado</span>'
-            : '';
-          // data-orig-* guarda o valor salvo no banco, pra detectar alteração
-          // não salva (comparando com o valor atual do campo).
-          return '<div class="admin-row" data-id="' + esc(o.id) + '" data-orig-status="' + esc(o.status) + '" data-orig-tracking="' + esc(o.tracking_code || '') + '">' +
-            '<div class="admin-row__main">' +
-              '<div class="admin-row__title">Pedido ' + esc(String(o.id).slice(0, 8)) +
-                ' <span class="badge-status" data-status="' + esc(o.status) + '">' + (STATUS_PT[o.status] || o.status) + '</span>' + delayedBadge + '</div>' +
-              '<div class="admin-row__meta">' + esc(o.customer_email || 'sem e-mail') + ' · ' +
-                new Date(o.created_at).toLocaleDateString('pt-BR') + ' · ' + brl(o.total_cents) + '</div>' +
-              '<div class="admin-row__meta">' + (items || 'sem itens') + '</div>' +
-            '</div>' +
-            '<div class="admin-row__actions">' +
-              '<label class="field"><span>Status</span><select data-field="status">' + statusOptions + '</select></label>' +
-              '<label class="field"><span>Rastreio</span><input type="text" data-field="tracking_code" value="' + esc(o.tracking_code || '') + '" placeholder="Código de rastreio" /></label>' +
-              '<button type="button" class="btn btn--secondary btn--sm" data-action="save-order">Salvar</button>' +
-              '<button type="button" class="link-btn" data-action="order-detail">Detalhes</button>' +
-            '</div>' +
-          '</div>';
-        }).join('');
-        refreshBulkBar();
-      }
-
-      // ---------------------------------------------------------------
-      // Salvar em lote: marca linha como "alterada" quando status/rastreio
-      // diverge do valor original, e permite salvar todas de uma vez.
-      // ---------------------------------------------------------------
-      function isRowDirty(row) {
-        const status = row.querySelector('[data-field="status"]').value;
-        const tracking = row.querySelector('[data-field="tracking_code"]').value.trim();
-        return status !== row.getAttribute('data-orig-status') ||
-          tracking !== (row.getAttribute('data-orig-tracking') || '');
-      }
-
-      function updateRowDirtyState(row) {
-        row.classList.toggle('is-dirty', isRowDirty(row));
-        refreshBulkBar();
-      }
-
-      function refreshBulkBar() {
-        const dirtyRows = ordersListEl.querySelectorAll('.admin-row.is-dirty');
-        const count = dirtyRows.length;
-        saveAllBtn.disabled = count === 0;
-        bulkSaveStatusEl.textContent = count === 0
-          ? 'Nenhuma alteração pendente.'
-          : count + ' pedido' + (count === 1 ? '' : 's') + ' com alteração não salva.';
-      }
-
-      ordersListEl.addEventListener('change', function (e) {
-        if (!e.target.matches('[data-field="status"]')) return;
-        const row = e.target.closest('.admin-row');
-        if (row) updateRowDirtyState(row);
-      });
-      ordersListEl.addEventListener('input', function (e) {
-        if (!e.target.matches('[data-field="tracking_code"]')) return;
-        const row = e.target.closest('.admin-row');
-        if (row) updateRowDirtyState(row);
-      });
-
-      saveAllBtn.addEventListener('click', async function () {
-        const dirtyRows = Array.from(ordersListEl.querySelectorAll('.admin-row.is-dirty'));
-        if (!dirtyRows.length) return;
-        saveAllBtn.disabled = true;
-        const failures = [];
-        for (let i = 0; i < dirtyRows.length; i++) {
-          const row = dirtyRows[i];
-          bulkSaveStatusEl.textContent = 'Salvando ' + (i + 1) + ' de ' + dirtyRows.length + '…';
-          const id = row.getAttribute('data-id');
-          const status = row.querySelector('[data-field="status"]').value;
-          const tracking = row.querySelector('[data-field="tracking_code"]').value;
-          const payload = { order_id: id, tracking_code: tracking };
-          if (status !== row.getAttribute('data-orig-status')) payload.status = status;
-          const { error } = await D.updateOrder(payload);
-          if (error) failures.push('Pedido ' + id.slice(0, 8) + ': ' + error);
-        }
-        if (failures.length) {
-          window.alert('Algumas alterações não foram salvas:\n\n' + failures.join('\n'));
-        }
-        await loadOrders();
-      });
-
-      async function loadOrders() {
-        ordersListEl.innerHTML = '<p class="field__hint">Carregando…</p>';
-        const { data, error } = await D.listOrders({
-          status: statusFilterEl.value || undefined,
-          search: searchEl.value.trim() || undefined,
-          date_from: dateFromEl.value || undefined,
-          date_to: dateToEl.value || undefined,
-        });
-        if (error) { ordersListEl.innerHTML = '<p class="field__hint">' + esc(error) + '</p>'; return; }
-        renderOrders((data && data.orders) || []);
-      }
-
-      statusFilterEl.addEventListener('change', loadOrders);
-      dateFromEl.addEventListener('change', loadOrders);
-      dateToEl.addEventListener('change', loadOrders);
-      searchBtn.addEventListener('click', loadOrders);
-      searchEl.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') { e.preventDefault(); loadOrders(); }
-      });
-
-      function csvCell(value) {
-        const text = String(value == null ? '' : value);
-        return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
-      }
-      function exportOrdersCsv() {
-        if (!currentOrders.length) return;
-        const header = ['id', 'data', 'cliente', 'status', 'itens', 'subtotal', 'frete', 'desconto', 'total', 'rastreio'];
-        const rows = currentOrders.map(function (o) {
-          const items = (o.order_items || []).map(function (it) {
-            return it.qty + 'x ' + it.product_name;
-          }).join('; ');
-          return [
-            o.id,
-            o.created_at ? new Date(o.created_at).toLocaleString('pt-BR') : '',
-            o.customer_email || '',
-            STATUS_PT[o.status] || o.status || '',
-            items,
-            brl(o.subtotal_cents),
-            brl(o.shipping_cents),
-            brl(o.discount_cents),
-            brl(o.total_cents),
-            o.tracking_code || '',
-          ];
-        });
-        const csv = [header].concat(rows).map(function (row) {
-          return row.map(csvCell).join(',');
-        }).join('\r\n');
-        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'pedidos-druza.csv';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      }
-      exportCsvBtn.addEventListener('click', exportOrdersCsv);
-      senderSettingsBtn.addEventListener('click', function () {
-        if (configureSender(true)) window.alert('Remetente salvo para as próximas impressões.');
-      });
-      printPaidBtn.addEventListener('click', async function () {
-        const paidOrders = currentOrders.filter(function (o) { return o.status === 'paid'; });
-        if (!paidOrders.length) {
-          window.alert('Nenhum pedido pago carregado na tela para imprimir.');
-          return;
-        }
-        printPaidBtn.disabled = true;
-        const originalText = printPaidBtn.textContent;
-        const details = [];
-        const failures = [];
-        for (let i = 0; i < paidOrders.length; i++) {
-          const order = paidOrders[i];
-          printPaidBtn.textContent = 'Preparando ' + (i + 1) + ' de ' + paidOrders.length + '...';
-          const { data, error } = await D.getOrder(order.id);
-          if (error || !data) failures.push(String(order.id).slice(0, 8));
-          else details.push(data);
-        }
-        printPaidBtn.disabled = false;
-        printPaidBtn.textContent = originalText;
-        if (failures.length) {
-          window.alert('Alguns pedidos não entraram na impressão: ' + failures.join(', '));
-        }
-        printShippingLabels(details);
-      });
-
-      ordersListEl.addEventListener('click', async function (e) {
-        const copyBtn = e.target.closest('button[data-copy-tracking]');
-        if (copyBtn) {
-          await copyText(copyBtn.getAttribute('data-copy-tracking') || '');
-          return;
-        }
-        const saveBtn = e.target.closest('button[data-action="save-order"]');
-        const detailBtn = e.target.closest('button[data-action="order-detail"]');
-        const row = e.target.closest('.admin-row');
-        if (!row) return;
-        const id = row.getAttribute('data-id');
-
-        if (saveBtn) {
-          const status = row.querySelector('[data-field="status"]').value;
-          const tracking = row.querySelector('[data-field="tracking_code"]').value;
-          saveBtn.disabled = true;
-          const payload = { order_id: id, tracking_code: tracking };
-          if (status !== row.getAttribute('data-orig-status')) payload.status = status;
-          const { error } = await D.updateOrder(payload);
-          saveBtn.disabled = false;
-          if (error) { window.alert(error); return; }
-          loadOrders();
-        } else if (detailBtn) {
-          openOrderDetail(id);
-        }
-      });
-
-      // ---------------------------------------------------------------
-      // Detalhe do pedido (logística: cliente, endereço, pagamento)
-      // ---------------------------------------------------------------
-      const orderModal = document.getElementById('order-modal');
-      const orderModalBody = document.getElementById('order-modal-body');
-      let currentOrderDetail = null; // dados do pedido aberto (p/ imprimir etiqueta)
-
-      function closeOrderModal() { orderModal.hidden = true; orderModalBody.innerHTML = ''; }
-      orderModal.querySelectorAll('[data-close-modal]').forEach(function (el) {
-        el.addEventListener('click', closeOrderModal);
-      });
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && !orderModal.hidden) closeOrderModal();
-      });
-
-      function line(label, value) {
-        return '<div class="detail-line"><span class="detail-label">' + esc(label) + '</span>' +
-          '<span class="detail-value">' + esc(value == null || value === '' ? '—' : value) + '</span></div>';
-      }
-      function lineHtml(label, html) {
-        return '<div class="detail-line"><span class="detail-label">' + esc(label) + '</span>' +
-          '<span class="detail-value">' + html + '</span></div>';
-      }
-
-      async function openOrderDetail(id) {
-        orderModalBody.innerHTML = '<p class="field__hint">Carregando…</p>';
-        orderModal.hidden = false;
-        const { data, error } = await D.getOrder(id);
-        if (error || !data) { orderModalBody.innerHTML = '<p class="auth-feedback is-error">' + esc(error || 'Falha ao carregar.') + '</p>'; return; }
-        currentOrderDetail = data;
-        const o = data.order || {};
-        const c = data.customer || {};
-        const a = data.address || null;
-        const p = data.payment || null;
-
-        const items = (o.order_items || []).map(function (it) {
-          return '<div class="detail-item">' + it.qty + '× ' + esc(it.product_name) +
-            ' <span class="muted">' + brl(it.unit_price_cents) + '</span></div>';
-        }).join('') || '<div class="muted">Sem itens.</div>';
-
-        const addrHtml = a
-          ? esc(a.recipient) + '<br>' + esc(a.street) + ', ' + esc(a.number) +
-            (a.complement ? ' — ' + esc(a.complement) : '') + '<br>' +
-            (a.neighborhood ? esc(a.neighborhood) + ' · ' : '') +
-            esc(a.city) + '/' + esc(a.state) + ' · CEP ' + esc(a.cep)
-          : '<span class="muted">Sem endereço cadastrado.</span>';
-
-        const payHtml = p
-          ? line('Forma', p.type_label) +
-            (p.method_id ? line('Bandeira/método', p.method_id) : '') +
-            (p.installments ? line('Parcelas', p.installments + 'x') : '') +
-            line('Status MP', (p.status || '—') + (p.status_detail ? ' (' + p.status_detail + ')' : '')) +
-            (p.amount != null ? line('Valor pago', brl(Math.round(p.amount * 100))) : '')
-          : '<div class="muted">Pagamento ainda não confirmado no MercadoPago.</div>';
-
-        orderModalBody.innerHTML =
-          '<section class="detail-block"><h3>Pedido</h3>' +
-            line('Nº', String(o.id)) +
-            line('Data', o.created_at ? new Date(o.created_at).toLocaleString('pt-BR') : '—') +
-            line('Status', STATUS_PT[o.status] || o.status) +
-            lineHtml('Rastreio', renderTracking(o.tracking_code)) +
-          '</section>' +
-          '<section class="detail-block"><h3>Cliente</h3>' +
-            line('Nome', c.full_name) +
-            line('E-mail', c.email) +
-            line('Telefone', c.phone) +
-          '</section>' +
-          '<section class="detail-block"><h3>Entrega</h3><div class="detail-address">' + addrHtml + '</div>' +
-            (a ? '<div class="admin-note-actions"><button type="button" class="btn btn--secondary btn--sm" data-action="print-label">Imprimir etiqueta completa</button></div>' : '') +
-          '</section>' +
-          '<section class="detail-block"><h3>Pagamento</h3>' + payHtml + '</section>' +
-          '<section class="detail-block"><h3>Itens</h3>' + items +
-            '<div class="detail-totals">' +
-              line('Subtotal', brl(o.subtotal_cents)) +
-              line('Frete', brl(o.shipping_cents)) +
-              (o.discount_cents ? line('Desconto', '− ' + brl(o.discount_cents)) : '') +
-              line('Total', brl(o.total_cents)) +
-            '</div>' +
-          '</section>' +
-          '<section class="detail-block"><h3>Notas internas</h3>' +
-            '<label class="field"><span>Nota do admin</span>' +
-              '<textarea id="admin-order-notes" maxlength="2000" rows="5" placeholder="Ex.: cliente pediu embalagem de presente">' + esc(o.admin_notes || '') + '</textarea>' +
-            '</label>' +
-            '<div class="admin-note-actions">' +
-              '<button type="button" class="btn btn--secondary btn--sm" data-action="save-admin-note" data-order-id="' + esc(o.id) + '">Salvar nota</button>' +
-              '<span class="field__hint" id="admin-note-feedback"></span>' +
-            '</div>' +
-          '</section>';
-      }
-
-      const SENDER_STORAGE_KEY = 'druza_admin_sender_v1';
-      const DEFAULT_SENDER = {
-        name: 'Druza Semi Joias',
-        document: 'CNPJ 19.600.917/0001-55',
-        address: '',
-      };
-
-      function loadSender() {
-        try {
-          return Object.assign({}, DEFAULT_SENDER, JSON.parse(localStorage.getItem(SENDER_STORAGE_KEY) || '{}'));
-        } catch (_) {
-          return Object.assign({}, DEFAULT_SENDER);
-        }
-      }
-
-      function configureSender(force) {
-        const current = loadSender();
-        if (!force && current.address) return current;
-        const name = window.prompt('Nome do remetente', current.name || DEFAULT_SENDER.name);
-        if (name == null) return null;
-        const documentId = window.prompt('Documento do remetente (CNPJ/CPF)', current.document || DEFAULT_SENDER.document);
-        if (documentId == null) return null;
-        const address = window.prompt('Endereco completo do remetente (rua, numero, bairro, cidade/UF e CEP)', current.address || '');
-        if (address == null) return null;
-        const sender = {
-          name: name.trim() || DEFAULT_SENDER.name,
-          document: documentId.trim() || DEFAULT_SENDER.document,
-          address: address.trim(),
-        };
-        if (!sender.address) {
-          window.alert('Preencha o endereco do remetente antes de imprimir.');
-          return null;
-        }
-        localStorage.setItem(SENDER_STORAGE_KEY, JSON.stringify(sender));
-        return sender;
-      }
-
-      function moneyFromCents(cents) {
-        return (Number(cents || 0) / 100).toFixed(2).replace('.', ',');
-      }
-
-      function itemUnitCents(item) {
-        const qty = Math.max(Number(item.qty) || 1, 1);
-        if (Number.isFinite(Number(item.unit_price_cents))) return Number(item.unit_price_cents);
-        if (Number.isFinite(Number(item.total_cents))) return Math.round(Number(item.total_cents) / qty);
-        return 0;
-      }
-
-      function formatAddressHtml(address) {
-        const compl = address.complement ? ' - ' + esc(address.complement) : '';
-        const bairro = address.neighborhood ? esc(address.neighborhood) + '<br>' : '';
-        return esc(address.recipient) + '<br>' +
-          esc(address.street) + ', ' + esc(address.number) + compl + '<br>' +
-          bairro + esc(address.city) + ' / ' + esc(address.state) +
-          '<div class="cep">CEP ' + esc(address.cep) + '</div>';
-      }
-
-      function renderPrintableOrder(detail, sender, index, total) {
-        const o = detail.order || {};
-        const c = detail.customer || {};
-        const a = detail.address || null;
-        if (!a) return '';
-        const orderLabel = String(o.id || '').slice(0, 8);
-        const rows = (o.order_items || []).map(function (it) {
-          const qty = Number(it.qty) || 1;
-          const unit = itemUnitCents(it);
-          const lineTotal = unit * qty;
-          return '<tr>' +
-            '<td class="q">' + esc(String(qty)) + 'x</td>' +
-            '<td>' + esc(it.product_name) + '</td>' +
-            '<td class="money">R$ ' + esc(moneyFromCents(unit)) + '</td>' +
-            '<td class="money">R$ ' + esc(moneyFromCents(lineTotal)) + '</td>' +
-          '</tr>';
-        }).join('') || '<tr><td colspan="4">Sem itens.</td></tr>';
-
-        const declarationRows = (o.order_items || []).map(function (it) {
-          const qty = Number(it.qty) || 1;
-          const unit = itemUnitCents(it);
-          return '<tr>' +
-            '<td>' + esc(it.product_name) + '</td>' +
-            '<td class="center">' + esc(String(qty)) + '</td>' +
-            '<td class="money">R$ ' + esc(moneyFromCents(unit)) + '</td>' +
-            '<td class="money">R$ ' + esc(moneyFromCents(unit * qty)) + '</td>' +
-          '</tr>';
-        }).join('') || '<tr><td colspan="4">Sem itens.</td></tr>';
-
-        return '<section class="print-page">' +
-          '<div class="label">' +
-            '<p class="tag">Remetente</p>' +
-            '<div class="sender"><strong>' + esc(sender.name) + '</strong><br>' +
-              esc(sender.document) + '<br>' + esc(sender.address) + '</div>' +
-            '<p class="tag">Destinatario</p>' +
-            '<div class="to">' + formatAddressHtml(a) + '</div>' +
-            '<p class="meta">Pedido ' + esc(orderLabel) +
-              (o.tracking_code ? ' - Rastreio ' + esc(o.tracking_code) : '') +
-              (total > 1 ? ' - Etiqueta ' + index + ' de ' + total : '') + '</p>' +
-          '</div>' +
-          '<div class="pick">' +
-            '<h2>Romaneio / picking list</h2>' +
-            '<table><thead><tr><th>Qtd.</th><th>Item</th><th>Unit.</th><th>Total</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-            '<p class="meta">Cliente: ' + esc(c.full_name || c.email || '-') +
-              ' - Total do pedido: ' + esc(brl(o.total_cents)) + '</p>' +
-          '</div>' +
-          '<div class="declaration">' +
-            '<h2>Declaracao de conteudo</h2>' +
-            '<div class="decl-grid">' +
-              '<div><strong>Remetente</strong><br>' + esc(sender.name) + '<br>' + esc(sender.document) + '<br>' + esc(sender.address) + '</div>' +
-              '<div><strong>Destinatario</strong><br>' + esc(a.recipient) + '<br>' +
-                esc(a.street) + ', ' + esc(a.number) + (a.complement ? ' - ' + esc(a.complement) : '') + '<br>' +
-                esc(a.city) + '/' + esc(a.state) + ' - CEP ' + esc(a.cep) + '</div>' +
-            '</div>' +
-            '<table><thead><tr><th>Descricao</th><th>Qtd.</th><th>Valor unit.</th><th>Valor total</th></tr></thead><tbody>' + declarationRows + '</tbody></table>' +
-            '<p class="meta">Valor total declarado: ' + esc(brl(o.total_cents)) + '</p>' +
-            '<p class="declaration-text">Declaro que nao me enquadro no conceito de contribuinte previsto na legislacao vigente e que os bens acima descritos sao de minha propriedade, assumindo inteira responsabilidade pelo seu conteudo.</p>' +
-            '<div class="signature"><span>Data</span><span>Assinatura do remetente</span></div>' +
-          '</div>' +
-        '</section>';
-      }
-
-      function printShippingLabels(details) {
-        const list = (details || []).filter(function (detail) { return detail && detail.address; });
-        if (!list.length) { window.alert('Nenhum pedido com endereco de entrega para imprimir.'); return; }
-        const sender = configureSender(false);
-        if (!sender) return;
-        const win = window.open('', '_blank', 'width=900,height=700');
-        if (!win) { window.alert('Permita pop-ups para imprimir as etiquetas.'); return; }
-        const pages = list.map(function (detail, i) {
-          return renderPrintableOrder(detail, sender, i + 1, list.length);
-        }).join('');
-        const doc =
-          '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
-          '<title>Etiquetas Druza</title>' +
-          '<style>' +
-          '*{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}' +
-          'body{margin:0;padding:18px;color:#111;background:#f4f4f4}' +
-          '.noprint{text-align:center;margin:0 0 18px}.noprint button{font-size:15px;padding:10px 22px;cursor:pointer;margin:0 4px}' +
-          '.print-page{width:190mm;min-height:277mm;margin:0 auto 16px;background:#fff;padding:12mm;page-break-after:always}' +
-          '.print-page:last-child{page-break-after:auto}' +
-          '.label{border:2px solid #111;border-radius:8px;padding:16px;margin-bottom:14px}' +
-          '.tag{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#666;margin:0 0 4px}' +
-          '.sender{font-size:12px;color:#333;padding-bottom:10px;border-bottom:1px dashed #999;margin-bottom:12px;line-height:1.35}' +
-          '.to{font-size:18px;font-weight:bold;line-height:1.35}.cep{font-size:24px;font-weight:bold;letter-spacing:.05em;margin-top:8px}' +
-          '.pick,.declaration{margin-top:14px}.pick h2,.declaration h2{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:#555;border-bottom:1px solid #ccc;padding-bottom:5px}' +
-          'table{width:100%;border-collapse:collapse;font-size:12px}th{text-align:left;background:#eee}th,td{padding:5px 4px;border:1px solid #ddd;vertical-align:top}' +
-          'td.q{width:42px;font-weight:bold;white-space:nowrap}.money{text-align:right;white-space:nowrap}.center{text-align:center}' +
-          '.meta{font-size:11px;color:#555;margin:8px 0}.decl-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11px;margin-bottom:8px}' +
-          '.declaration-text{font-size:10px;line-height:1.35}.signature{display:grid;grid-template-columns:1fr 2fr;gap:24px;margin-top:24px;font-size:11px}' +
-          '.signature span{border-top:1px solid #111;text-align:center;padding-top:5px}' +
-          '@media print{body{padding:0;background:#fff}.noprint{display:none}.print-page{margin:0;width:auto;min-height:auto;box-shadow:none}}' +
-          '</style></head><body>' +
-          '<div class="noprint"><button onclick="window.print()">Imprimir</button><button onclick="window.close()">Fechar</button></div>' +
-          pages +
-          '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();},300);};</scr' + 'ipt>' +
-          '</body></html>';
-        win.document.write(doc);
-        win.document.close();
-        win.focus();
-      }
-
-      orderModalBody.addEventListener('click', async function (e) {
-        const copyBtn = e.target.closest('button[data-copy-tracking]');
-        if (copyBtn) {
-          await copyText(copyBtn.getAttribute('data-copy-tracking') || '');
-          return;
-        }
-        const printBtn = e.target.closest('button[data-action="print-label"]');
-        if (printBtn) {
-          printShippingLabels([currentOrderDetail]);
-          return;
-        }
-        const noteBtn = e.target.closest('button[data-action="save-admin-note"]');
-        if (!noteBtn) return;
-        const notesEl = document.getElementById('admin-order-notes');
-        const feedbackEl = document.getElementById('admin-note-feedback');
-        noteBtn.disabled = true;
-        if (feedbackEl) feedbackEl.textContent = 'Salvando...';
-        const { error } = await D.updateOrder({
-          order_id: noteBtn.getAttribute('data-order-id'),
-          admin_notes: notesEl ? notesEl.value : '',
-        });
-        noteBtn.disabled = false;
-        if (feedbackEl) feedbackEl.textContent = error ? error : 'Nota salva.';
-        if (!error) await loadOrders();
-      });
-
-      // ---------------------------------------------------------------
-      // Produtos
-      // ---------------------------------------------------------------
-      const productsListEl = document.getElementById('products-list');
-      const productForm = document.getElementById('product-form');
-      const productFeedback = document.getElementById('product-feedback');
-      const productAddBtn = document.getElementById('product-add-btn');
-      const productCancelBtn = document.getElementById('product-cancel-btn');
-      const productSaveBtn = document.getElementById('product-save-btn');
-      let products = [];
-
-      function renderProducts(list) {
-        if (!list.length) {
-          productsListEl.innerHTML = '<p class="field__hint">Nenhum produto cadastrado.</p>';
-          return;
-        }
-        productsListEl.innerHTML = list.map(function (p) {
-          return '<div class="admin-row" data-id="' + esc(p.id) + '">' +
-            '<div class="admin-row__main">' +
-              '<div class="admin-row__title">' + esc(p.name) +
-                ' <span class="badge-status" data-status="' + (p.active ? 'paid' : 'canceled') + '">' + (p.active ? 'Ativo' : 'Inativo') + '</span>' +
-                (p.stock_quantity > 0 ? '' : ' <span class="badge-status" data-status="pending">Sem estoque</span>') +
-                (p.featured ? ' <span class="badge-status" data-status="shipped">★ Destaque</span>' : '') +
-              '</div>' +
-              '<div class="admin-row__meta">' + esc(p.slug) + ' · ' + esc(p.category || '—') + ' · ' + brl(p.price_cents) + ' · Estoque ' + esc(p.stock_quantity) + '</div>' +
-            '</div>' +
-            '<div class="admin-row__actions">' +
-              '<button type="button" class="link-btn" data-action="edit-product">Editar</button>' +
-              '<button type="button" class="link-btn link-btn--danger" data-action="delete-product">Desativar</button>' +
-            '</div>' +
-          '</div>';
-        }).join('');
-      }
-
-      function fillProductForm(p) {
-        const f = productForm;
-        f.elements.id.value = p ? p.id : '';
-        f.elements.slug.value = p ? p.slug : '';
-        f.elements.name.value = p ? p.name : '';
-        f.elements.category.value = p ? (p.category || '') : '';
-        f.elements.price.value = p ? centsToReais(p.price_cents) : '';
-        f.elements.active.checked = p ? !!p.active : true;
-        f.elements.stock_quantity.value = p ? Number(p.stock_quantity || 0) : 1;
-        f.elements.featured.checked = p ? !!p.featured : false;
-      }
-
-      function openProductForm(p) {
-        productFeedback.className = 'auth-feedback';
-        productFeedback.textContent = '';
-        fillProductForm(p);
-        productForm.elements.slug.disabled = !!p; // slug é o identificador, não muda depois de criado
-        productSaveBtn.textContent = p ? 'Salvar alterações' : 'Criar produto';
-        productForm.hidden = false;
-        productForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-      function closeProductForm() {
-        productForm.hidden = true;
-        productForm.elements.slug.disabled = false;
-        productForm.reset();
-      }
-
-      async function loadProducts() {
-        productsListEl.innerHTML = '<p class="field__hint">Carregando…</p>';
-        const { data, error } = await D.listProducts();
-        if (error) { productsListEl.innerHTML = '<p class="field__hint">' + esc(error) + '</p>'; return; }
-        products = (data && data.products) || [];
-        renderProducts(products);
-      }
-
-      productAddBtn.addEventListener('click', function () { openProductForm(null); });
-      productCancelBtn.addEventListener('click', closeProductForm);
-
-      productsListEl.addEventListener('click', async function (e) {
-        const editBtn = e.target.closest('button[data-action="edit-product"]');
-        const deleteBtn = e.target.closest('button[data-action="delete-product"]');
-        const row = e.target.closest('.admin-row');
-        if (!row) return;
-        const id = row.getAttribute('data-id');
-        const p = products.find(function (x) { return x.id === id; });
-
-        if (editBtn && p) {
-          openProductForm(p);
-        } else if (deleteBtn && p) {
-          if (!window.confirm('Desativar "' + p.name + '"?')) return;
-          deleteBtn.disabled = true;
-          const { error } = await D.deleteProduct(id);
-          if (error) { window.alert(error); deleteBtn.disabled = false; return; }
-          loadProducts();
-        }
-      });
-
-      productForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        const f = productForm;
-        const priceCents = reaisToCents(f.elements.price.value);
-        const stockQuantity = Number(f.elements.stock_quantity.value);
-        const slug = f.elements.slug.value.trim();
-        const name = f.elements.name.value.trim();
-        if (!slug || !name || !Number.isFinite(priceCents) || priceCents < 0 ||
-            !Number.isInteger(stockQuantity) || stockQuantity < 0) {
-          productFeedback.className = 'auth-feedback is-error';
-          productFeedback.textContent = 'Preencha slug, nome e um preço válido.';
-          return;
-        }
-        productSaveBtn.disabled = true;
-        const { error } = await D.upsertProduct({
-          id: f.elements.id.value || undefined,
-          slug: slug,
-          name: name,
-          category: f.elements.category.value.trim() || undefined,
-          price_cents: priceCents,
-          active: f.elements.active.checked,
-          stock_quantity: stockQuantity,
-          featured: f.elements.featured.checked,
-        });
-        productSaveBtn.disabled = false;
-        if (error) {
-          productFeedback.className = 'auth-feedback is-error';
-          productFeedback.textContent = error;
-          return;
-        }
-        closeProductForm();
-        loadProducts();
-      });
-
-      // ---------------------------------------------------------------
-      // 2FA: ativação obrigatória no primeiro acesso
-      // ---------------------------------------------------------------
-      const mfaEnrollEl = document.getElementById('mfa-enroll');
-      const mfaGenBtn = document.getElementById('mfa-generate-btn');
-      const mfaStepGen = document.getElementById('mfa-step-generate');
-      const mfaStepConfirm = document.getElementById('mfa-step-confirm');
-      const mfaQrEl = document.getElementById('mfa-qr');
-      const mfaSecretEl = document.getElementById('mfa-secret');
-      const mfaConfirmForm = document.getElementById('mfa-confirm-form');
-      const mfaConfirmBtn = document.getElementById('mfa-confirm-btn');
-      const mfaFeedback = document.getElementById('mfa-feedback');
-      let enrollFactorId = null;
-
-      mfaGenBtn.addEventListener('click', async function () {
-        mfaGenBtn.disabled = true;
-        const res = await D.enroll();
-        if (res.error) { mfaGenBtn.disabled = false; window.alert(res.error); return; }
-        enrollFactorId = res.factorId;
-        // qr_code do Supabase costuma vir como "data:image/svg+xml;...,<svg ...>"
-        // — uma string que já contém aspas duplas do próprio SVG. Concatenar
-        // isso dentro de um src="..." via innerHTML quebra o HTML (as aspas
-        // do SVG fecham o atributo antes da hora). Setar .src como
-        // propriedade do elemento (não via string) evita esse problema por
-        // completo, funcionando tanto para "data:" quanto para markup <svg>.
-        mfaQrEl.innerHTML = '';
-        const qrValue = (res.qr || '').trim();
-        if (/^<svg/i.test(qrValue)) {
-          mfaQrEl.innerHTML = qrValue;
-        } else if (qrValue) {
-          const qrImg = document.createElement('img');
-          qrImg.alt = 'QR Code do 2FA';
-          qrImg.src = qrValue;
-          mfaQrEl.appendChild(qrImg);
-        }
-        mfaSecretEl.textContent = res.secret || '';
-        mfaStepGen.hidden = true;
-        mfaStepConfirm.hidden = false;
-      });
-
-      mfaConfirmForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        mfaFeedback.className = 'auth-feedback'; mfaFeedback.textContent = '';
-        const code = (mfaConfirmForm.elements.code.value || '').trim();
-        if (!/^[0-9]{6}$/.test(code)) { mfaFeedback.classList.add('is-error'); mfaFeedback.textContent = 'Digite os 6 dígitos.'; return; }
-        mfaConfirmBtn.disabled = true; mfaConfirmBtn.textContent = 'Ativando…';
-        const { error } = await D.verifyFactor(enrollFactorId, code);
-        if (error) {
-          mfaFeedback.classList.add('is-error'); mfaFeedback.textContent = 'Código inválido. Tente novamente.';
-          mfaConfirmBtn.disabled = false; mfaConfirmBtn.textContent = 'Ativar e entrar';
-          return;
-        }
-        // Agora a sessão é aal2 — abre o painel.
-        mfaEnrollEl.hidden = true;
-        await showAdmin();
-      });
-
-      async function showAdmin() {
-        contentEl.hidden = false;
-        await Promise.all([loadOrders(), loadProducts()]);
-      }
-
-      // ---------------------------------------------------------------
-      // Boot
-      // ---------------------------------------------------------------
-      document.getElementById('logout-btn').addEventListener('click', async function () {
-        await A.signOut();
-        location.replace('admin-login.html');
-      });
-
-      (async function init() {
-        // Sem sessão → tela de login do admin (não a do cliente).
-        const session = await A.requireAuth('admin-login.html');
-        if (!session) return;
-
-        const allowed = await D.checkAccess();
-        loadingEl.hidden = true;
-        if (!allowed) { deniedEl.hidden = false; return; }
-
-        // Gate de 2FA (a trava real é no servidor; aqui é o fluxo da UI):
-        //  - aal2            → painel liberado.
-        //  - aal1 + tem fator → precisa completar o código → tela de login.
-        //  - aal1 + sem fator → ativação obrigatória do 2FA aqui.
-        const aal = await D.getAAL();
-        if (aal.current === 'aal2') {
-          await showAdmin();
-        } else if (aal.next === 'aal2') {
-          location.replace('admin-login.html');
-        } else {
-          mfaEnrollEl.hidden = false;
-        }
-      })();
-    })();
-  </script>
+  <script src="js/admin-panel.js"></script>
+  <script src="js/admin-help.js"></script>
 </body>
 </html>

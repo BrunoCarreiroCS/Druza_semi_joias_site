@@ -29,3 +29,27 @@ verify_jwt = true
 
 [functions.admin-delete-product]
 verify_jwt = true
+
+[functions.admin-dashboard]
+verify_jwt = true
+
+[functions.admin-list-categories]
+verify_jwt = true
+
+[functions.admin-upsert-category]
+verify_jwt = true
+
+[functions.admin-delete-category]
+verify_jwt = true
+
+[functions.admin-inventory-move]
+verify_jwt = true
+
+[functions.admin-list-inventory]
+verify_jwt = true
+
+[functions.admin-list-customers]
+verify_jwt = true
+
+[functions.admin-list-audit]
+verify_jwt = true

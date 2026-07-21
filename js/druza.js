@@ -176,13 +176,16 @@
     $$('a', mNav).forEach(function (a) { a.addEventListener('click', function () { mNav.classList.remove('is-open'); document.body.classList.remove('body-lock'); }); });
   }
 
-  /* ── Botões "Adicionar à sacola" (data-add) ─────────────── */
-  $$('[data-add]').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var sizeWrap = document.querySelector('[data-size-group]');
-      var size = sizeWrap ? (sizeWrap.querySelector('.is-active') || {}).textContent || '' : '';
-      addToCart({ id: b.dataset.add, name: b.dataset.name, price: parseFloat(b.dataset.price), img: b.dataset.img, size: (size || '').trim() });
-    });
+  /* ── Botões "Adicionar à sacola" (data-add) ─────────────────
+     Delegado no document: os cards do catálogo e a ficha do produto são
+     montados a partir do banco depois deste script rodar, e um listener
+     por botão deixaria de fora tudo que chega em seguida. */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-add]');
+    if (!b) return;
+    var sizeWrap = document.querySelector('[data-size-group]');
+    var size = sizeWrap ? (sizeWrap.querySelector('.is-active') || {}).textContent || '' : '';
+    addToCart({ id: b.dataset.add, name: b.dataset.name, price: parseFloat(b.dataset.price), img: b.dataset.img, size: (size || '').trim() });
   });
 
   /* ── Seletor de tamanho ─────────────────────────────────── */
@@ -199,13 +202,13 @@
   var gMain = $('[data-gallery-main]');
   if (gMain) {
     var gImg = gMain.querySelector('img');
-    $$('[data-thumb]').forEach(function (t) {
-      t.addEventListener('click', function () {
-        $$('[data-thumb]').forEach(function (x) { x.classList.remove('is-active'); });
-        t.classList.add('is-active');
-        gImg.src = t.getAttribute('data-src');
-        gImg.style.objectPosition = t.getAttribute('data-pos') || 'center';
-      });
+    document.addEventListener('click', function (e) {
+      var t = e.target.closest && e.target.closest('[data-thumb]');
+      if (!t) return;
+      $$('[data-thumb]').forEach(function (x) { x.classList.remove('is-active'); });
+      t.classList.add('is-active');
+      gImg.src = t.getAttribute('data-src');
+      gImg.style.objectPosition = t.getAttribute('data-pos') || 'center';
     });
     gMain.addEventListener('click', function (e) {
       if (gMain.classList.toggle('is-zoom')) {
@@ -235,41 +238,61 @@
     }, { threshold: 0 }).observe(anchor);
   }
 
-  /* ── Catálogo: filtros + ordenação ──────────────────────── */
+  /* ── Catálogo: filtros + ordenação ────────────────────────
+     A grade vem do banco (js/storefront.js) e pode ser repintada a
+     qualquer momento; por isso os itens são relidos a cada aplicação e
+     tanto os chips quanto a grade usam delegação. */
   var grid = $('[data-catalog]');
-  if (grid) {
+  var catalogState = { cat: 'all', stone: 'all', sort: 'destaque' };
+  function applyCatalog() {
+    if (!grid) return;
     var items = $$('[data-item]', grid);
     var countEl = $('[data-catalog-count]');
-    var state = { cat: 'all', stone: 'all', sort: 'destaque' };
-    function apply() {
-      var visible = items.filter(function (el) {
-        var okCat = state.cat === 'all' || el.dataset.cat === state.cat;
-        var okStone = state.stone === 'all' || el.dataset.stone === state.stone;
-        el.style.display = (okCat && okStone) ? '' : 'none';
-        return okCat && okStone;
-      });
-      if (state.sort !== 'destaque') {
-        visible.sort(function (a, b) {
-          var pa = parseFloat(a.dataset.price), pb = parseFloat(b.dataset.price);
-          return state.sort === 'menor' ? pa - pb : pb - pa;
-        }).forEach(function (el) { grid.appendChild(el); });
-      } else {
-        items.forEach(function (el) { if (el.style.display !== 'none') grid.appendChild(el); });
-      }
-      if (countEl) countEl.textContent = visible.length + (visible.length === 1 ? ' peça' : ' peças');
-    }
-    $$('[data-filter]').forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        var key = chip.dataset.filter, val = chip.dataset.val;
-        $$('[data-filter="' + key + '"]').forEach(function (c) { c.classList.remove('is-active'); });
-        chip.classList.add('is-active');
-        state[key] = val; apply();
-      });
+    var visible = items.filter(function (el) {
+      var okCat = catalogState.cat === 'all' || el.dataset.cat === catalogState.cat;
+      var okStone = catalogState.stone === 'all' || el.dataset.stone === catalogState.stone;
+      el.style.display = (okCat && okStone) ? '' : 'none';
+      return okCat && okStone;
     });
-    var sortSel = $('[data-sort]');
-    if (sortSel) sortSel.addEventListener('change', function () { state.sort = sortSel.value; apply(); });
-    apply();
+    if (catalogState.sort !== 'destaque') {
+      visible.slice().sort(function (a, b) {
+        var pa = parseFloat(a.dataset.price), pb = parseFloat(b.dataset.price);
+        return catalogState.sort === 'menor' ? pa - pb : pb - pa;
+      }).forEach(function (el) { grid.appendChild(el); });
+    }
+    if (countEl) countEl.textContent = visible.length + (visible.length === 1 ? ' peça' : ' peças');
   }
+  if (grid) {
+    document.addEventListener('click', function (e) {
+      var chip = e.target.closest && e.target.closest('[data-filter]');
+      if (!chip) return;
+      var key = chip.dataset.filter, val = chip.dataset.val;
+      $$('[data-filter="' + key + '"]').forEach(function (c) { c.classList.remove('is-active'); });
+      chip.classList.add('is-active');
+      catalogState[key] = val;
+      applyCatalog();
+    });
+    document.addEventListener('change', function (e) {
+      if (!e.target.matches || !e.target.matches('[data-sort]')) return;
+      catalogState.sort = e.target.value;
+      applyCatalog();
+    });
+    applyCatalog();
+  }
+
+  /* Ponte para o storefront avisar que a grade mudou. */
+  window.DruzaShop = {
+    refreshCatalog: applyCatalog,
+    setCatalogFilter: function (key, value) {
+      if (!(key in catalogState)) return;
+      catalogState[key] = value;
+      $$('[data-filter="' + key + '"]').forEach(function (c) {
+        c.classList.toggle('is-active', c.dataset.val === value);
+      });
+      applyCatalog();
+    },
+    repaintCart: paint
+  };
 
   /* ── Hero slideshow ─────────────────────────────────────── */
   var slides = $$('[data-slide]'), dotsWrap = $('[data-dots]'), caption = $('[data-hero-caption]'), counter = $('[data-hero-count]');

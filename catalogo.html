@@ -57,7 +57,7 @@
 
     <!-- FILTROS -->
     <div class="toolbar" style="margin-top:44px">
-      <div class="chips" role="group" aria-label="Filtrar por categoria">
+      <div class="chips" role="group" aria-label="Filtrar por categoria" data-catalog-categories>
         <button class="chip is-active" data-filter="cat" data-val="all">Tudo</button>
         <button class="chip" data-filter="cat" data-val="aneis">Anéis</button>
         <button class="chip" data-filter="cat" data-val="pulseiras">Pulseiras</button>
@@ -75,7 +75,7 @@
         </select>
       </div>
     </div>
-    <div class="chips" role="group" aria-label="Filtrar por pedra" style="margin:-18px 0 40px">
+    <div class="chips" role="group" aria-label="Filtrar por pedra" style="margin:-18px 0 40px" data-catalog-stones>
       <button class="chip is-active" data-filter="stone" data-val="all">Todas as pedras</button>
       <button class="chip" data-filter="stone" data-val="paraiba">Paraíba</button>
       <button class="chip" data-filter="stone" data-val="esmeralda">Esmeralda</button>
@@ -144,7 +144,9 @@
   </div>
 </aside>
 
+<script src="js/config.public.js"></script>
 <script src="js/druza.js" defer></script>
+<script src="js/storefront.js" defer></script>
 <script>
 /* pré-seleciona categoria via ?cat= */
 (function () {

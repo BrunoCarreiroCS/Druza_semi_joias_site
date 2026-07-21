@@ -1,109 +1,101 @@
+// Cria ou edita um produto. A validacao vive em _shared/catalog-validation
+// e a gravacao inteira (ficha + galeria + saldo inicial) acontece numa
+// unica transacao dentro de public.admin_save_product.
+//
+// O saldo de estoque so pode ser informado na CRIACAO. Depois disso ele
+// muda exclusivamente por movimentacao registrada, para que a soma do
+// livro-razao sempre bata com o estoque atual.
+
+import { AdminRequestError, logAdminAction, serveAdmin } from '../_shared/admin-endpoint.ts';
 import {
-  AdminAuthError,
-  logAdminAction,
-  requireAdmin,
-} from '../_shared/require-admin.ts';
-import { corsHeaders, preflight, rejectDisallowedOrigin } from '../_shared/cors.ts';
-import { rateLimit } from '../_shared/rate-limit.ts';
-import { isUuid } from '../_shared/payment.ts';
+  isUuid,
+  parseImages,
+  parseInitialStock,
+  parseProductInput,
+} from '../_shared/catalog-validation.ts';
+import { SUPABASE_URL } from '../_shared/supabase-env.ts';
 
-interface RequestBody {
+interface RequestBody extends Record<string, unknown> {
   id?: string;
-  slug?: string;
-  name?: string;
-  category?: string;
-  price_cents?: number;
-  active?: boolean;
-  in_stock?: boolean;
-  stock_quantity?: number;
-  featured?: boolean;
+  images?: unknown;
+  initial_stock?: unknown;
 }
 
-function json(req: Request, body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
-  });
-}
-
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return preflight(req);
-  const originError = rejectDisallowedOrigin(req);
-  if (originError) return originError;
-  if (req.method !== 'POST') return json(req, { error: 'Metodo nao permitido.' }, 405);
-
-  const limited = rateLimit(req, corsHeaders(req), { limit: 30 });
-  if (limited) return limited;
-
-  let context;
+function storageHost(): string {
   try {
-    context = await requireAdmin(req);
-  } catch (error) {
-    if (error instanceof AdminAuthError) return json(req, { error: error.message }, error.status);
-    return json(req, { error: 'Erro de autorizacao.' }, 500);
-  }
-
-  let body: RequestBody;
-  try {
-    body = await req.json();
+    return new URL(SUPABASE_URL).host;
   } catch {
-    return json(req, { error: 'JSON invalido.' }, 400);
+    return '';
+  }
+}
+
+serveAdmin<RequestBody>(async ({ body, context }) => {
+  if (body.id !== undefined && body.id !== null && !isUuid(body.id)) {
+    throw new AdminRequestError('Produto inválido.');
+  }
+  const productId = isUuid(body.id) ? body.id : null;
+
+  const fields = parseProductInput(body);
+  const images = parseImages(body.images, storageHost());
+  const initialStock = productId ? 0 : parseInitialStock(body.initial_stock);
+
+  if (fields.category_id) {
+    const { data: category } = await context.admin
+      .from('categories').select('id').eq('id', fields.category_id).maybeSingle();
+    if (!category) throw new AdminRequestError('A categoria escolhida não existe mais.');
   }
 
-  const slug = String(body.slug ?? '').trim().toLowerCase();
-  const name = String(body.name ?? '').trim().replace(/\s+/g, ' ');
-  const category = String(body.category ?? '').trim().toLowerCase();
-  const priceCents = Number(body.price_cents);
-  const stockQuantity = body.stock_quantity === undefined
-    ? (body.in_stock === false ? 0 : 1)
-    : Number(body.stock_quantity);
+  const { data, error } = await context.admin.rpc('admin_save_product', {
+    p_admin_user_id: context.userId,
+    p_product_id: productId,
+    p_fields: fields,
+    p_images: images,
+    p_initial_stock: initialStock,
+  });
 
-  if (body.id !== undefined && !isUuid(body.id)) {
-    return json(req, { error: 'id invalido.' }, 400);
-  }
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || slug.length > 60) {
-    return json(req, { error: 'Slug invalido.' }, 400);
-  }
-  if (name.length < 2 || name.length > 120) {
-    return json(req, { error: 'Nome invalido.' }, 400);
-  }
-  if (category && (category.length > 40 || !/^[a-z0-9-]+$/.test(category))) {
-    return json(req, { error: 'Categoria invalida.' }, 400);
-  }
-  if (!Number.isInteger(priceCents) || priceCents < 0 || priceCents > 100_000_000) {
-    return json(req, { error: 'Preco invalido.' }, 400);
-  }
-  if (!Number.isInteger(stockQuantity) || stockQuantity < 0 || stockQuantity > 100_000) {
-    return json(req, { error: 'Quantidade de estoque invalida.' }, 400);
-  }
-
-  const fields = {
-    slug,
-    name,
-    category: category || null,
-    price_cents: priceCents,
-    active: body.active !== false,
-    stock_quantity: stockQuantity,
-    featured: body.featured === true,
-  };
-  const result = body.id
-    ? await context.admin.from('products').update(fields).eq('id', body.id).select().single()
-    : await context.admin.from('products').insert(fields).select().single();
-
-  if (result.error) {
-    if (String(result.error.code) === '23505') {
-      return json(req, { error: 'Ja existe um produto com esse slug.' }, 409);
+  if (error) {
+    const message = error.message ?? '';
+    if (message.includes('products_slug_key') || message.includes('duplicate key')) {
+      if (message.includes('sku')) {
+        throw new AdminRequestError('Já existe um produto com esse código interno (SKU).', 409);
+      }
+      throw new AdminRequestError('Já existe um produto com esse endereço no site.', 409);
     }
-    return json(req, { error: 'Falha ao salvar produto.' }, 500);
+    if (message.includes('product_not_found')) {
+      throw new AdminRequestError('Produto não encontrado.', 404);
+    }
+    if (message.includes('slug_locked_by_orders')) {
+      throw new AdminRequestError(
+        'Este produto já foi vendido, então o endereço dele no site não pode mais mudar. '
+        + 'Você pode alterar todo o resto normalmente.',
+        409,
+      );
+    }
+    throw new Error(`save_product_failed: ${message}`);
   }
+
+  const saved = (data ?? {}) as Record<string, unknown>;
 
   await logAdminAction(
     context.admin,
     context.userId,
-    body.id ? 'product.update' : 'product.create',
+    productId ? 'product.update' : 'product.create',
     'products',
-    result.data.id,
-    { changed_fields: Object.keys(fields).sort() },
+    String(saved.id ?? productId ?? ''),
+    {
+      slug: fields.slug,
+      status: fields.status,
+      price_cents: fields.price_cents,
+      images: images.length,
+      initial_stock: initialStock || undefined,
+    },
   );
-  return json(req, { product: result.data });
-});
+
+  const { data: product } = await context.admin
+    .from('products')
+    .select('*, categories(id, slug, name), product_images(id, url, alt, position, is_primary)')
+    .eq('id', saved.id)
+    .maybeSingle();
+
+  return { product, created: saved.created === true };
+}, { limit: 40, maxBodyBytes: 96_000 });

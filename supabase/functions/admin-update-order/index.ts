@@ -1,64 +1,115 @@
-import {
-  AdminAuthError,
-  logAdminAction,
-  requireAdmin,
-} from '../_shared/require-admin.ts';
-import { corsHeaders, preflight, rejectDisallowedOrigin } from '../_shared/cors.ts';
-import { rateLimit } from '../_shared/rate-limit.ts';
-import { isUuid } from '../_shared/payment.ts';
+// Atualiza o que o painel pode mudar num pedido: etapa logistica,
+// transportadora, codigo de rastreio, data de postagem e nota interna.
+//
+// O status financeiro (pago, cancelado, estornado) continua fora daqui de
+// proposito — quem decide isso e o gateway, pelo webhook. O painel so
+// avanca o que depende da loja: separacao, envio e entrega.
+
+import { AdminRequestError, logAdminAction, serveAdmin } from '../_shared/admin-endpoint.ts';
+import { cleanMultiline, cleanText, isUuid } from '../_shared/catalog-validation.ts';
 
 interface RequestBody {
   order_id?: string;
   status?: string;
   tracking_code?: string;
+  tracking_url?: string;
+  shipping_carrier?: string;
+  posted_at?: string;
   admin_notes?: string;
 }
 
-function json(req: Request, body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
-  });
+const ALLOWED_STATUSES = new Set(['shipped', 'delivered']);
+
+const CARRIERS = new Set([
+  'Correios', 'Jadlog', 'Loggi', 'Azul Cargo', 'Total Express',
+  'Entrega própria', 'Retirada em mãos', 'Outra',
+]);
+
+function isCorreiosCode(code: string): boolean {
+  return /^[A-Z]{2}\d{9}BR$/.test(code);
 }
 
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return preflight(req);
-  const originError = rejectDisallowedOrigin(req);
-  if (originError) return originError;
-  if (req.method !== 'POST') return json(req, { error: 'Metodo nao permitido.' }, 405);
-
-  const limited = rateLimit(req, corsHeaders(req), { limit: 30 });
-  if (limited) return limited;
-
-  let context;
-  try {
-    context = await requireAdmin(req);
-  } catch (error) {
-    if (error instanceof AdminAuthError) return json(req, { error: error.message }, error.status);
-    return json(req, { error: 'Erro de autorizacao.' }, 500);
+function normalizeDate(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const raw = value.trim();
+  const source = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T12:00:00.000Z` : raw;
+  const parsed = Date.parse(source);
+  if (!Number.isFinite(parsed)) {
+    throw new AdminRequestError('A data de postagem não é válida.');
   }
+  if (parsed > Date.now() + 24 * 3600 * 1000) {
+    throw new AdminRequestError('A data de postagem não pode estar no futuro.');
+  }
+  return new Date(parsed).toISOString();
+}
 
-  let body: RequestBody;
-  try {
-    body = await req.json();
-  } catch {
-    return json(req, { error: 'JSON invalido.' }, 400);
-  }
-  if (!isUuid(body.order_id)) return json(req, { error: 'order_id invalido.' }, 400);
-  if (body.status && !['shipped', 'delivered'].includes(body.status)) {
-    return json(req, { error: 'Status financeiro nao pode ser alterado manualmente.' }, 400);
-  }
+serveAdmin<RequestBody>(async ({ body, context }) => {
+  if (!isUuid(body.order_id)) throw new AdminRequestError('Pedido inválido.');
 
   const fields: Record<string, unknown> = {};
-  if (body.status) fields.status = body.status;
+
+  if (body.status) {
+    if (!ALLOWED_STATUSES.has(body.status)) {
+      throw new AdminRequestError(
+        'O status de pagamento é definido pelo Mercado Pago e não pode ser alterado à mão.',
+      );
+    }
+    fields.status = body.status;
+  }
+
+  let trackingCode: string | null | undefined;
   if (typeof body.tracking_code === 'string') {
-    fields.tracking_code = body.tracking_code.trim().slice(0, 60) || null;
+    trackingCode = cleanText(body.tracking_code, 60).toUpperCase().replace(/\s+/g, '') || null;
+    fields.tracking_code = trackingCode;
   }
+
+  if (typeof body.shipping_carrier === 'string') {
+    const carrier = cleanText(body.shipping_carrier, 60);
+    if (carrier && !CARRIERS.has(carrier)) {
+      throw new AdminRequestError('Transportadora não reconhecida.');
+    }
+    fields.shipping_carrier = carrier || null;
+  }
+
+  if (typeof body.tracking_url === 'string') {
+    const url = cleanText(body.tracking_url, 400);
+    if (url) {
+      let parsed: URL;
+      try {
+        parsed = new URL(url);
+      } catch {
+        throw new AdminRequestError('O link de rastreamento não é um endereço válido.');
+      }
+      if (parsed.protocol !== 'https:') {
+        throw new AdminRequestError('O link de rastreamento precisa começar com https.');
+      }
+      fields.tracking_url = parsed.toString().slice(0, 400);
+    } else {
+      fields.tracking_url = null;
+    }
+  }
+
+  if (body.posted_at !== undefined) {
+    fields.posted_at = normalizeDate(body.posted_at);
+  }
+
   if (typeof body.admin_notes === 'string') {
-    fields.admin_notes = body.admin_notes.trim().slice(0, 2000) || null;
+    fields.admin_notes = cleanMultiline(body.admin_notes, 2000) || null;
   }
+
   if (Object.keys(fields).length === 0) {
-    return json(req, { error: 'Nada para atualizar.' }, 400);
+    throw new AdminRequestError('Nada para atualizar.');
+  }
+
+  // Correios tem link publico e estavel: monta sozinho para a usuaria nao
+  // precisar colar URL nenhuma. Outras transportadoras ficam com o campo
+  // livre, porque nao ha padrao confiavel de link por codigo.
+  if (trackingCode && fields.tracking_url === undefined && isCorreiosCode(trackingCode)) {
+    fields.tracking_url =
+      `https://rastreamento.correios.com.br/app/index.php?objetos=${encodeURIComponent(trackingCode)}`;
+  }
+  if (trackingCode === null) {
+    fields.tracking_url = null;
   }
 
   const { data, error } = await context.admin
@@ -66,14 +117,18 @@ Deno.serve(async (req: Request) => {
     .update(fields)
     .eq('id', body.order_id)
     .select('*, order_items(*)')
-    .single();
+    .maybeSingle();
+
   if (error || !data) {
-    const invalidTransition = error?.message?.includes('invalid_order_status_transition');
-    return json(req, {
-      error: invalidTransition
-        ? 'Transicao de status nao permitida.'
-        : 'Falha ao atualizar pedido.',
-    }, invalidTransition ? 409 : 500);
+    const message = error?.message ?? '';
+    if (message.includes('invalid_order_status_transition')) {
+      throw new AdminRequestError(
+        'Esta mudança de etapa não é permitida a partir da situação atual do pedido.',
+        409,
+      );
+    }
+    if (!error && !data) throw new AdminRequestError('Pedido não encontrado.', 404);
+    throw new Error(`update_order_failed: ${message}`);
   }
 
   await logAdminAction(
@@ -81,11 +136,9 @@ Deno.serve(async (req: Request) => {
     context.userId,
     'order.update',
     'orders',
-    body.order_id,
-    {
-      changed_fields: Object.keys(fields).sort(),
-      status: fields.status ?? null,
-    },
+    String(body.order_id),
+    { changed_fields: Object.keys(fields).sort(), status: fields.status ?? null },
   );
-  return json(req, { order: data });
-});
+
+  return { order: data };
+}, { limit: 40 });

@@ -1,13 +1,21 @@
 // deno-lint-ignore-file no-explicit-any
-import { AdminAuthError, requireAdmin } from '../_shared/require-admin.ts';
-import { corsHeaders, preflight, rejectDisallowedOrigin } from '../_shared/cors.ts';
-import { rateLimit } from '../_shared/rate-limit.ts';
+// Lista de pedidos do painel.
+//
+// A busca por nome, e-mail e telefone e resolvida no banco (via
+// public.admin_find_user_ids) antes da consulta, e nao filtrando a
+// pagina ja carregada — assim um pedido antigo nao some da busca so
+// porque ficou fora das primeiras 200 linhas.
+
+import { AdminRequestError, serveAdmin } from '../_shared/admin-endpoint.ts';
 
 interface RequestBody {
   status?: string;
   search?: string;
   date_from?: string;
   date_to?: string;
+  /** 'sem_rastreio' restringe aos pagos que ainda nao foram postados. */
+  shipping?: string;
+  sort?: string;
   limit?: number;
   offset?: number;
 }
@@ -17,12 +25,14 @@ const STATUSES = new Set([
   'delivered', 'canceled', 'refunded',
 ]);
 
-function json(req: Request, body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
-  });
-}
+const SORTS: Record<string, { column: string; ascending: boolean }> = {
+  recentes: { column: 'created_at', ascending: false },
+  antigos: { column: 'created_at', ascending: true },
+  maior_valor: { column: 'total_cents', ascending: false },
+  menor_valor: { column: 'total_cents', ascending: true },
+};
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function normalizeDate(value: unknown, endOfDay = false): string | null {
   if (typeof value !== 'string' || !value.trim() || value.length > 40) return null;
@@ -34,81 +44,93 @@ function normalizeDate(value: unknown, endOfDay = false): string | null {
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
 }
 
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return preflight(req);
-  const originError = rejectDisallowedOrigin(req);
-  if (originError) return originError;
-  if (req.method !== 'POST') return json(req, { error: 'Metodo nao permitido.' }, 405);
-
-  const limited = rateLimit(req, corsHeaders(req), { limit: 60 });
-  if (limited) return limited;
-
-  let context;
-  try {
-    context = await requireAdmin(req);
-  } catch (error) {
-    if (error instanceof AdminAuthError) return json(req, { error: error.message }, error.status);
-    return json(req, { error: 'Erro de autorizacao.' }, 500);
-  }
-
-  let body: RequestBody = {};
-  try {
-    body = await req.json();
-  } catch {
-    // Filtros sao opcionais.
-  }
-
+serveAdmin<RequestBody>(async ({ body, context }) => {
   const statusFilter = String(body.status ?? '').trim();
   if (statusFilter && !STATUSES.has(statusFilter)) {
-    return json(req, { error: 'Status invalido.' }, 400);
+    throw new AdminRequestError('Status inválido.');
   }
-  const search = String(body.search ?? '').trim().toLowerCase().slice(0, 254);
+
+  const sort = SORTS[String(body.sort ?? 'recentes')];
+  if (!sort) throw new AdminRequestError('Ordenação inválida.');
+
   const dateFrom = body.date_from ? normalizeDate(body.date_from) : null;
   const dateTo = body.date_to ? normalizeDate(body.date_to, true) : null;
   if ((body.date_from && !dateFrom) || (body.date_to && !dateTo)) {
-    return json(req, { error: 'Data invalida.' }, 400);
+    throw new AdminRequestError('Data inválida.');
   }
   if (dateFrom && dateTo && Date.parse(dateFrom) > Date.parse(dateTo)) {
-    return json(req, { error: 'Intervalo de datas invalido.' }, 400);
+    throw new AdminRequestError('O período informado começa depois de terminar.');
   }
 
-  const hasSearch = search.length > 0;
-  const limit = hasSearch
-    ? 200
-    : Math.min(Math.max(Math.trunc(Number(body.limit) || 50), 1), 200);
-  const offset = hasSearch ? 0 : Math.max(Math.trunc(Number(body.offset) || 0), 0);
+  const limit = Math.min(Math.max(Math.trunc(Number(body.limit) || 50), 1), 200);
+  const offset = Math.max(Math.trunc(Number(body.offset) || 0), 0);
+
   let query = context.admin
     .from('orders')
     .select('*, order_items(*)', { count: 'exact' })
-    .order('created_at', { ascending: false })
+    .order(sort.column, { ascending: sort.ascending })
     .range(offset, offset + limit - 1);
+
   if (statusFilter) query = query.eq('status', statusFilter);
   if (dateFrom) query = query.gte('created_at', dateFrom);
   if (dateTo) query = query.lte('created_at', dateTo);
-
-  const { data: orders, error, count } = await query;
-  if (error) return json(req, { error: 'Falha ao listar pedidos.' }, 500);
-
-  const userIds = [...new Set((orders ?? []).map((order: any) => String(order.user_id)))];
-  const emailById: Record<string, string> = {};
-  await Promise.all(userIds.map(async (userId) => {
-    const { data } = await context.admin.auth.admin.getUserById(userId);
-    if (data?.user?.email) emailById[userId] = data.user.email;
-  }));
-
-  let result = (orders ?? []).map((order: any) => ({
-    ...order,
-    customer_email: emailById[order.user_id] ?? null,
-  }));
-  if (hasSearch) {
-    result = result.filter((order: any) => (
-      String(order.id).toLowerCase().includes(search)
-      || String(order.customer_email ?? '').toLowerCase().includes(search)
-    ));
+  if (body.shipping === 'sem_rastreio') {
+    query = query.eq('status', 'paid').is('tracking_code', null);
   }
 
-  return json(req, {
-    orders: result,
-    total: hasSearch ? result.length : (count ?? result.length),
-  });
-});
+  const search = String(body.search ?? '').trim().slice(0, 254);
+  if (search) {
+    if (UUID_RE.test(search)) {
+      query = query.eq('id', search);
+    } else if (/^[0-9a-f-]{4,}$/i.test(search)) {
+      // Numero curto do pedido: o painel mostra os 8 primeiros caracteres.
+      // A comparacao acontece no banco, porque `ilike` nao existe para uuid.
+      const { data: matches, error: matchError } = await context.admin
+        .rpc('admin_find_order_ids', { p_prefix: search });
+      if (matchError) throw new Error(`find_order_ids_failed: ${matchError.message}`);
+
+      const orderIds = ((matches as any[]) ?? []).map((row) => row.order_id);
+      if (!orderIds.length) return { orders: [], total: 0, limit, offset };
+      query = query.in('id', orderIds);
+    } else {
+      const { data: matches, error: matchError } = await context.admin
+        .rpc('admin_find_user_ids', { p_term: search });
+      if (matchError) throw new Error(`find_user_ids_failed: ${matchError.message}`);
+
+      const userIds = ((matches as any[]) ?? []).map((row) => row.user_id);
+      if (!userIds.length) return { orders: [], total: 0, limit, offset };
+      query = query.in('user_id', userIds);
+    }
+  }
+
+  const { data: orders, error, count } = await query;
+  if (error) throw new Error(`list_orders_failed: ${error.message}`);
+
+  const userIds = [...new Set(((orders as any[]) ?? []).map((order) => String(order.user_id)))];
+  const emailById: Record<string, string> = {};
+  const profileById: Record<string, { full_name: string | null; phone: string | null }> = {};
+
+  await Promise.all([
+    ...userIds.map(async (userId) => {
+      const { data } = await context.admin.auth.admin.getUserById(userId);
+      if (data?.user?.email) emailById[userId] = data.user.email;
+    }),
+    (async () => {
+      if (!userIds.length) return;
+      const { data } = await context.admin
+        .from('profiles').select('id, full_name, phone').in('id', userIds);
+      for (const profile of ((data as any[]) ?? [])) {
+        profileById[profile.id] = { full_name: profile.full_name, phone: profile.phone };
+      }
+    })(),
+  ]);
+
+  const result = ((orders as any[]) ?? []).map((order) => ({
+    ...order,
+    customer_email: emailById[order.user_id] ?? null,
+    customer_name: profileById[order.user_id]?.full_name ?? null,
+    customer_phone: profileById[order.user_id]?.phone ?? null,
+  }));
+
+  return { orders: result, total: count ?? result.length, limit, offset };
+}, { limit: 90 });

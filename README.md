@@ -34,27 +34,30 @@ validado ponta a ponta em ambiente de teste.
 │   └── admin.css              Painel administrativo
 ├── js/
 │   ├── config.public.js       Configuracao publica usada no GitHub Pages
-│   ├── catalog.js             Catálogo: conteúdo estático + preço/estoque ao vivo do banco
-│   ├── main.js                UI global (drawers, sacola, grids, frete/cupom)
-│   ├── product-page.js        Render da página de produto (por id fixo ou ?slug=)
+│   ├── druza.js               UI global (drawers, sacola, filtros, galeria)
+│   ├── storefront.js          Vitrine lendo catálogo, destaques e ficha do banco
 │   ├── auth.js                Camada de autenticação (window.DruzaAuth)
 │   ├── checkout.js            Fluxo de pagamento
-│   └── admin.js               Camada do painel (window.DruzaAdmin, MFA)
-├── produtos/                  Páginas fixas dos produtos originais
+│   ├── admin.js               Camada do painel (window.DruzaAdmin, MFA, upload)
+│   ├── admin-panel.js         Comportamento das 8 seções do painel
+│   └── admin-help.js          Ajuda embutida: ícones (i) e tutorial por seção
+├── produtos/                  Páginas fixas dos produtos originais (legado)
 ├── img/                       Fotos e assets de marca
 ├── db/
 │   ├── schema.sql             Tabelas base (profiles, addresses, orders, order_items) + RLS
 │   ├── schema-payments.sql    Colunas de pagamento (MercadoPago)
 │   ├── schema-admin.sql       Admin (admins, products, admin_audit_log) + RLS
 │   ├── security-final-hardening.sql  Migracao final obrigatoria
+│   ├── schema-catalog-inventory.sql  Catálogo completo, estoque auditável e envios
+│   ├── *-smoke-test.sql       Testes das migrações (rodam em transação + ROLLBACK)
 │   └── schedule-payment-reconciliation.sql  Job de recuperacao de pagamentos
 ├── supabase/functions/
-│   ├── _shared/               Autorizacao, CORS, rate limit e validacao de pagamento
+│   ├── _shared/               Envelope admin, CORS, rate limit, validação de catálogo
 │   ├── create-order/          Cria pedido, preços server-side (sem falar com o MP)
 │   ├── process-payment/       Cobra o pedido via Payment Brick (API MercadoPago)
 │   ├── webhook-mp/            Confirma pagamento (re-consulta autenticada na API MP)
 │   ├── reconcile-stale-payments/  Recupera tentativas interrompidas
-│   └── admin-*/               6 funções do painel (sempre passam por require-admin)
+│   └── admin-*/               14 funções do painel (todas passam por serveAdmin)
 └── docs/                      Guias e documentação (ver abaixo)
 ```
 
@@ -98,6 +101,7 @@ no servidor.** Detalhes e checklist de produção em [docs/SEGURANCA.md](docs/SE
 | Guia | Conteúdo |
 | --- | --- |
 | [ADMIN-GUIA.md](docs/ADMIN-GUIA.md) | Painel admin: setup, 2FA, uso diário, recuperação |
+| [CATALOGO-E-ESTOQUE.md](docs/CATALOGO-E-ESTOQUE.md) | Produtos, categorias, estoque, envios: arquitetura, migração e uso |
 | [SEGURANCA.md](docs/SEGURANCA.md) | Camadas de segurança + checklist de produção |
 | [MERCADOPAGO-SETUP.md](docs/MERCADOPAGO-SETUP.md) | Integração MP: credenciais, webhook, testes |
 | [BACKEND-SETUP.md](docs/BACKEND-SETUP.md) | Supabase: projeto, schema, auth |
@@ -108,6 +112,15 @@ no servidor.** Detalhes e checklist de produção em [docs/SEGURANCA.md](docs/SE
 | [EVOLUCAO.md](docs/EVOLUCAO.md) | Linha do tempo de tudo que já foi construído |
 
 ## Deploy das Edge Functions
+
+Um comando publica todas de uma vez, respeitando o `verify_jwt` que cada uma
+declara em `supabase/config.toml`:
+
+```bash
+supabase functions deploy
+```
+
+Para publicar uma função isolada, passe o nome:
 
 ```bash
 supabase functions deploy create-order
@@ -120,12 +133,28 @@ supabase functions deploy admin-get-order
 supabase functions deploy admin-list-products
 supabase functions deploy admin-upsert-product
 supabase functions deploy admin-delete-product
+supabase functions deploy admin-dashboard
+supabase functions deploy admin-list-categories
+supabase functions deploy admin-upsert-category
+supabase functions deploy admin-delete-category
+supabase functions deploy admin-inventory-move
+supabase functions deploy admin-list-inventory
+supabase functions deploy admin-list-customers
+supabase functions deploy admin-list-audit
 ```
 
 ## Estado e pendências
 
 - ✅ Checkout MercadoPago validado ponta a ponta (ambiente de teste).
 - ✅ Webhook seguro (re-consulta na API + verificação de valor).
+- 🚀 **Catálogo e estoque no painel** (codado; **requer rodar
+  `db/schema-catalog-inventory.sql` + deploy das 14 functions `admin-*`**):
+  cadastro completo de produto com fotos e ficha técnica, categorias
+  gerenciáveis, entrada/saída de estoque com histórico imutável, clientes,
+  envios com rastreio e a vitrine lendo o catálogo do banco.
+  Ver [docs/CATALOGO-E-ESTOQUE.md](docs/CATALOGO-E-ESTOQUE.md).
+  Enquanto a migração não roda, a loja continua exibindo o catálogo estático —
+  o `storefront.js` mantém o HTML atual quando a consulta falha.
 - ✅ Painel admin com 2FA (codado; requer rodar `db/schema-admin.sql` + deploy).
 - ✅ Pacote logística admin 1/5/6/8 codado: rastreio clicável/copiar, alerta de pago parado, filtro por período, CSV e notas internas (requer rodar schema + redeploy das functions tocadas).
 - ✅ Etiqueta de envio + romaneio imprimível por pedido (front-end puro). Ainda

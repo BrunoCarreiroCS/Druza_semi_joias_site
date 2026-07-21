@@ -47,15 +47,23 @@
 
 <main id="conteudo">
   <div class="wrap--wide" style="padding:24px 56px 0">
-    <nav class="crumb" aria-label="Você está em"><a href="index.html">Início</a><span>/</span><a href="catalogo.html?cat=aneis">Anéis</a><span>/</span><span style="color:var(--text)">Anel Paraíba Quadrado</span></nav>
+    <nav class="crumb" aria-label="Você está em"><a href="index.html">Início</a><span>/</span><a href="catalogo.html?cat=aneis" data-pdp-crumb-category>Anéis</a><span>/</span><span style="color:var(--text)" data-pdp-crumb-name>Anel Paraíba Quadrado</span></nav>
+  </div>
+
+  <div class="wrap" style="max-width:840px" hidden data-pdp-missing>
+    <div class="block" style="text-align:center">
+      <h1 style="font-size:2.4rem">Peça não encontrada</h1>
+      <p style="margin:14px 0 26px;color:var(--muted)">Esta peça saiu do catálogo ou o endereço está incorreto.</p>
+      <a class="btn btn--ink" href="catalogo.html">Ver todas as peças</a>
+    </div>
   </div>
 
   <section class="block wrap--wide" style="padding-top:32px" data-buy-anchor>
-    <div class="pdp">
+    <div class="pdp" data-pdp>
       <!-- GALERIA -->
-      <div class="gallery">
+      <div class="gallery" data-pdp-gallery>
         <div class="gallery__main" data-gallery-main aria-label="Ampliar imagem — clique para zoom"><img src="img/anel-paraiba.webp" alt="Anel Paraíba Quadrado em prata 925" style="object-position:center 40%"></div>
-        <div class="gallery__thumbs">
+        <div class="gallery__thumbs" data-pdp-thumbs>
           <button class="thumb is-active" data-thumb data-src="img/anel-paraiba.webp" data-pos="center 40%" aria-label="Vista 1"><img src="img/anel-paraiba.webp" alt=""></button>
           <button class="thumb" data-thumb data-src="img/anel-coracao.webp" data-pos="center 58%" aria-label="Vista 2"><img src="img/anel-coracao.webp" alt=""></button>
           <button class="thumb" data-thumb data-src="img/pulseiras-riviera.webp" data-pos="center" aria-label="Vista 3"><img src="img/pulseiras-riviera.webp" alt=""></button>
@@ -65,18 +73,19 @@
 
       <!-- COMPRA -->
       <div class="buy">
-        <div class="sindex"><span class="sindex__rule"></span><span class="eyebrow">Anéis · Pedra Paraíba</span></div>
-        <h1 style="font-size:2.8rem;line-height:1.05">Anel Paraíba Quadrado</h1>
+        <div class="sindex"><span class="sindex__rule"></span><span class="eyebrow" data-pdp-eyebrow>Anéis · Pedra Paraíba</span></div>
+        <h1 style="font-size:2.8rem;line-height:1.05" data-pdp-name>Anel Paraíba Quadrado</h1>
         <div style="display:flex;align-items:center;gap:10px;margin-top:10px;color:var(--rose-strong);font-size:.85rem">
-          <span aria-hidden="true">★★★★★</span><span style="color:var(--muted)">Feito à mão · edição limitada</span>
+          <span aria-hidden="true">★★★★★</span><span style="color:var(--muted)" data-pdp-tagline>Feito à mão · edição limitada</span>
         </div>
 
         <div style="margin-top:24px">
-          <div class="buy__price">R$ 219,00</div>
-          <div class="buy__inst">ou 6× de R$ 36,50 sem juros · 5% off no Pix (R$ 208,05)</div>
+          <div class="buy__price" data-pdp-price>R$ 219,00</div>
+          <div class="buy__inst" data-pdp-inst>ou 6× de R$ 36,50 sem juros</div>
+          <p style="margin-top:8px;font-size:.82rem;color:var(--rose-strong)" data-pdp-stock></p>
         </div>
 
-        <div style="margin-top:26px">
+        <div style="margin-top:26px" data-pdp-sizes>
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><span style="font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">Tamanho (aro)</span><a href="cuidados.html" style="font-size:.74rem;color:var(--rose-strong);border-bottom:1px solid var(--rose)">Guia de medidas</a></div>
           <div class="opt" data-size-group>
             <button type="button">14</button><button type="button" class="is-active">16</button><button type="button">18</button><button type="button">20</button><button type="button">22</button>
@@ -84,7 +93,7 @@
         </div>
 
         <div style="display:flex;flex-direction:column;gap:12px;margin-top:28px">
-          <button class="btn btn--ink btn--block" data-add="anel-paraiba-quadrado" data-name="Anel Paraíba Quadrado" data-price="219" data-img="img/anel-paraiba.webp">Adicionar à sacola</button>
+          <button class="btn btn--ink btn--block" data-pdp-add data-add="anel-paraiba-quadrado" data-name="Anel Paraíba Quadrado" data-price="219" data-img="img/anel-paraiba.webp">Adicionar à sacola</button>
           <a href="https://wa.me/5500000000000" class="btn btn--ghost-rose btn--block">Comprar pelo WhatsApp</a>
         </div>
 
@@ -111,11 +120,11 @@
   <section class="block wrap" style="max-width:840px;padding-top:0">
     <div class="sindex"><span class="sindex__n">01</span><span class="sindex__rule"></span><span class="eyebrow">A peça</span></div>
     <h2 style="font-size:2.4rem;margin-bottom:16px">Feita para ser notada de perto</h2>
-    <p style="color:var(--text);line-height:1.8;max-width:60ch">Uma pedra Paraíba de lapidação quadrada, cercada por um contorno delicado em prata 925 polida. O tom verde-água captura a luz a cada movimento — presente sem ser exagerado. Um anel para o dia e para o instante que fica.</p>
+    <div style="color:var(--text);line-height:1.8;max-width:60ch" data-pdp-description><p>Uma pedra Paraíba de lapidação quadrada, cercada por um contorno delicado em prata 925 polida. O tom verde-água captura a luz a cada movimento — presente sem ser exagerado. Um anel para o dia e para o instante que fica.</p></div>
 
     <div style="margin-top:36px">
-      <details class="acc-item" open><summary>Ficha técnica</summary><div class="acc-item__body"><dl class="specs"><div class="specs__row"><dt class="specs__k">Material</dt><dd class="specs__v">Prata 925 com banho de ródio</dd></div><div class="specs__row"><dt class="specs__k">Pedra</dt><dd class="specs__v">Paraíba, lapidação quadrada (~7 mm)</dd></div><div class="specs__row"><dt class="specs__k">Aros</dt><dd class="specs__v">14 a 22</dd></div><div class="specs__row"><dt class="specs__k">Acabamento</dt><dd class="specs__v">Polido de alto brilho</dd></div></dl></div></details>
-      <details class="acc-item"><summary>Cuidados</summary><div class="acc-item__body">Guarde em local seco, longe de perfumes e produtos químicos. Limpe com flanela macia. Evite contato com água do mar e piscina. <a href="cuidados.html" style="color:var(--rose-strong);border-bottom:1px solid var(--rose)">Ver guia completo</a>.</div></details>
+      <details class="acc-item" open><summary>Ficha técnica</summary><div class="acc-item__body" data-pdp-specs><dl class="specs"><div class="specs__row"><dt class="specs__k">Material</dt><dd class="specs__v">Prata 925 com banho de ródio</dd></div><div class="specs__row"><dt class="specs__k">Pedra</dt><dd class="specs__v">Paraíba, lapidação quadrada (~7 mm)</dd></div><div class="specs__row"><dt class="specs__k">Aros</dt><dd class="specs__v">14 a 22</dd></div><div class="specs__row"><dt class="specs__k">Acabamento</dt><dd class="specs__v">Polido de alto brilho</dd></div></dl></div></details>
+      <details class="acc-item"><summary>Cuidados</summary><div class="acc-item__body"><span data-pdp-care>Guarde em local seco, longe de perfumes e produtos químicos. Limpe com flanela macia. Evite contato com água do mar e piscina.</span> <a href="cuidados.html" style="color:var(--rose-strong);border-bottom:1px solid var(--rose)">Ver guia completo</a>.</div></details>
       <details class="acc-item"><summary>Entrega e trocas</summary><div class="acc-item__body">Enviamos para todo o Brasil. Frete grátis acima de R$ 199. Troca ou devolução gratuita em até 7 dias após o recebimento. <a href="trocas.html" style="color:var(--rose-strong);border-bottom:1px solid var(--rose)">Política de trocas</a>.</div></details>
     </div>
   </section>
@@ -124,7 +133,7 @@
   <section class="block wrap--wide" style="padding-top:12px">
     <div class="sindex"><span class="sindex__n">02</span><span class="sindex__rule"></span><span class="eyebrow">Complete o look</span></div>
     <h2 style="font-size:2.6rem;margin-bottom:40px">Combina com</h2>
-    <div class="grid-3">
+    <div class="grid-3" data-pdp-related>
       <article class="pcard card--lift"><a href="produtos/pulseira-riviera-prata.html"><span class="card-media" style="aspect-ratio:4/5"><img src="img/pulseiras-riviera.webp" alt="Pulseira Riviera Prata"></span></a><h3>Pulseira Riviera Prata</h3><p class="pcard__price">R$ 159,00</p><p class="pcard__inst">ou 6× de R$ 26,50 sem juros</p></article>
       <article class="pcard card--lift"><a href="produtos/anel-coracao-esmeralda.html"><span class="card-media" style="aspect-ratio:4/5"><img src="img/anel-coracao.webp" alt="Anel Coração Esmeralda" style="object-position:center 58%"></span></a><h3>Anel Coração Esmeralda</h3><p class="pcard__price">R$ 189,00</p><p class="pcard__inst">ou 6× de R$ 31,50 sem juros</p></article>
       <article class="pcard card--lift"><a href="brincos.html"><span class="ph" style="aspect-ratio:4/5"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="var(--silver)" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M8 11v7M16 11v7"/><path d="M6.5 18h3M14.5 18h3" stroke-linecap="round"/></svg><span style="font-family:var(--serif);font-size:1.05rem;color:var(--ink)">Foto em breve</span><span class="ph__pill">brincos</span></span></a><h3>Brinco Ponto de Luz</h3><p class="pcard__price">Em breve</p><p class="pcard__inst">entre na lista de espera</p></article>
@@ -145,9 +154,9 @@
 <!-- STICKY BUY BAR -->
 <div class="stickybuy" data-stickybuy>
   <div class="stickybuy__in">
-    <img class="stickybuy__thumb" src="img/anel-paraiba.webp" alt="">
-    <div style="flex:1;min-width:0"><div class="stickybuy__name">Anel Paraíba Quadrado</div><div class="stickybuy__price">R$ 219,00 · 6× de R$ 36,50</div></div>
-    <button class="btn btn--ink" data-add="anel-paraiba-quadrado" data-name="Anel Paraíba Quadrado" data-price="219" data-img="img/anel-paraiba.webp">Adicionar à sacola</button>
+    <img class="stickybuy__thumb" src="img/anel-paraiba.webp" alt="" data-pdp-sticky-thumb>
+    <div style="flex:1;min-width:0"><div class="stickybuy__name" data-pdp-sticky-name>Anel Paraíba Quadrado</div><div class="stickybuy__price" data-pdp-sticky-price>R$ 219,00 · 6× de R$ 36,50</div></div>
+    <button class="btn btn--ink" data-pdp-add data-add="anel-paraiba-quadrado" data-name="Anel Paraíba Quadrado" data-price="219" data-img="img/anel-paraiba.webp">Adicionar à sacola</button>
   </div>
 </div>
 
@@ -163,6 +172,8 @@
   </div>
 </aside>
 
+<script src="js/config.public.js"></script>
 <script src="js/druza.js" defer></script>
+<script src="js/storefront.js" defer></script>
 </body>
 </html>

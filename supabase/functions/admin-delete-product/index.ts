@@ -1,60 +1,51 @@
-import {
-  AdminAuthError,
-  logAdminAction,
-  requireAdmin,
-} from '../_shared/require-admin.ts';
-import { corsHeaders, preflight, rejectDisallowedOrigin } from '../_shared/cors.ts';
-import { rateLimit } from '../_shared/rate-limit.ts';
-import { isUuid } from '../_shared/payment.ts';
+// Tira um produto do ar sem apagar nada.
+//
+// Produto que ja apareceu num pedido nunca pode sumir: o historico do
+// pedido aponta para ele. Por isso a acao aqui e mudar a situacao —
+// "inactive" (fora da loja, volta a qualquer momento) ou "archived"
+// (encerrado, some ate da lista do painel).
+//
+// O saldo de estoque e preservado de proposito. A versao anterior desta
+// funcao zerava stock_quantity ao desativar, o que apagava a contagem
+// real das pecas guardadas na gaveta; agora o produto some da loja mas
+// o estoque continua contado.
 
-function json(req: Request, body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
-  });
+import { AdminRequestError, logAdminAction, serveAdmin } from '../_shared/admin-endpoint.ts';
+import { isUuid } from '../_shared/catalog-validation.ts';
+
+interface RequestBody {
+  id?: string;
+  status?: string;
 }
 
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return preflight(req);
-  const originError = rejectDisallowedOrigin(req);
-  if (originError) return originError;
-  if (req.method !== 'POST') return json(req, { error: 'Metodo nao permitido.' }, 405);
+serveAdmin<RequestBody>(async ({ body, context }) => {
+  if (!isUuid(body.id)) throw new AdminRequestError('Produto inválido.');
 
-  const limited = rateLimit(req, corsHeaders(req), { limit: 30 });
-  if (limited) return limited;
-
-  let context;
-  try {
-    context = await requireAdmin(req);
-  } catch (error) {
-    if (error instanceof AdminAuthError) return json(req, { error: error.message }, error.status);
-    return json(req, { error: 'Erro de autorizacao.' }, 500);
+  const status = String(body.status ?? 'inactive');
+  if (!['inactive', 'archived', 'active'].includes(status)) {
+    throw new AdminRequestError('Situação inválida.');
   }
 
-  let body: { id?: string } = {};
-  try {
-    body = await req.json();
-  } catch {
-    return json(req, { error: 'JSON invalido.' }, 400);
-  }
-  if (!isUuid(body.id)) return json(req, { error: 'id invalido.' }, 400);
+  const { data: current } = await context.admin
+    .from('products').select('id, name, status').eq('id', body.id).maybeSingle();
+  if (!current) throw new AdminRequestError('Produto não encontrado.', 404);
 
-  // Desativar preserva a linha necessaria para devolver reservas existentes.
   const { data, error } = await context.admin
     .from('products')
-    .update({ active: false, stock_quantity: 0 })
+    .update({ status })
     .eq('id', body.id)
-    .select('id')
+    .select('id, name, status, stock_quantity')
     .maybeSingle();
-  if (error || !data) return json(req, { error: 'Falha ao desativar produto.' }, 500);
+  if (error || !data) throw new Error(`update_product_status_failed: ${error?.message ?? 'sem retorno'}`);
 
   await logAdminAction(
     context.admin,
     context.userId,
-    'product.deactivate',
+    status === 'archived' ? 'product.archive' : 'product.status_change',
     'products',
-    body.id,
-    null,
+    String(body.id),
+    { de: current.status, para: status },
   );
-  return json(req, { ok: true });
-});
+
+  return { product: data };
+}, { limit: 30 });

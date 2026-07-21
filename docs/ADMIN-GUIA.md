@@ -27,25 +27,65 @@ Feito para o dono da loja — não precisa saber programar para seguir.
 
 ## 1. O que dá para fazer
 
+O painel tem oito seções, no menu à esquerda (no celular, no botão **Menu**).
+
+**Visão geral** — vendas do dia, da semana e do mês, quantos pedidos estão
+esperando envio, quais produtos estão sem estoque ou com estoque baixo, e
+atalhos para as tarefas mais comuns.
+
 **Pedidos**
-- Ver **todos** os pedidos de todos os clientes.
-- Filtrar por status e buscar por e-mail / número do pedido.
-- Abrir o **detalhe de logística** de cada pedido: nome, e-mail e telefone do
-  cliente, endereço de entrega completo, itens, forma de pagamento usada
-  (cartão/Pix/boleto, parcelas, status — consultado ao vivo no MercadoPago).
-- Mudar o status (Aguardando → Pago → Enviado → Entregue / Cancelado) e registrar
-  o **código de rastreio**.
+- Ver **todos** os pedidos, buscar por nome, e-mail, telefone ou número.
+- Filtrar por situação e período; baixar a lista em planilha.
+- Abrir o detalhe: dados do cliente, endereço, itens com foto, forma de
+  pagamento (consultada ao vivo no Mercado Pago) e a **linha do tempo** do
+  pedido, do momento em que foi criado até a entrega.
 
 **Produtos**
-- Criar produto novo, editar preço, pausar/reativar a venda, marcar/desmarcar
-  "em estoque", colocar em **destaque** na página inicial, e excluir.
-- O preço que você define aqui é o **mesmo** que o site mostra e que o checkout
-  cobra (ver [seção 8](#8-preço-e-catálogo-como-o-site-fica-sincronizado)).
+- Cadastrar peça nova com **fotos, descrição, categoria, características
+  (material, banho, pedra, tamanhos…), preço promocional e custo**.
+- Buscar, filtrar por categoria, situação e disponibilidade; duplicar uma peça;
+  tirar da loja ou arquivar.
+- O preço definido aqui é o mesmo que o site mostra e que o checkout cobra.
 
-> **O que o painel ainda NÃO faz (de propósito, por enquanto):** enviar reembolso
-> real pelo MercadoPago (cancelar aqui só muda o status interno — o estorno do
-> dinheiro continua no painel do MP); e subir **fotos/descrição** de produto novo
-> (isso ainda é feito no código). Ver [Futuros upgrades](#10-futuros-upgrades).
+**Estoque** — registrar entrada de mercadoria, perda, avaria, devolução e
+correção depois de uma contagem. Todo lançamento fica no histórico, com saldo
+antes e depois.
+
+**Categorias** — criar e organizar as categorias que aparecem nos filtros da
+loja, sem mexer em código.
+
+**Clientes** — quem comprou, quantas vezes, quanto no total e quando foi a
+última compra.
+
+**Envios** — pedidos pagos esperando postagem, campo de transportadora e
+rastreio, e impressão de etiqueta + declaração de conteúdo.
+
+**Histórico** — tudo que foi feito no painel: quem, o quê e quando.
+
+### O painel se explica sozinho
+
+Você não precisa decorar nada — e nem consultar este guia no dia a dia:
+
+- **Cartão de tutorial:** ao abrir cada seção pela primeira vez, aparece no
+  topo um cartão rosa com o passo a passo daquela tela. Dá para fechar no
+  **×**. Se marcar *"Não mostrar isto de novo"* antes de fechar, ele não volta.
+- **Ícones ⓘ:** ao lado de cada campo e de cada título há um **i** dentro de
+  um círculo. Clicar abre um balão explicando para que serve aquele campo, com
+  exemplos e avisos. Fecha no ×, no Esc ou clicando fora. No celular ele vira
+  uma faixa embaixo da tela.
+- **Botão "? Ajuda"** no canto de cima: reabre o tutorial da seção em que você
+  estiver, mesmo que já tenha dispensado.
+
+Tudo isso só existe dentro do painel — nenhuma cliente vê essas explicações.
+
+> **Detalhes técnicos de estoque, pedidos e migração** estão em
+> [CATALOGO-E-ESTOQUE.md](CATALOGO-E-ESTOQUE.md).
+
+> **O que o painel ainda NÃO faz (de propósito):** enviar reembolso real pelo
+> Mercado Pago (o estorno do dinheiro continua no painel do MP); avisar a
+> cliente por e-mail quando o rastreio é cadastrado (o projeto não tem serviço
+> de e-mail configurado); e estoque separado por tamanho na mesma peça — para
+> isso, cadastre cada tamanho como um produto.
 
 ---
 
