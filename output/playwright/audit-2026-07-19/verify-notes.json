@@ -1,0 +1,81 @@
+{
+  "results": [
+    {
+      "check": "thumbnail no drawer (pagina de produto)",
+      "thumb": {
+        "src": "../img/anel-coracao.webp",
+        "loaded": true
+      }
+    },
+    {
+      "check": "localStorage apos adicionar",
+      "storage": {
+        "druzaCartV1": {
+          "items": [
+            {
+              "id": "anel-coracao-esmeralda",
+              "name": "Anel Coração Esmeralda",
+              "priceCents": 18900,
+              "image": "img/anel-coracao.webp",
+              "size": "14",
+              "quantity": 1
+            }
+          ],
+          "coupon": null,
+          "shipping": null
+        },
+        "druza_cart": null
+      }
+    },
+    {
+      "check": "checkout com sacola cheia (sem login)",
+      "after": {
+        "url": "http://127.0.0.1:5002/login.html?next=checkout.html",
+        "emptyVisible": null
+      }
+    },
+    {
+      "check": "migracao druza_cart -> druzaCartV1",
+      "migrated": {
+        "druzaCartV1": {
+          "items": [
+            {
+              "id": "pulseira-riviera-prata",
+              "name": "Pulseira Riviera Prata",
+              "priceCents": 15900,
+              "image": "img/pulseiras-riviera.webp",
+              "size": "Único",
+              "quantity": 2
+            }
+          ],
+          "coupon": null,
+          "shipping": null
+        },
+        "legacyRemovida": true,
+        "badge": "2"
+      }
+    },
+    {
+      "check": "coupon/shipping preservados apos writeCart",
+      "preserved": {
+        "coupon": "PRIMEIRADRUZA",
+        "shipping": {
+          "cep": "01001000"
+        },
+        "items": 0
+      }
+    },
+    {
+      "check": "mobile: thumbnail drawer",
+      "mThumb": {
+        "src": "../img/pulseiras-riviera.webp",
+        "loaded": true
+      }
+    },
+    {
+      "check": "mobile: destino apos finalizar",
+      "url": "http://127.0.0.1:5002/login.html?next=checkout.html"
+    }
+  ],
+  "errors": []
+}

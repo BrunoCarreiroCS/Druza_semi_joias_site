@@ -1,0 +1,57 @@
+<h2>Matriz de cobertura e critérios</h2>
+<p class="subtitle">O que será considerado concluído na primeira etapa.</p>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-body">
+      <div class="label">Vitrine</div>
+      <h3>Páginas comerciais</h3>
+      <p>Home, catálogo, brincos, produto genérico e todas as páginas fixas de produto.</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <div class="label">Conteúdo</div>
+      <h3>Páginas institucionais</h3>
+      <p>Sobre, contato, cuidados, trocas e privacidade.</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <div class="label">Entrada</div>
+      <h3>Telas sem sessão</h3>
+      <p>Login, cadastro, recuperação e redefinição de senha, além dos estados públicos de pagamento.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="label">Critérios automáticos</div>
+  <div class="options">
+    <div class="option"><div class="letter">A</div><div class="content"><h3>Imagens e assets</h3><p>Nenhum arquivo local ausente, imagem com largura natural zero ou recurso 404.</p></div></div>
+    <div class="option"><div class="letter">B</div><div class="content"><h3>Geometria</h3><p>Sem scroll horizontal, conteúdo fora do viewport, texto cortado ou sobreposição involuntária.</p></div></div>
+    <div class="option"><div class="letter">C</div><div class="content"><h3>Interação</h3><p>Header, menu, sacola, botões e campos acessíveis, sem elementos fixos cobrindo o conteúdo.</p></div></div>
+    <div class="option"><div class="letter">D</div><div class="content"><h3>Navegador</h3><p>Sem erros JavaScript relevantes e sem falhas de carregamento causadas pelo front-end local.</p></div></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="label">Tratamento de exceções</div>
+  <p>Falhas externas do Supabase ou Mercado Pago serão registradas separadamente. Esta etapa não altera banco, autenticação nem pagamento; corrige somente o front-end público e as telas acessíveis sem sessão.</p>
+</div>
+
+<div class="section">
+  <div class="label">Regressão</div>
+  <p>Cada página corrigida será renderizada novamente nos dois aparelhos. A entrega inclui screenshots finais e um resumo objetivo dos defeitos encontrados e eliminados.</p>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="approve-matrix" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content"><h3>Aprovar a matriz</h3><p>Fechar o desenho e registrar a especificação.</p></div>
+  </div>
+  <div class="option" data-choice="adjust-matrix" onclick="toggleSelect(this)">
+    <div class="letter">↺</div>
+    <div class="content"><h3>Quero ajustar</h3><p>Alterar páginas, critérios ou limites desta etapa.</p></div>
+  </div>
+</div>

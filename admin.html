@@ -586,6 +586,69 @@
     </div>
   </div>
 
+  <!-- Modal de confirmação — substitui window.confirm() em todo o painel -->
+  <div class="admin-modal" id="confirm-modal" hidden>
+    <div class="admin-modal__backdrop" data-confirm-cancel></div>
+    <div class="admin-modal__panel admin-modal__panel--sm" role="alertdialog" aria-modal="true" aria-labelledby="confirm-modal-title" aria-describedby="confirm-modal-message">
+      <div class="admin-modal__head">
+        <h2 id="confirm-modal-title">Confirmar ação</h2>
+        <button type="button" class="icon-btn" aria-label="Cancelar" data-confirm-cancel>&times;</button>
+      </div>
+      <p id="confirm-modal-message"></p>
+      <div class="admin-form__actions">
+        <button type="button" class="btn btn--primary" id="confirm-modal-confirm">Confirmar</button>
+        <button type="button" class="btn btn--ghost" data-confirm-cancel>Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal do remetente — substitui os 3 window.prompt() sequenciais -->
+  <div class="admin-modal" id="sender-modal" hidden>
+    <div class="admin-modal__backdrop" data-sender-cancel></div>
+    <div class="admin-modal__panel admin-modal__panel--sm" role="dialog" aria-modal="true" aria-labelledby="sender-modal-title">
+      <div class="admin-modal__head">
+        <h2 id="sender-modal-title">Dados do remetente</h2>
+        <button type="button" class="icon-btn" aria-label="Fechar" data-sender-cancel>&times;</button>
+      </div>
+      <p class="field__hint">Usados na etiqueta e na declaração de conteúdo impressas. Preencha uma vez; fica salvo para as próximas impressões.</p>
+      <form id="sender-form" class="auth-form" novalidate>
+        <label class="field"><span>Nome do remetente</span>
+          <input type="text" name="name" maxlength="120" required />
+        </label>
+        <label class="field"><span>CNPJ ou CPF</span>
+          <input type="text" name="document" maxlength="40" placeholder="opcional" />
+        </label>
+        <label class="field"><span>Endereço completo</span>
+          <textarea name="address" rows="3" maxlength="300" placeholder="Rua, número, bairro, cidade/UF e CEP" required></textarea>
+        </label>
+        <p class="auth-feedback" id="sender-feedback"></p>
+        <div class="admin-form__actions">
+          <button type="submit" class="btn btn--primary">Salvar</button>
+          <button type="button" class="btn btn--ghost" data-sender-cancel>Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de mover produtos — substitui o prompt() de digitar um número -->
+  <div class="admin-modal" id="category-move-modal" hidden>
+    <div class="admin-modal__backdrop" data-move-cancel></div>
+    <div class="admin-modal__panel admin-modal__panel--sm" role="dialog" aria-modal="true" aria-labelledby="category-move-title">
+      <div class="admin-modal__head">
+        <h2 id="category-move-title">Mover produtos antes de excluir</h2>
+        <button type="button" class="icon-btn" aria-label="Cancelar" data-move-cancel>&times;</button>
+      </div>
+      <p class="field__hint" id="category-move-hint"></p>
+      <label class="field"><span>Mover os produtos para qual categoria?</span>
+        <select id="category-move-select"></select>
+      </label>
+      <div class="admin-form__actions">
+        <button type="button" class="btn btn--primary" id="category-move-confirm">Mover e excluir</button>
+        <button type="button" class="btn btn--ghost" data-move-cancel>Cancelar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Aviso flutuante de confirmação -->
   <div class="admin-toast" id="toast" hidden role="status" aria-live="polite"></div>
 

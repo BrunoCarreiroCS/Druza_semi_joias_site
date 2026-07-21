@@ -1,0 +1,58 @@
+{
+  "notes": [
+    {
+      "step": "apos adicionar a sacola (produto)",
+      "storage": {
+        "druza_cart": "[{\"id\":\"anel-coracao-esmeralda\",\"name\":\"Anel Coração Esmeralda\",\"price\":189,\"img\":\"img/anel-coracao.webp\",\"size\":\"14\",\"qty\":1}]",
+        "druzaCartV1": null
+      }
+    },
+    {
+      "step": "checkout apos finalizar compra",
+      "state": {
+        "url": "http://127.0.0.1:5002/checkout.html",
+        "emptyVisible": true,
+        "emptyText": "Sua sacola está vazia. Adicione uma peça antes de finalizar.\n\nVer coleção",
+        "druza_cart": "[{\"id\":\"anel-coracao-esmeralda\",\"name\":\"Anel Coração Esmeralda\",\"price\":189,\"img\":\"img/anel-coracao.webp\",\"size\":\"14\",\"qty\":1}]",
+        "druzaCartV1": null
+      }
+    },
+    {
+      "step": "quick-nav mobile apos Escape",
+      "state": {
+        "openAposEscape": false
+      }
+    },
+    {
+      "step": "checkout mobile",
+      "state": {
+        "emptyVisible": true,
+        "druza_cart": "[{\"id\":\"pulseira-riviera-prata\",\"name\":\"Pulseira Riviera Prata\",\"price\":159,\"img\":\"img/pulseiras-riviera.webp\",\"size\":\"Único\",\"qty\":1}]"
+      }
+    },
+    {
+      "step": "overflow-x mobile home",
+      "px": 0
+    },
+    {
+      "step": "overflow-x mobile catalogo",
+      "px": 0
+    },
+    {
+      "step": "overflow-x mobile produto",
+      "px": 0
+    },
+    {
+      "step": "overflow-x mobile checkout",
+      "px": 0
+    },
+    {
+      "step": "overflow-x mobile login",
+      "px": 0
+    }
+  ],
+  "errors": [
+    "[desktop] Failed to load resource: the server responded with a status of 404 (File not found)",
+    "[mobile] Failed to load resource: the server responded with a status of 404 (File not found)"
+  ]
+}

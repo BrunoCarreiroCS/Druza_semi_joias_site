@@ -100,6 +100,127 @@
     }
   }
 
+  // ------------------------------------------------------------------
+  // Modais leves: confirmação, remetente e escolha de categoria.
+  //
+  // Substituem window.confirm()/window.prompt() em todo o painel — uma
+  // caixa cinza do sistema operacional, sem a cara do site, quebra a
+  // confiança bem no meio de uma tarefa que o resto do painel ensinou a
+  // usuária a fazer com calma. Os três seguem o mesmo formato (abre,
+  // resolve a Promise no clique/Esc/backdrop, limpa os listeners) para
+  // não precisar decorar três jeitos diferentes de fechar um modal.
+  // ------------------------------------------------------------------
+  function adminConfirm(message, opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var modal = document.getElementById('confirm-modal');
+      document.getElementById('confirm-modal-title').textContent = opts.title || 'Confirmar ação';
+      document.getElementById('confirm-modal-message').textContent = message;
+      var confirmBtn = document.getElementById('confirm-modal-confirm');
+      confirmBtn.textContent = opts.confirmLabel || 'Confirmar';
+      confirmBtn.className = 'btn ' + (opts.danger ? 'btn--primary' : 'btn--primary');
+
+      function cleanup(result) {
+        modal.hidden = true;
+        confirmBtn.removeEventListener('click', onConfirm);
+        cancelButtons.forEach(function (b) { b.removeEventListener('click', onCancel); });
+        document.removeEventListener('keydown', onKey);
+        resolve(result);
+      }
+      function onConfirm() { cleanup(true); }
+      function onCancel() { cleanup(false); }
+      function onKey(event) {
+        if (event.key === 'Escape') cleanup(false);
+        else if (event.key === 'Enter') cleanup(true);
+      }
+
+      var cancelButtons = Array.prototype.slice.call(modal.querySelectorAll('[data-confirm-cancel]'));
+      confirmBtn.addEventListener('click', onConfirm);
+      cancelButtons.forEach(function (b) { b.addEventListener('click', onCancel); });
+      document.addEventListener('keydown', onKey);
+      modal.hidden = false;
+      confirmBtn.focus();
+    });
+  }
+
+  function openSenderModal(current) {
+    return new Promise(function (resolve) {
+      var modal = document.getElementById('sender-modal');
+      var form = document.getElementById('sender-form');
+      var feedback = document.getElementById('sender-feedback');
+      form.elements.name.value = current.name || '';
+      form.elements.document.value = current.document || '';
+      form.elements.address.value = current.address || '';
+      feedback.className = 'auth-feedback';
+      feedback.textContent = '';
+
+      function cleanup(result) {
+        modal.hidden = true;
+        form.removeEventListener('submit', onSubmit);
+        cancelButtons.forEach(function (b) { b.removeEventListener('click', onCancel); });
+        document.removeEventListener('keydown', onKey);
+        resolve(result);
+      }
+      function onSubmit(event) {
+        event.preventDefault();
+        var address = form.elements.address.value.trim();
+        if (!address) {
+          feedback.className = 'auth-feedback is-error';
+          feedback.textContent = 'Preencha o endereço do remetente.';
+          return;
+        }
+        cleanup({
+          name: form.elements.name.value.trim() || 'Druza Semi Joias',
+          document: form.elements.document.value.trim(),
+          address: address
+        });
+      }
+      function onCancel() { cleanup(null); }
+      function onKey(event) { if (event.key === 'Escape') cleanup(null); }
+
+      var cancelButtons = Array.prototype.slice.call(modal.querySelectorAll('[data-sender-cancel]'));
+      form.addEventListener('submit', onSubmit);
+      cancelButtons.forEach(function (b) { b.addEventListener('click', onCancel); });
+      document.addEventListener('keydown', onKey);
+      modal.hidden = false;
+      form.elements.name.focus();
+    });
+  }
+
+  function pickCategoryToMove(category, others) {
+    return new Promise(function (resolve) {
+      var modal = document.getElementById('category-move-modal');
+      var singular = category.products_count === 1;
+      document.getElementById('category-move-hint').textContent =
+        'A categoria "' + category.name + '" tem ' + category.products_count +
+        ' produto' + (singular ? '' : 's') + '. Escolha para onde ' +
+        (singular ? 'ele vai' : 'eles vão') + ' antes de excluir.';
+      var select = document.getElementById('category-move-select');
+      select.innerHTML = others.map(function (c) {
+        return '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>';
+      }).join('');
+      var confirmBtn = document.getElementById('category-move-confirm');
+
+      function cleanup(result) {
+        modal.hidden = true;
+        confirmBtn.removeEventListener('click', onConfirm);
+        cancelButtons.forEach(function (b) { b.removeEventListener('click', onCancel); });
+        document.removeEventListener('keydown', onKey);
+        resolve(result);
+      }
+      function onConfirm() { cleanup(select.value); }
+      function onCancel() { cleanup(null); }
+      function onKey(event) { if (event.key === 'Escape') cleanup(null); }
+
+      var cancelButtons = Array.prototype.slice.call(modal.querySelectorAll('[data-move-cancel]'));
+      confirmBtn.addEventListener('click', onConfirm);
+      cancelButtons.forEach(function (b) { b.addEventListener('click', onCancel); });
+      document.addEventListener('keydown', onKey);
+      modal.hidden = false;
+      select.focus();
+    });
+  }
+
   function emptyState(message, actionHtml) {
     return '<div class="admin-empty"><p>' + esc(message) + '</p>' + (actionHtml || '') + '</div>';
   }
@@ -727,7 +848,7 @@
     }
 
     if (event.target.closest('button[data-action="print-label"]')) {
-      printShippingLabels([currentOrderDetail]);
+      await printShippingLabels([currentOrderDetail]);
       return;
     }
 
@@ -748,7 +869,7 @@
     if (markShipped) {
       var shippedPayload = collectShipping();
       if (!shippedPayload.tracking_code) {
-        if (!window.confirm('Marcar como enviado sem código de rastreio?')) return;
+        if (!(await adminConfirm('Marcar como enviado sem código de rastreio?'))) return;
       }
       shippedPayload.order_id = orderId;
       shippedPayload.status = 'shipped';
@@ -760,7 +881,7 @@
 
     var markDelivered = event.target.closest('button[data-action="mark-delivered"]');
     if (markDelivered) {
-      if (!window.confirm('Confirmar que este pedido foi entregue?')) return;
+      if (!(await adminConfirm('Confirmar que este pedido foi entregue?'))) return;
       var deliveredPayload = collectShipping();
       deliveredPayload.order_id = orderId;
       deliveredPayload.status = 'delivered';
@@ -801,29 +922,13 @@
     }
   }
 
-  function configureSender(force) {
+  async function configureSender(force) {
     var current = loadSender();
     if (!force && current.address) return current;
 
-    var name = window.prompt('Nome do remetente', current.name || DEFAULT_SENDER.name);
-    if (name == null) return null;
-    var documentId = window.prompt('CNPJ ou CPF do remetente', current.document || '');
-    if (documentId == null) return null;
-    var address = window.prompt(
-      'Endereço completo do remetente (rua, número, bairro, cidade/UF e CEP)',
-      current.address || ''
-    );
-    if (address == null) return null;
+    var sender = await openSenderModal(current);
+    if (!sender) return null;
 
-    var sender = {
-      name: name.trim() || DEFAULT_SENDER.name,
-      document: documentId.trim(),
-      address: address.trim()
-    };
-    if (!sender.address) {
-      toast('Preencha o endereço do remetente antes de imprimir.', 'error');
-      return null;
-    }
     localStorage.setItem(SENDER_KEY, JSON.stringify(sender));
     return sender;
   }
@@ -894,11 +999,11 @@
     '</section>';
   }
 
-  function printShippingLabels(details) {
+  async function printShippingLabels(details) {
     var list = (details || []).filter(function (detail) { return detail && detail.address; });
     if (!list.length) { toast('Nenhum pedido com endereço de entrega para imprimir.', 'error'); return; }
 
-    var sender = configureSender(false);
+    var sender = await configureSender(false);
     if (!sender) return;
 
     var win = window.open('', '_blank', 'width=900,height=700');
@@ -979,8 +1084,8 @@
   }
 
   $('#shipping-filter').addEventListener('change', loadShipping);
-  $('#sender-settings-btn').addEventListener('click', function () {
-    if (configureSender(true)) toast('Remetente salvo para as próximas impressões.');
+  $('#sender-settings-btn').addEventListener('click', async function () {
+    if (await configureSender(true)) toast('Remetente salvo para as próximas impressões.');
   });
   $('#print-labels-btn').addEventListener('click', async function () {
     var button = this;
@@ -993,7 +1098,7 @@
       if (result.data) details.push(result.data);
     }
     setBusy(button, false);
-    printShippingLabels(details);
+    await printShippingLabels(details);
   });
 
   // ------------------------------------------------------------------
@@ -1262,11 +1367,11 @@
   }
 
   $('#product-add-btn').addEventListener('click', function () { openProductForm(null); });
-  $('#product-cancel-btn').addEventListener('click', function () {
-    if (window.confirm('Descartar as alterações deste produto?')) closeProductForm();
+  $('#product-cancel-btn').addEventListener('click', async function () {
+    if (await adminConfirm('Descartar as alterações deste produto?')) closeProductForm();
   });
-  $('#product-back-btn').addEventListener('click', function () {
-    if (window.confirm('Voltar para a lista? As alterações não salvas serão perdidas.')) closeProductForm();
+  $('#product-back-btn').addEventListener('click', async function () {
+    if (await adminConfirm('Voltar para a lista? As alterações não salvas serão perdidas.')) closeProductForm();
   });
 
   $('#products-list').addEventListener('click', async function (event) {
@@ -1306,7 +1411,7 @@
       inactive: 'Tirar "' + product.name + '" da loja? O estoque continua guardado e a peça volta quando você quiser.',
       archived: 'Arquivar "' + product.name + '"? Ele sai da loja e da lista, mas o histórico de pedidos é preservado.'
     }[target];
-    if (!window.confirm(question)) return;
+    if (!(await adminConfirm(question))) return;
 
     setBusy(statusButton, true, 'Aguarde…');
     var result = await D.setProductStatus(product.id, target);
@@ -1503,16 +1608,9 @@
         toast('Esta categoria tem produtos e não há outra categoria para movê-los. Desative-a em vez de excluir.', 'error');
         return;
       }
-      var choice = window.prompt(
-        'A categoria "' + category.name + '" tem ' + category.products_count + ' produto(s).\n\n' +
-        'Digite o número da categoria para onde mover esses produtos, ou cancele:\n\n' +
-        others.map(function (c, i) { return (i + 1) + ' - ' + c.name; }).join('\n')
-      );
-      if (choice == null) return;
-      var picked = others[Number(choice) - 1];
-      if (!picked) { toast('Número inválido. Nada foi alterado.', 'error'); return; }
-      moveTo = picked.id;
-    } else if (!window.confirm('Excluir a categoria "' + category.name + '"?')) {
+      moveTo = await pickCategoryToMove(category, others);
+      if (!moveTo) return;
+    } else if (!(await adminConfirm('Excluir a categoria "' + category.name + '"?'))) {
       return;
     }
 
@@ -1737,7 +1835,7 @@
       entrada: 'Registrar entrada de ' + quantity + ' unidade(s) de "' + (product && product.name) + '"?',
       inventario: 'Corrigir o estoque de "' + (product && product.name) + '" para ' + quantity + ' unidade(s)?'
     }[type] || 'Registrar saída de ' + quantity + ' unidade(s) de "' + (product && product.name) + '"?';
-    if (!window.confirm(confirmation)) return;
+    if (!(await adminConfirm(confirmation))) return;
 
     var button = $('#inventory-save-btn');
     setBusy(button, true, 'Registrando…');

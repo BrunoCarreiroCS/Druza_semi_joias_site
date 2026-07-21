@@ -1,0 +1,59 @@
+<h2>Auditoria mobile — fluxo proposto</h2>
+<p class="subtitle">Páginas públicas primeiro, usando dois smartphones reais como referência.</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">iPhone 13 / 14</div>
+    <div class="mockup-body" style="text-align:center">
+      <div style="font-size:2.2rem; margin-bottom:.5rem">◯</div>
+      <strong>390 × 844 px</strong>
+      <p>Safari móvel · modo retrato</p>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">Samsung Galaxy S23 / S24</div>
+    <div class="mockup-body" style="text-align:center">
+      <div style="font-size:2.2rem; margin-bottom:.5rem">▯</div>
+      <strong>360 × 780 px</strong>
+      <p>Chrome móvel · modo retrato</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="label">Fluxo de validação</div>
+  <div class="options">
+    <div class="option">
+      <div class="letter">1</div>
+      <div class="content"><h3>Servidor local</h3><p>Servir o projeto estático e percorrer todas as rotas públicas.</p></div>
+    </div>
+    <div class="option">
+      <div class="letter">2</div>
+      <div class="content"><h3>Varredura automática</h3><p>Detectar imagens quebradas, overflow horizontal, conteúdo cortado, colisões e erros do navegador.</p></div>
+    </div>
+    <div class="option">
+      <div class="letter">3</div>
+      <div class="content"><h3>Revisão visual</h3><p>Capturar páginas inteiras nos dois aparelhos e revisar hierarquia, legibilidade, header, cards, modais e rodapé.</p></div>
+    </div>
+    <div class="option">
+      <div class="letter">4</div>
+      <div class="content"><h3>Correção e regressão</h3><p>Aplicar ajustes mínimos, repetir a varredura e comparar screenshots antes/depois.</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="label">Princípio da correção</div>
+  <p>Preservar a direção “Cinema Editorial”. Alterar apenas o necessário para remover defeitos de renderização, texto, imagem e sobreposição.</p>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="approve-flow" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content"><h3>Aprovar este fluxo</h3><p>Seguir para os critérios técnicos e a matriz de testes.</p></div>
+  </div>
+  <div class="option" data-choice="adjust-flow" onclick="toggleSelect(this)">
+    <div class="letter">↺</div>
+    <div class="content"><h3>Quero ajustar</h3><p>Voltar à conversa para mudar cobertura ou prioridade.</p></div>
+  </div>
+</div>
