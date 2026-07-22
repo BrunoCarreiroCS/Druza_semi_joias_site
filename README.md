@@ -50,13 +50,13 @@ validado ponta a ponta em ambiente de teste.
 │   ├── security-final-hardening.sql  Migracao final obrigatoria
 │   ├── schema-catalog-inventory.sql  Catálogo completo, estoque auditável e envios
 │   ├── *-smoke-test.sql       Testes das migrações (rodam em transação + ROLLBACK)
-│   └── schedule-payment-reconciliation.sql  Job de recuperacao de pagamentos
+│   └── schedule-payment-reconciliation.sql  Job HMAC de recuperacao de pagamentos
 ├── supabase/functions/
 │   ├── _shared/               Envelope admin, CORS, rate limit, validação de catálogo
 │   ├── create-order/          Cria pedido, preços server-side (sem falar com o MP)
 │   ├── process-payment/       Cobra o pedido via Payment Brick (API MercadoPago)
 │   ├── webhook-mp/            Confirma pagamento (re-consulta autenticada na API MP)
-│   ├── reconcile-stale-payments/  Recupera tentativas interrompidas
+│   ├── reconcile-stale-payments/  Recupera tentativas interrompidas com HMAC
 │   └── admin-*/               14 funções do painel (todas passam por serveAdmin)
 └── docs/                      Guias e documentação (ver abaixo)
 ```
@@ -88,6 +88,8 @@ no servidor.** Detalhes e checklist de produção em [docs/SEGURANCA.md](docs/SE
   tentativas antigas evitam dupla cobranca e pedido preso.
 - **Webhook do MP** exige HMAC, reconsulta a API, confere valor e
   `external_reference`, e trata replay como `no-op`.
+- **Reconciliador** exige HMAC-SHA256 com timestamp antes de carregar qualquer
+  chave administrativa; o cron busca o secret dedicado no Supabase Vault.
 - **Admin**: tabela `admins` sem nenhuma política de escrita (promoção só manual,
   via SQL Editor) + **2FA TOTP obrigatório** verificado **no servidor** (claim
   `aal2` exigido pelas Edge Functions) + log de auditoria de toda ação.
@@ -142,6 +144,13 @@ supabase functions deploy admin-list-inventory
 supabase functions deploy admin-list-customers
 supabase functions deploy admin-list-audit
 ```
+
+O `verify_jwt = false` do reconciliador e intencional: o gateway nao valida JWT,
+mas o proprio handler exige a assinatura HMAC v1 do cron. Nao invoque esse
+endpoint manualmente. Os nomes operacionais sao
+`RECONCILE_CRON_HMAC_SECRET_CURRENT`, o opcional
+`RECONCILE_CRON_HMAC_SECRET_PREVIOUS` e `druza_reconcile_cron_hmac` no Vault;
+valores nunca devem ser versionados ou registrados.
 
 ## Estado e pendências
 

@@ -25,8 +25,28 @@ precisa de servidor próprio para login/conta. Servidor só entra na **Fase 4d**
    `orders`, `order_items`.
 4. Rode `db/schema-payments.sql`, `db/schema-admin.sql` e por ultimo
    [`db/security-final-hardening.sql`](../db/security-final-hardening.sql).
-5. Depois do deploy de `reconcile-stale-payments`, rode
-   [`db/schedule-payment-reconciliation.sql`](../db/schedule-payment-reconciliation.sql).
+5. Para o reconciliador, use esta ordem fail-closed:
+   - configure o mesmo valor aleatorio somente no Edge secret
+     `RECONCILE_CRON_HMAC_SECRET_CURRENT` e no item de Vault
+     `druza_reconcile_cron_hmac`, sem copiar o valor para arquivos ou comandos;
+   - rode [`db/schedule-payment-reconciliation.sql`](../db/schedule-payment-reconciliation.sql)
+     para assinar o cron;
+   - publique imediatamente `reconcile-stale-payments` com o
+     `verify_jwt = false` declarado em `supabase/config.toml`;
+   - aguarde duas execucoes naturais e valide
+     [`db/schedule-payment-reconciliation-smoke-test.sql`](../db/schedule-payment-reconciliation-smoke-test.sql).
+
+O JWT do gateway fica desativado somente porque o handler valida HMAC-SHA256,
+timestamp, caminho, metodo e corpo antes de carregar chaves administrativas.
+Nao chame o endpoint nem RPCs de reconciliacao manualmente para testar.
+
+Na rotacao, primeiro configure no Edge
+`RECONCILE_CRON_HMAC_SECRET_PREVIOUS=<valor-antigo>` e
+`RECONCILE_CRON_HMAC_SECRET_CURRENT=<valor-novo>`; depois atualize a entrada
+existente do Vault para o valor novo, sem criar nome duplicado. Remova
+`PREVIOUS` apenas depois de duas execucoes naturais validas. Em falha, desative
+o job com `cron.alter_job(job_id := <jobid>, active := false)` e mantenha o
+handler autenticado publicado.
 
 > Se `security-final-hardening.sql` já havia sido aplicado antes de 17/07/2026,
 > rode também [`db/enforce-checkout-profile-completion.sql`](../db/enforce-checkout-profile-completion.sql)

@@ -280,7 +280,9 @@ supabase functions deploy
 Sem nome de função, o CLI envia tudo que está em `supabase/functions/` e
 respeita o que `supabase/config.toml` declara para cada uma — inclusive o
 `verify_jwt = false` do `webhook-mp` e do `reconcile-stale-payments`. Por isso
-o antigo `--no-verify-jwt` não é mais necessário.
+o antigo `--no-verify-jwt` não é mais necessário. No reconciliador essa flag e
+intencional: antes de qualquer acesso administrativo, o handler valida o HMAC
+v1 enviado pelo cron com timestamp e secret dedicado no Vault.
 
 Para publicar só uma função (útil ao corrigir um detalhe):
 
@@ -301,9 +303,12 @@ supabase login              # abre o navegador para autorizar
 supabase link --project-ref hqkpgghlbwincahfwkem
 ```
 
-Nenhuma variável de ambiente nova. As já usadas continuam valendo:
-`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`,
-`MP_ACCESS_TOKEN`, `ALLOWED_ORIGINS`.
+As variáveis existentes continuam valendo: `SUPABASE_URL`,
+`SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, `MP_ACCESS_TOKEN` e
+`ALLOWED_ORIGINS`. O reconciliador adiciona
+`RECONCILE_CRON_HMAC_SECRET_CURRENT` e, somente durante rotacao,
+`RECONCILE_CRON_HMAC_SECRET_PREVIOUS`. O mesmo valor de `CURRENT` fica no item
+`druza_reconcile_cron_hmac` do Vault; nenhum desses valores e publico.
 
 ### 6.3 Conferir o bucket de fotos
 
@@ -499,5 +504,6 @@ função `security definer` que lê `auth.users`, porque o e-mail não fica em
 nenhuma tabela do schema `public`. Ela só é executável pela `service_role`.
 
 **Reservas expiradas dependem do job de reconciliação.** Já configurado em
-`db/schedule-payment-reconciliation.sql`. Se ele não estiver rodando, uma
+`db/schedule-payment-reconciliation.sql`, ele assina cada chamada com HMAC e
+nao deve ser substituido por chamadas manuais. Se ele não estiver rodando, uma
 reserva abandonada segura a peça por até 30 minutos a mais do que deveria.

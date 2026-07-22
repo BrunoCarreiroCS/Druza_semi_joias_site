@@ -4,6 +4,7 @@ project_id = "hqkpgghlbwincahfwkem"
 verify_jwt = false
 
 [functions.reconcile-stale-payments]
+# JWT do gateway desativado intencionalmente: o handler exige HMAC v1 do cron.
 verify_jwt = false
 
 [functions.create-order]
