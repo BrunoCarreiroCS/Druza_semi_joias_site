@@ -46,6 +46,8 @@ Baseado em [2026-07-22-supabase-p0-acl-lockdown-design.md](./2026-07-22-supabase
 - Confirmar funções de trigger e de `private` fechadas para clientes.
 - Confirmar defaults opt-in para `postgres` e `supabase_admin`.
 - Rodar o Security Advisor e exigir a ausência dos alertas `0028` e `0029`.
+- Registrar separadamente qualquer default ACL de owner legado que a sessão
+  atual não possa administrar; isso não pode ser descrito como resolvido.
 
 ## 6. Alinhamento dos scripts-base
 

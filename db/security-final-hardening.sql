@@ -1363,9 +1363,40 @@ grant execute on function public.reconcile_payment_not_found(uuid, uuid)
 grant execute on function public.release_expired_pending_reservations(integer)
   to service_role;
 
-alter default privileges in schema public
-  revoke all on tables from anon, authenticated;
-alter default privileges in schema public
-  revoke execute on functions from public, anon, authenticated;
+-- Defaults opt-in do owner ativo. O REVOKE global e necessario porque o
+-- PostgreSQL concede EXECUTE de novas funcoes a PUBLIC por padrao; um REVOKE
+-- limitado ao schema nao remove esse grant nativo.
+alter default privileges for role postgres
+  revoke execute on functions from public, anon, authenticated, service_role;
+alter default privileges for role postgres in schema public
+  revoke all on tables from public, anon, authenticated, service_role;
+alter default privileges for role postgres in schema public
+  revoke all on sequences from public, anon, authenticated, service_role;
+alter default privileges for role postgres in schema public
+  revoke execute on functions from public, anon, authenticated, service_role;
+alter default privileges for role postgres in schema private
+  revoke execute on functions from public, anon, authenticated, service_role;
+
+-- Compatibilidade com projetos legados: fecha supabase_admin somente quando a
+-- sessao autorizada puder assumir esse owner. Caso contrario, o NOTICE torna o
+-- risco residual visivel sem tentar elevar privilegios.
+do $legacy_default_acl$
+begin
+  if pg_has_role(current_user, 'supabase_admin', 'USAGE') then
+    execute 'alter default privileges for role supabase_admin
+      revoke execute on functions from public, anon, authenticated, service_role';
+    execute 'alter default privileges for role supabase_admin in schema public
+      revoke all on tables from public, anon, authenticated, service_role';
+    execute 'alter default privileges for role supabase_admin in schema public
+      revoke all on sequences from public, anon, authenticated, service_role';
+    execute 'alter default privileges for role supabase_admin in schema public
+      revoke execute on functions from public, anon, authenticated, service_role';
+    execute 'alter default privileges for role supabase_admin in schema private
+      revoke execute on functions from public, anon, authenticated, service_role';
+  else
+    raise notice 'supabase_admin_default_acl_requires_owner_context';
+  end if;
+end
+$legacy_default_acl$;
 
 commit;

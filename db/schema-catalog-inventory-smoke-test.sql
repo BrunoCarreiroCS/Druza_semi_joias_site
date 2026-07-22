@@ -475,7 +475,35 @@ begin
   -- PERMISSOES
   -- =================================================================
 
-  -- 27) O navegador nao alcanca estoque, auditoria nem linha do tempo.
+  -- 27) Nenhuma SECURITY DEFINER publica fica ao alcance do cliente.
+  if exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.prosecdef
+      and (
+        has_function_privilege('anon', p.oid, 'EXECUTE')
+        or has_function_privilege('authenticated', p.oid, 'EXECUTE')
+      )
+  ) then
+    raise exception 'test_failed_security_definer_exposed_to_client';
+  end if;
+
+  if exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'private'
+      and (
+        has_function_privilege('anon', p.oid, 'EXECUTE')
+        or has_function_privilege('authenticated', p.oid, 'EXECUTE')
+      )
+  ) then
+    raise exception 'test_failed_private_function_exposed_to_client';
+  end if;
+
+  -- 28) O navegador nao alcanca estoque, auditoria nem linha do tempo.
   if has_table_privilege('anon', 'public.inventory_movements', 'SELECT')
      or has_table_privilege('authenticated', 'public.inventory_movements', 'SELECT') then
     raise exception 'test_failed_ledger_readable_by_client';
@@ -487,13 +515,13 @@ begin
     raise exception 'test_failed_audit_readable_by_client';
   end if;
 
-  -- 28) Custo e margem nao saem para a vitrine.
+  -- 29) Custo e margem nao saem para a vitrine.
   if has_column_privilege('anon', 'public.products', 'cost_cents', 'SELECT')
      or has_column_privilege('authenticated', 'public.products', 'cost_cents', 'SELECT') then
     raise exception 'test_failed_cost_exposed_to_client';
   end if;
 
-  -- 29) Nenhuma escrita de catalogo pelo cliente.
+  -- 30) Nenhuma escrita de catalogo pelo cliente.
   if has_table_privilege('authenticated', 'public.products', 'UPDATE')
      or has_table_privilege('authenticated', 'public.products', 'INSERT')
      or has_table_privilege('authenticated', 'public.categories', 'UPDATE')
@@ -501,11 +529,23 @@ begin
     raise exception 'test_failed_client_can_write_catalog';
   end if;
 
-  -- 30) A vitrine continua conseguindo ler o que precisa.
+  -- 31) A vitrine continua conseguindo ler o que precisa.
   if not has_column_privilege('anon', 'public.products', 'price_cents', 'SELECT')
      or not has_table_privilege('anon', 'public.categories', 'SELECT')
      or not has_table_privilege('anon', 'public.product_images', 'SELECT') then
     raise exception 'test_failed_storefront_cannot_read_catalog';
+  end if;
+
+  if not has_function_privilege(
+    'anon',
+    'public.effective_price_cents(integer,integer,timestamptz,timestamptz)',
+    'EXECUTE'
+  ) or not has_function_privilege(
+    'authenticated',
+    'public.effective_price_cents(integer,integer,timestamptz,timestamptz)',
+    'EXECUTE'
+  ) then
+    raise exception 'test_failed_storefront_price_function_unavailable';
   end if;
 
   raise notice 'smoke test completo: catalogo, estoque, pedidos e permissoes OK';

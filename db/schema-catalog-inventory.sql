@@ -1574,6 +1574,19 @@ create policy "product_images_select_active_product"
 -- Sem policy em inventory_movements e order_status_history: movimentacao
 -- de estoque e linha do tempo interna nao saem do painel.
 
+-- Este arquivo cria funcoes depois do hardening base. Reaplicar o bloqueio
+-- aqui evita depender da ordem historica das migrations ou do owner usado.
+revoke execute on all functions in schema public
+  from public, anon, authenticated;
+revoke execute on all functions in schema private
+  from public, anon, authenticated;
+alter default privileges
+  revoke execute on functions from public, anon, authenticated, service_role;
+alter default privileges in schema public
+  revoke execute on functions from public, anon, authenticated, service_role;
+alter default privileges in schema private
+  revoke execute on functions from public, anon, authenticated, service_role;
+
 grant execute on function public.effective_price_cents(integer, integer, timestamptz, timestamptz)
   to anon, authenticated, service_role;
 grant execute on function public.create_reserved_order(uuid, uuid, jsonb, text) to service_role;

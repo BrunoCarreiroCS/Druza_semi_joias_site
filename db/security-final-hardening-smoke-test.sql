@@ -20,6 +20,20 @@ declare
   v_address_city text;
   v_snapshot_city text;
 begin
+  if exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.prosecdef
+      and (
+        has_function_privilege('anon', p.oid, 'EXECUTE')
+        or has_function_privilege('authenticated', p.oid, 'EXECUTE')
+      )
+  ) then
+    raise exception 'test_failed_security_definer_exposed_to_client';
+  end if;
+
   if has_table_privilege('authenticated', 'public.orders', 'INSERT')
      or has_table_privilege('authenticated', 'public.order_items', 'INSERT') then
     raise exception 'test_failed_client_can_insert_orders';
