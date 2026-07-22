@@ -22,6 +22,8 @@ declare
   v_job_count integer;
   v_job_active boolean;
   v_job_schedule text;
+  v_job_database text;
+  v_job_username text;
   v_job_command text;
 begin
   if not exists (
@@ -135,13 +137,17 @@ begin
     raise exception 'p1a_smoke_secret_format_invalid';
   end if;
 
-  select count(*), bool_and(active), min(schedule), min(command)
-  into v_job_count, v_job_active, v_job_schedule, v_job_command
+  select count(*), bool_and(active), min(schedule), min(database),
+         min(username), min(command)
+  into v_job_count, v_job_active, v_job_schedule, v_job_database,
+       v_job_username, v_job_command
   from cron.job
   where jobname = 'druza-reconcile-stale-payments';
 
   if v_job_count <> 1 or v_job_active is not true
-     or v_job_schedule <> '*/5 * * * *' then
+     or v_job_schedule <> '*/5 * * * *'
+     or v_job_database is distinct from 'postgres'
+     or v_job_username is distinct from 'postgres' then
     raise exception 'p1a_smoke_job_metadata_invalid';
   end if;
   if position('do $reconcile$' in lower(v_job_command)) = 0

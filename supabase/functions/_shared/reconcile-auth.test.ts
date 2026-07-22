@@ -140,6 +140,22 @@ test('accepts semantically empty JSON object variants', async () => {
   }
 });
 
+test('accepts exact runtime path aliases while signing the public canonical path', async () => {
+  for (const path of ['/reconcile-stale-payments', '/']) {
+    const result = await authenticateReconcileRequest(
+      buildRequest('{}', {
+        'x-druza-timestamp': FIXTURE_TIMESTAMP,
+        'x-druza-signature': FIXTURE_SIGNATURE_HEADER_CURRENT,
+      }, { path }),
+      {
+        currentSecret: FIXTURE_SECRET_CURRENT,
+        nowMs: FIXTURE_NOW_MS,
+      },
+    );
+    assert.equal(result.ok, true);
+  }
+});
+
 test('rejects missing or malformed current secret with 503', async () => {
   for (const currentSecret of [undefined, '', 'a'.repeat(63), 'A'.repeat(64), 'g'.repeat(64)]) {
     const result = await expectAuthFailure(
@@ -262,6 +278,13 @@ test('rejects incorrect signature, method, path, query string, content type, inv
         'x-druza-timestamp': FIXTURE_TIMESTAMP,
         'x-druza-signature': FIXTURE_SIGNATURE_HEADER_CURRENT,
       }, { method: 'GET' }),
+      expectedStatus: 401,
+    },
+    {
+      request: buildRequest('{}', {
+        'x-druza-timestamp': FIXTURE_TIMESTAMP,
+        'x-druza-signature': FIXTURE_SIGNATURE_HEADER_CURRENT,
+      }, { path: '/functions/v1/other-function' }),
       expectedStatus: 401,
     },
     {

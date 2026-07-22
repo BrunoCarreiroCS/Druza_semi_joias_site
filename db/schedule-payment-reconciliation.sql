@@ -29,6 +29,8 @@ do $reconcile_schedule$
 declare
   v_job_count integer;
   v_job_id bigint;
+  v_job_database text;
+  v_job_username text;
   v_job_command text := $job$
     do $reconcile$
     declare
@@ -86,8 +88,8 @@ declare
     $reconcile$;
   $job$;
 begin
-  select count(*), min(jobid)
-  into v_job_count, v_job_id
+  select count(*), min(jobid), min(database), min(username)
+  into v_job_count, v_job_id, v_job_database, v_job_username
   from cron.job
   where jobname = 'druza-reconcile-stale-payments';
 
@@ -102,12 +104,18 @@ begin
       v_job_command
     );
   else
+    -- A conexao gerenciada nao pode passar `username` a alter_job, mesmo ao
+    -- preservar o mesmo owner. Falhe fechado se os metadados divergirem e
+    -- altere somente os campos permitidos pelo papel atual.
+    if v_job_database is distinct from 'postgres'
+       or v_job_username is distinct from 'postgres' then
+      raise exception 'reconcile_cron_job_execution_context_invalid';
+    end if;
+
     perform cron.alter_job(
       job_id := v_job_id,
       schedule := '*/5 * * * *',
       command := v_job_command,
-      database := 'postgres',
-      username := 'postgres',
       active := true
     );
   end if;

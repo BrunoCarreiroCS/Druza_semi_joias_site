@@ -3,6 +3,15 @@ export const RECONCILE_AUTH_PATH = '/functions/v1/reconcile-stale-payments';
 export const RECONCILE_AUTH_MAX_BODY_BYTES = 1024;
 export const RECONCILE_AUTH_SKEW_MS = 120_000;
 
+// O gateway pode entregar a mesma rota publica ao runtime com o prefixo
+// removido. A assinatura continua sempre vinculada ao caminho publico canonico;
+// somente estes aliases exatos de execucao sao aceitos.
+const RECONCILE_RUNTIME_PATHS = new Set([
+  RECONCILE_AUTH_PATH,
+  '/reconcile-stale-payments',
+  '/',
+]);
+
 const SECRET_HEX_RE = /^[0-9a-f]{64}$/;
 const SIGNATURE_RE = /^v1=([0-9a-f]{64})$/;
 const TIMESTAMP_RE = /^[0-9]{1,10}$/;
@@ -82,7 +91,7 @@ export async function authenticateReconcileRequest(
 
   const url = new URL(request.url);
   if (url.search || request.url.includes('?')) return invalidRequest();
-  if (url.pathname !== RECONCILE_AUTH_PATH) return unauthorized();
+  if (!RECONCILE_RUNTIME_PATHS.has(url.pathname)) return unauthorized();
 
   const timestamp = parseTimestampHeader(
     request.headers.get('x-druza-timestamp'),
@@ -102,7 +111,7 @@ export async function authenticateReconcileRequest(
   const message = buildCanonicalReconcileMessage({
     timestamp: timestamp.timestamp,
     method: request.method,
-    path: url.pathname,
+    path: RECONCILE_AUTH_PATH,
     bodySha256Hex,
   });
 
