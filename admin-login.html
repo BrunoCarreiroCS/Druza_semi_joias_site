@@ -52,6 +52,11 @@
             <button type="button" class="pw-toggle" data-pw-toggle aria-label="Mostrar senha">ver</button>
           </span>
         </label>
+        <div class="auth-security" id="admin-security" hidden>
+          <div class="auth-security__widget" id="admin-turnstile"></div>
+          <p class="auth-security__status" id="admin-turnstile-status" aria-live="polite"></p>
+          <button type="button" class="btn btn--ghost auth-security__retry" id="admin-turnstile-retry" hidden>Tentar verificação novamente</button>
+        </div>
         <p class="auth-feedback" id="feedback" role="alert" aria-live="polite"></p>
         <button type="submit" class="btn btn--primary" id="submit-btn">Continuar</button>
       </form>
@@ -76,6 +81,7 @@
 
   <script src="js/config.public.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js" integrity="sha384-dGnL7r9uccC9TdSdE05clTJ6esxMU42XBQ1/BWLzKQOBi7qR1aCMRIi0LzUmexIg" crossorigin="anonymous"></script>
+  <script src="js/auth-security.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/admin.js"></script>
   <script>
@@ -88,35 +94,90 @@
       const codeFb = document.getElementById('code-feedback');
       const btn = document.getElementById('submit-btn');
       const codeBtn = document.getElementById('code-btn');
+      const securityWrapper = document.getElementById('admin-security');
+      const security = window.DruzaAuthSecurity.createTurnstileController({
+        container: document.getElementById('admin-turnstile'),
+        statusElement: document.getElementById('admin-turnstile-status'),
+        retryElement: document.getElementById('admin-turnstile-retry')
+      });
       let factorId = null;
+      let submitLocked = false;
 
-      document.querySelectorAll('[data-pw-toggle]').forEach(function (t) {
-        t.addEventListener('click', function () {
-          const input = t.previousElementSibling;
+      syncSecurityVisibility();
+      security.init().then(syncSecurityVisibility, syncSecurityVisibility);
+      document.getElementById('admin-turnstile-retry').addEventListener('click', function () {
+        security.retry().then(syncSecurityVisibility, syncSecurityVisibility);
+      });
+
+      function syncSecurityVisibility() {
+        securityWrapper.hidden = !security.isActive();
+      }
+
+      function setFeedback(type, message) {
+        fb.className = 'auth-feedback';
+        fb.textContent = message || '';
+        if (type) {
+          fb.classList.add('is-' + type);
+        }
+      }
+
+      function requireCaptchaToken() {
+        if (!security.isActive()) {
+          return '';
+        }
+        if (!security.isReady()) {
+          setFeedback('error', 'A verificacao de seguranca ainda nao carregou. Tente novamente.');
+          return null;
+        }
+        const token = security.getToken();
+        if (!token) {
+          setFeedback('error', 'Conclua a verificacao de seguranca.');
+          return null;
+        }
+        return token;
+      }
+
+      document.querySelectorAll('[data-pw-toggle]').forEach(function (toggle) {
+        toggle.addEventListener('click', function () {
+          const input = toggle.previousElementSibling;
           const show = input.type === 'password';
           input.type = show ? 'text' : 'password';
-          t.textContent = show ? 'ocultar' : 'ver';
+          toggle.textContent = show ? 'ocultar' : 'ver';
+          toggle.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
         });
       });
 
-      function goAdmin() { location.replace('admin.html'); }
+      function goAdmin() {
+        location.replace('admin.html');
+      }
 
       // Mostra o passo do código (2FA). factorId já resolvido.
       function showCodeStep() {
         loginForm.hidden = true;
         codeForm.hidden = false;
-        setTimeout(function () { codeForm.elements.code.focus(); }, 50);
+        setTimeout(function () {
+          codeForm.elements.code.focus();
+        }, 50);
       }
 
       // Decide o próximo passo depois de autenticado + confirmado admin.
       async function routeAfterAuth() {
         const aal = await D.getAAL();
-        if (aal.current === 'aal2') { goAdmin(); return; }
+        if (aal.current === 'aal2') {
+          goAdmin();
+          return;
+        }
         if (aal.next === 'aal2') {
           // Tem fator TOTP: precisa do código.
           const factors = await D.listFactors();
-          const verified = factors.filter(function (f) { return f.status === 'verified'; });
-          if (verified.length) { factorId = verified[0].id; showCodeStep(); return; }
+          const verified = factors.filter(function (factor) {
+            return factor.status === 'verified';
+          });
+          if (verified.length) {
+            factorId = verified[0].id;
+            showCodeStep();
+            return;
+          }
         }
         // Sem fator ainda: enrolamento acontece no admin.html.
         goAdmin();
@@ -124,38 +185,87 @@
 
       // Se já houver sessão de admin, roteia direto.
       (async function () {
-        const s = await A.getSession();
-        if (!s) return;
-        const isAdmin = await D.checkAccess();
-        if (!isAdmin) { await A.signOut(); return; }
-        routeAfterAuth();
-      })();
-
-      loginForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        fb.className = 'auth-feedback'; fb.textContent = '';
-        const fd = new FormData(loginForm);
-        const email = (fd.get('email') || '').trim();
-        const password = fd.get('password') || '';
-        if (!email || !password) { fb.classList.add('is-error'); fb.textContent = 'Preencha e-mail e senha.'; return; }
-        btn.disabled = true; btn.textContent = 'Verificando…';
-
-        const res = await A.signIn({ email: email, password: password });
-        if (res.error) {
-          fb.classList.add('is-error'); fb.textContent = res.error;
-          btn.disabled = false; btn.textContent = 'Continuar';
+        const session = await A.getSession();
+        if (!session) {
           return;
         }
-        // Só admins passam daqui. Quem não é, é deslogado na hora.
         const isAdmin = await D.checkAccess();
         if (!isAdmin) {
           await A.signOut();
-          fb.classList.add('is-error'); fb.textContent = 'Acesso restrito a administradores.';
-          btn.disabled = false; btn.textContent = 'Continuar';
           return;
         }
-        btn.disabled = false; btn.textContent = 'Continuar';
         routeAfterAuth();
+      })();
+
+      loginForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        if (submitLocked) {
+          return;
+        }
+        setFeedback('', '');
+        const fd = new FormData(loginForm);
+        const email = (fd.get('email') || '').trim();
+        const password = fd.get('password') || '';
+        if (!email || !password) {
+          setFeedback('error', 'Preencha e-mail e senha.');
+          return;
+        }
+
+        const captchaToken = requireCaptchaToken();
+        if (captchaToken === null) {
+          return;
+        }
+
+        submitLocked = true;
+        btn.disabled = true;
+        btn.textContent = 'Verificando…';
+
+        let attemptedRequest = false;
+        let signedIn = false;
+        try {
+          attemptedRequest = true;
+          const result = await A.signIn({ email: email, password: password, captchaToken: captchaToken });
+          if (result.error) {
+            setFeedback('error', result.error);
+            submitLocked = false;
+            btn.disabled = false;
+            btn.textContent = 'Continuar';
+            return;
+          }
+          signedIn = true;
+
+          // Só admins passam daqui. Quem não é, é deslogado na hora.
+          const isAdmin = await D.checkAccess();
+          if (!isAdmin) {
+            await A.signOut();
+            setFeedback('error', 'Acesso restrito a administradores.');
+            submitLocked = false;
+            btn.disabled = false;
+            btn.textContent = 'Continuar';
+            return;
+          }
+
+          await routeAfterAuth();
+          submitLocked = false;
+          btn.disabled = false;
+          btn.textContent = 'Continuar';
+        } catch (_) {
+          if (signedIn) {
+            try {
+              await A.signOut();
+            } catch (_) {
+              // Mantem a mensagem publica sem expor detalhes do erro.
+            }
+          }
+          setFeedback('error', 'Nao foi possivel concluir o acesso agora. Tente novamente.');
+          submitLocked = false;
+          btn.disabled = false;
+          btn.textContent = 'Continuar';
+        } finally {
+          if (attemptedRequest && security.isActive()) {
+            security.reset();
+          }
+        }
       });
 
       document.getElementById('code-cancel').addEventListener('click', async function () {
@@ -165,16 +275,24 @@
         loginForm.reset();
       });
 
-      codeForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        codeFb.className = 'auth-feedback'; codeFb.textContent = '';
+      codeForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        codeFb.className = 'auth-feedback';
+        codeFb.textContent = '';
         const code = (codeForm.elements.code.value || '').trim();
-        if (!/^[0-9]{6}$/.test(code)) { codeFb.classList.add('is-error'); codeFb.textContent = 'Digite os 6 dígitos.'; return; }
-        codeBtn.disabled = true; codeBtn.textContent = 'Entrando…';
-        const { error } = await D.verifyFactor(factorId, code);
-        if (error) {
-          codeFb.classList.add('is-error'); codeFb.textContent = 'Código inválido. Tente novamente.';
-          codeBtn.disabled = false; codeBtn.textContent = 'Entrar';
+        if (!/^[0-9]{6}$/.test(code)) {
+          codeFb.classList.add('is-error');
+          codeFb.textContent = 'Digite os 6 dígitos.';
+          return;
+        }
+        codeBtn.disabled = true;
+        codeBtn.textContent = 'Entrando…';
+        const result = await D.verifyFactor(factorId, code);
+        if (result.error) {
+          codeFb.classList.add('is-error');
+          codeFb.textContent = 'Código inválido. Tente novamente.';
+          codeBtn.disabled = false;
+          codeBtn.textContent = 'Entrar';
           return;
         }
         goAdmin();

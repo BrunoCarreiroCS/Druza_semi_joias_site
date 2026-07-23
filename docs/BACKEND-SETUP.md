@@ -66,22 +66,36 @@ No painel → **Authentication**:
 
 - **Providers → Email**: deixe habilitado. Mantenha **Confirm email** LIGADO
   (segurança: evita cadastro com e-mail de terceiros).
-- **Password security**: use minimo de 8 caracteres e exija maiuscula,
-  minuscula, numero e simbolo. Se o plano permitir, ative protecao contra
-  senhas vazadas.
+- **Password security**: use minimo de 12 caracteres e exija maiuscula,
+  minuscula, numero e simbolo. Senhas antigas validas continuam entrando; o
+  aviso `data.weakPassword` nao deve ser tratado como erro.
 - **Secure email change**, **Secure password change** e **Require current
   password when updating**: mantenha ligados.
-- **Captcha protection**: opcionalmente conecte Cloudflare Turnstile e coloque
-  a Site Key publica em `js/config.public.js`. O secret fica apenas no Auth.
-- **URL Configuration → Site URL**: a URL do site (ex.: `https://druza.com.br`
-  ou, em testes locais, `http://localhost:5510`).
-- **Redirect URLs**: adicione:
-  - `https://druza.com.br/login.html`
-  - `https://druza.com.br/redefinir-senha.html`
-  - `https://brunocarreirocs.github.io/Druza_semi_joias_site/**`
-  - (e as versões `http://localhost:5510/...` enquanto testa local)
+- **Captcha protection**: use Cloudflare Turnstile. Primeiro publique a Site
+  Key em `js/config.public.js` e valide os quatro widgets nos hosts autorizados
+  com o CAPTCHA remoto ainda desligado. Somente depois cole a Secret Key
+  diretamente no Dashboard e habilite a protecao. O secret nunca entra em Git,
+  chat, screenshot ou configuracao publica.
+- **URL Configuration → Site URL**: enquanto o app estiver publicado somente
+  no GitHub Pages, use a canonical
+  `https://brunocarreirocs.github.io/Druza_semi_joias_site/`.
+- **Redirect URLs ativas**: mantenha somente os destinos exatos que o app
+  publicado produz:
+  - `https://brunocarreirocs.github.io/Druza_semi_joias_site/login.html`
+  - `https://brunocarreirocs.github.io/Druza_semi_joias_site/redefinir-senha.html`
+- Em 22/07/2026, `druza.com.br/login.html` e a rota em `www` ainda apontavam
+  para outro site/GoDaddy e retornavam pagina nao encontrada. Nao use esses
+  origins em Site URL nem Redirect URLs do app antes de concluir a migracao do
+  dominio, publicar as duas rotas e valida-las. Depois da migracao, adicione
+  apenas as URLs exatas de `login.html` e `redefinir-senha.html`, sem wildcard.
 - **Email Templates** (opcional agora): personalize os e-mails de confirmação e
   de recuperação com a marca Druza.
+
+No plano Free, a verificacao adicional de senha exposta ocorre no navegador
+somente no cadastro e na definicao de nova senha. `js/auth-security.js` calcula
+SHA-1 localmente e envia ao Pwned Passwords somente o prefixo de cinco
+caracteres, com padding, sem e-mail ou outro dado pessoal. Falha do servico gera
+aviso e nao bloqueia; uma correspondencia confirmada bloqueia aquela senha.
 
 > O Supabase já envia os e-mails de confirmação e recuperação. Em produção, com
 > volume, configure um SMTP próprio (ex.: Resend) em **Project Settings → Auth → SMTP**.
@@ -98,7 +112,8 @@ No painel → **Authentication**:
    ```js
    window.DRUZA_CONFIG = Object.freeze({
      SUPABASE_URL: 'https://xxxx.supabase.co',
-     SUPABASE_ANON_KEY: 'eyJhbGciOi...'   // anon public
+     SUPABASE_ANON_KEY: 'sb_publishable_...',
+     TURNSTILE_SITE_KEY: '' // Site Key publica; nunca a Secret Key
    });
    ```
 3. URL, chave publishable/anon, MP Public Key e Turnstile Site Key sao publicas.
@@ -107,10 +122,18 @@ No painel → **Authentication**:
 
 ## 5. Testar
 
-1. Suba o site local (preview na porta 5510) e abra `cadastro.html`.
-2. Crie uma conta → confira o e-mail de confirmação → confirme.
-3. Faça login em `login.html` → você cai em `conta.html`.
-4. Teste `recuperar-senha.html` → link no e-mail → `redefinir-senha.html`.
+1. Rode os testes sem rede ou conta real:
+   ```bash
+   node --test tests/auth-security.test.js tests/auth.test.js tests/auth-pages.test.js tests/auth-entry-pages.test.js tests/auth-hardening-static.test.js
+   ```
+2. Suba o site local na porta 5510 com Site Key vazia e CAPTCHA remoto
+   desligado. Verifique layout e estados sem usar `file://`.
+3. Publique a Site Key e valide os quatro widgets no GitHub Pages antes de
+   habilitar Turnstile no Supabase. Valide `druza.com.br` e `www` somente depois
+   de o app estar realmente publicado nesses origins; ter o hostname cadastrado
+   no widget nao substitui essa verificacao.
+4. Depois da ativacao, o proprietario testa com a propria conta: login, login
+   admin + TOTP e um recovery real. Nao compartilhe e-mail, senha ou token.
 
 ---
 
@@ -121,18 +144,24 @@ No painel → **Authentication**:
 | `db/schema.sql` | Tabelas + RLS + triggers (rode no Supabase) |
 | `js/config.public.js` | Configuracao publica carregada pelo site estatico |
 | `js/auth.js` | Camada de auth (signup, login, reset, perfil, pedidos) |
+| `js/auth-security.js` | Turnstile compartilhado e HIBP k-anonymity |
 | `css/account.css` | Estilos de auth e da conta |
 | `cadastro.html` | Criar conta (com consentimento LGPD) |
 | `login.html` | Entrar |
 | `recuperar-senha.html` | Solicitar link de recuperação |
 | `redefinir-senha.html` | Definir nova senha (após link do e-mail) |
 | `conta.html` | Painel: dados, endereços, histórico de pedidos |
+| `tests/auth*.test.js` | Contratos e fluxos Auth sem rede nem dados reais |
 
 ## Segurança e LGPD (já contemplados)
 
 - **RLS em todas as tabelas**: cada usuário só acessa os próprios dados.
 - **Confirmação de e-mail** ligada: impede cadastro com e-mail alheio.
 - **Anti-enumeração**: a tela de recuperação não revela se um e-mail existe.
+- **Turnstile**: cadastro, login, login admin e solicitacao de recovery exigem
+  token quando a Site Key esta publicada e o controle remoto esta ativo.
+- **Senha exposta**: HIBP recebe somente um prefixo de hash e nenhum dado de
+  conta; a checagem nao ocorre durante login.
 - **Consentimento explícito** de marketing no cadastro, com data registrada.
 - **Telefone obrigatório**, data de nascimento obrigatória e bloqueio de menores
   de 18 anos no front e no banco.

@@ -60,17 +60,25 @@
         <label class="field">
           <span>Nova senha</span>
           <span class="pw-wrap">
-            <input type="password" name="password" autocomplete="new-password" minlength="8" maxlength="72" required />
+            <input type="password" name="password" autocomplete="new-password" minlength="12" maxlength="72" required disabled />
             <button type="button" class="pw-toggle" data-pw-toggle aria-label="Mostrar senha">ver</button>
           </span>
-          <span class="field__hint">Minimo de 8 caracteres, com maiuscula, minuscula, numero e simbolo.</span>
+          <span class="field__hint">Minimo de 12 caracteres, com maiuscula, minuscula, numero e simbolo.</span>
         </label>
         <label class="field">
           <span>Confirmar nova senha</span>
-          <input type="password" name="confirm" autocomplete="new-password" minlength="8" maxlength="72" required />
+          <input type="password" name="confirm" autocomplete="new-password" minlength="12" maxlength="72" required disabled />
         </label>
+        <div class="auth-recovery-state">
+          <p class="auth-feedback" id="recovery-status" aria-live="polite">Validando o link seguro para redefinir sua senha.</p>
+          <div class="auth-recovery-actions" id="recovery-actions" hidden>
+            <button type="button" class="btn btn--ghost" id="recovery-retry">Tentar novamente</button>
+            <a href="recuperar-senha.html" class="btn btn--ghost" id="recovery-link">Solicitar novo link</a>
+          </div>
+        </div>
+        <p class="auth-feedback" id="password-security-warning" aria-live="polite"></p>
         <p class="auth-feedback" id="feedback" role="alert" aria-live="polite"></p>
-        <button type="submit" class="btn btn--primary" id="submit-btn">Salvar nova senha</button>
+        <button type="submit" class="btn btn--primary" id="submit-btn" disabled>Salvar nova senha</button>
       </form>
       <div class="auth-alt">
         <a href="login.html">Voltar para entrar</a>
@@ -90,52 +98,191 @@
 
   <script src="js/config.public.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js" integrity="sha384-dGnL7r9uccC9TdSdE05clTJ6esxMU42XBQ1/BWLzKQOBi7qR1aCMRIi0LzUmexIg" crossorigin="anonymous"></script>
+  <script src="js/auth-security.js"></script>
   <script src="js/auth.js"></script>
   <script>
     (function () {
       const form = document.getElementById('newpw-form');
       const fb = document.getElementById('feedback');
+      const passwordSecurityWarning = document.getElementById('password-security-warning');
+      const recoveryStatus = document.getElementById('recovery-status');
+      const recoveryActions = document.getElementById('recovery-actions');
+      const recoveryRetry = document.getElementById('recovery-retry');
       const btn = document.getElementById('submit-btn');
       const V = window.DruzaAuth.validators;
+      const passwordInput = form.elements.password;
+      const confirmInput = form.elements.confirm;
+      let recoveryReady = false;
+      let submitLocked = false;
+      let recoveryTimeoutId = null;
 
-      document.querySelectorAll('[data-pw-toggle]').forEach(function (t) {
-        t.addEventListener('click', function () {
-          const input = t.previousElementSibling;
+      document.querySelectorAll('[data-pw-toggle]').forEach(function (toggle) {
+        toggle.addEventListener('click', function () {
+          const input = toggle.previousElementSibling;
           const show = input.type === 'password';
           input.type = show ? 'text' : 'password';
-          t.textContent = show ? 'ocultar' : 'ver';
-          t.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
+          toggle.textContent = show ? 'ocultar' : 'ver';
+          toggle.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
         });
       });
 
-      // O link do e-mail traz um token que o SDK troca por uma sessão de recuperação.
-      // Damos um instante para o onAuthStateChange processar.
-      let recoveryReady = false;
+      function setFeedback(type, message) {
+        fb.className = 'auth-feedback';
+        fb.textContent = message || '';
+        if (type) {
+          fb.classList.add('is-' + type);
+        }
+      }
+
+      function setPasswordSecurityWarning(message) {
+        passwordSecurityWarning.className = 'auth-feedback';
+        passwordSecurityWarning.textContent = message || '';
+        if (message) {
+          passwordSecurityWarning.classList.add('is-warning');
+        }
+      }
+
+      function unlockSubmit() {
+        submitLocked = false;
+        setFormEnabled(true);
+        btn.disabled = false;
+        btn.textContent = 'Salvar nova senha';
+      }
+
+      function setRecoveryStatus(type, message) {
+        recoveryStatus.className = 'auth-feedback';
+        recoveryStatus.textContent = message || '';
+        if (type) {
+          recoveryStatus.classList.add('is-' + type);
+        }
+      }
+
+      function setFormEnabled(enabled) {
+        passwordInput.disabled = !enabled;
+        confirmInput.disabled = !enabled;
+        if (!submitLocked) {
+          btn.disabled = !enabled;
+        }
+      }
+
+      function authorizeRecovery() {
+        if (recoveryReady) {
+          return;
+        }
+        recoveryReady = true;
+        if (recoveryTimeoutId !== null) {
+          clearTimeout(recoveryTimeoutId);
+          recoveryTimeoutId = null;
+        }
+        recoveryActions.hidden = true;
+        setRecoveryStatus('success', 'Link validado. Agora voce pode definir sua nova senha.');
+        setFormEnabled(true);
+      }
+
+      function checkRecoveryState() {
+        if (window.DruzaAuth.hasPasswordRecovery()) {
+          authorizeRecovery();
+          return true;
+        }
+        return false;
+      }
+
+      // Somente PASSWORD_RECOVERY libera o formulário; uma sessão comum permanece bloqueada.
+      setFormEnabled(false);
+      setRecoveryStatus('', 'Validando o link seguro para redefinir sua senha.');
+      checkRecoveryState();
       window.DruzaAuth.onAuthChange(function (event) {
-        if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') recoveryReady = true;
+        if (event === 'PASSWORD_RECOVERY') {
+          authorizeRecovery();
+        }
+      });
+      recoveryTimeoutId = setTimeout(function () {
+        if (recoveryReady) {
+          return;
+        }
+        recoveryActions.hidden = false;
+        setRecoveryStatus('error', 'Ainda nao foi possivel validar este link. Aguarde alguns segundos ou tente novamente.');
+      }, 10000);
+      recoveryRetry.addEventListener('click', function () {
+        if (checkRecoveryState()) {
+          return;
+        }
+        recoveryActions.hidden = false;
+        setRecoveryStatus('error', 'O link ainda nao foi validado. Se preferir, solicite um novo e-mail de recuperacao.');
       });
 
-      form.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        fb.className = 'auth-feedback'; fb.textContent = '';
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        if (submitLocked) {
+          return;
+        }
+        setFeedback('', '');
+        setPasswordSecurityWarning('');
+
+        if (!recoveryReady || !window.DruzaAuth.hasPasswordRecovery()) {
+          setFeedback('error', 'Link invalido ou expirado. Solicite um novo em "Recuperar senha".');
+          recoveryActions.hidden = false;
+          return;
+        }
+
         const fd = new FormData(form);
         const password = fd.get('password') || '';
         const confirm = fd.get('confirm') || '';
         const pwErrors = V.passwordPolicyErrors(password);
-        if (pwErrors.length) { fb.classList.add('is-error'); fb.textContent = pwErrors[0]; return; }
-        if (password !== confirm) { fb.classList.add('is-error'); fb.textContent = 'As senhas não coincidem.'; return; }
-
-        btn.disabled = true; btn.textContent = 'Salvando…';
-        const { error } = await window.DruzaAuth.updatePassword(password);
-        if (error) {
-          fb.classList.add('is-error');
-          fb.textContent = recoveryReady ? error : 'Link inválido ou expirado. Solicite um novo em "Recuperar senha".';
-          btn.disabled = false; btn.textContent = 'Salvar nova senha';
+        if (pwErrors.length) {
+          setFeedback('error', pwErrors[0]);
           return;
         }
-        fb.classList.add('is-success');
-        fb.textContent = 'Senha alterada com sucesso! Redirecionando para o login…';
-        setTimeout(function () { location.replace('login.html'); }, 1800);
+        if (password !== confirm) {
+          setFeedback('error', 'As senhas nao coincidem.');
+          return;
+        }
+
+        submitLocked = true;
+        setFormEnabled(false);
+        btn.disabled = true;
+        btn.textContent = 'Verificando...';
+
+        let passwordUpdated = false;
+        try {
+          const pwnedCheck = await window.DruzaAuthSecurity.checkPwnedPassword(password);
+          if (pwnedCheck.status === 'pwned') {
+            setFeedback('error', 'Escolha uma senha unica que nao tenha sido exposta anteriormente.');
+            unlockSubmit();
+            return;
+          }
+          if (pwnedCheck.status === 'unavailable') {
+            setPasswordSecurityWarning('Nao foi possivel validar a senha exposta agora. Voce ainda pode continuar.');
+          }
+
+          btn.textContent = 'Salvando...';
+          const updateResult = await window.DruzaAuth.updatePassword(password);
+          if (updateResult.error) {
+            setFeedback('error', updateResult.error);
+            unlockSubmit();
+            return;
+          }
+          passwordUpdated = true;
+
+          const signOutResult = await window.DruzaAuth.signOut({ scope: 'local' });
+          if (signOutResult && signOutResult.error) {
+            setFeedback('error', signOutResult.error);
+            setRecoveryStatus('error', 'A senha foi atualizada, mas nao foi possivel encerrar a sessao local com seguranca.');
+            return;
+          }
+
+          setFeedback('success', 'Senha alterada com sucesso! Redirecionando para o login...');
+          setRecoveryStatus('success', 'Sessao de recuperacao encerrada com sucesso.');
+          location.replace('login.html');
+        } catch (_) {
+          if (passwordUpdated) {
+            setFeedback('error', 'A senha foi atualizada, mas nao foi possivel encerrar a sessao local com seguranca.');
+            setRecoveryStatus('error', 'Solicite um novo link antes de tentar novamente.');
+            return;
+          }
+          setFeedback('error', 'Nao foi possivel atualizar a senha agora. Verifique sua conexao e tente novamente.');
+          unlockSubmit();
+        }
       });
     })();
   </script>

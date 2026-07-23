@@ -37,6 +37,7 @@ validado ponta a ponta em ambiente de teste.
 │   ├── druza.js               UI global (drawers, sacola, filtros, galeria)
 │   ├── storefront.js          Vitrine lendo catálogo, destaques e ficha do banco
 │   ├── auth.js                Camada de autenticação (window.DruzaAuth)
+│   ├── auth-security.js       Turnstile compartilhado + HIBP k-anonymity
 │   ├── checkout.js            Fluxo de pagamento
 │   ├── admin.js               Camada do painel (window.DruzaAdmin, MFA, upload)
 │   ├── admin-panel.js         Comportamento das 8 seções do painel
@@ -58,6 +59,7 @@ validado ponta a ponta em ambiente de teste.
 │   ├── webhook-mp/            Confirma pagamento (re-consulta autenticada na API MP)
 │   ├── reconcile-stale-payments/  Recupera tentativas interrompidas com HMAC
 │   └── admin-*/               14 funções do painel (todas passam por serveAdmin)
+├── tests/                     Testes Node do Auth, recovery e integrações estáticas
 └── docs/                      Guias e documentação (ver abaixo)
 ```
 
@@ -74,6 +76,10 @@ python -m http.server 5510
 3. Acesse `http://localhost:5510`. A allowlist das Edge Functions aceita o
    dominio Druza e o GitHub Pages. Para chamar as funcoes a partir do localhost,
    inclua temporariamente essa origem em `ALLOWED_ORIGINS` e faca novo deploy.
+
+O Turnstile de producao nao e exercitado em localhost. Com a Site Key vazia, os
+formularios permanecem funcionais enquanto o CAPTCHA remoto estiver desligado;
+loader, expiracao, erro e retry sao cobertos por mocks em `tests/`.
 
 ## Modelo de segurança (resumo)
 
@@ -95,8 +101,8 @@ no servidor.** Detalhes e checklist de produção em [docs/SEGURANCA.md](docs/SE
   `aal2` exigido pelas Edge Functions) + log de auditoria de toda ação.
 - **CORS restrito** por allowlist, supabase-js **pinado com SRI**
   nas páginas, entradas validadas/limitadas e **rate limiting IP + Postgres** nas Edge
-  Functions, **fontes auto-hospedadas** (zero requisições a terceiros além do
-  Supabase/MP).
+  Functions, **fontes auto-hospedadas**, Turnstile nos pontos publicos de Auth e
+  consulta HIBP por prefixo de hash apenas ao criar ou redefinir senha.
 
 ## Documentação (docs/)
 

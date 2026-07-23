@@ -23,8 +23,11 @@
   const client = window.supabase && cfg
     ? window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY)
     : null;
+  const authListeners = new Set();
+  let recoverySeen = false;
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const LOGIN_FAILURE_MESSAGE = 'Nao foi possivel entrar. Verifique os dados e a confirmacao do e-mail.';
   const PASSWORD_SYMBOL_RE = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/;
   const VALID_DDDS = new Set([
     '11','12','13','14','15','16','17','18','19','21','22','24','27','28',
@@ -40,11 +43,16 @@
 
   function mapError(error) {
     if (!error) return null;
+    const code = String(error.code || '').toLowerCase();
     const msg = (error.message || '').toLowerCase();
-    if (msg.includes('invalid login')) return 'E-mail ou senha incorretos.';
-    if (msg.includes('email not confirmed')) return 'Confirme seu e-mail antes de entrar. Verifique a caixa de entrada.';
+    if (code === 'captcha_failed') return 'Confirme a verificacao de seguranca e tente novamente.';
+    if (code === 'over_request_rate_limit' || code === 'over_email_send_rate_limit') return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
+    if (code === 'weak_password') return 'A senha precisa ter no minimo 12 caracteres.';
+    if (code === 'invalid_credentials' || code === 'email_not_confirmed') return LOGIN_FAILURE_MESSAGE;
+    if (msg.includes('invalid login') || msg.includes('email not confirmed')) return LOGIN_FAILURE_MESSAGE;
     if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already')) return 'Nao foi possivel concluir. Tente entrar ou recuperar a senha.';
-    if (msg.includes('password should be at least')) return 'A senha precisa ter no minimo 8 caracteres.';
+    if (msg.includes('captcha')) return 'Confirme a verificacao de seguranca e tente novamente.';
+    if (msg.includes('password should be at least')) return 'A senha precisa ter no minimo 12 caracteres.';
     if (msg.includes('weak_password') || msg.includes('weak password')) return 'A senha nao atende aos requisitos de seguranca.';
     if (msg.includes('profile_phone_format')) return 'Informe um telefone brasileiro valido com DDD.';
     if (msg.includes('profile_birth_date_age')) return 'Para criar conta, e preciso ter 18 anos ou mais.';
@@ -52,6 +60,24 @@
     if (msg.includes('rate limit') || msg.includes('too many')) return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
     if (msg.includes('redirect')) return 'Erro de configuracao de URL de redirecionamento. Verifique as Redirect URLs no Supabase.';
     return 'Nao foi possivel concluir a operacao. Tente novamente.';
+  }
+
+  function isAccountEnumerationError(error) {
+    if (!error) return false;
+    const code = String(error.code || '').toLowerCase();
+    const msg = String(error.message || '').toLowerCase();
+    if ([
+      'user_already_exists',
+      'email_exists',
+      'identity_already_exists',
+      'email_not_confirmed',
+      'user_not_found'
+    ].includes(code)) return true;
+    return msg.includes('already registered') ||
+      msg.includes('already exists') ||
+      msg.includes('user already') ||
+      msg.includes('email not confirmed') ||
+      msg.includes('user not found');
   }
 
   function baseUrl() {
@@ -157,7 +183,7 @@
   function passwordPolicyErrors(password, context) {
     const value = String(password || '');
     const errors = [];
-    if (value.length < 8) errors.push('A senha precisa ter no minimo 8 caracteres.');
+    if (value.length < 12) errors.push('A senha precisa ter no minimo 12 caracteres.');
     if (value.length > 72) errors.push('A senha deve ter no maximo 72 caracteres.');
     if (!/[a-z]/.test(value)) errors.push('Inclua pelo menos uma letra minuscula.');
     if (!/[A-Z]/.test(value)) errors.push('Inclua pelo menos uma letra maiuscula.');
@@ -207,31 +233,45 @@
         }
       }
     });
+    if (isAccountEnumerationError(error)) return { data, error: null };
     return { data, error: mapError(error) };
   }
 
-  async function signIn({ email, password }) {
+  async function signIn({ email, password, captchaToken }) {
     if (!client) return { error: 'Configuracao ausente.' };
     const { data, error } = await client.auth.signInWithPassword({
       email: normalizeEmail(email),
-      password
+      password,
+      options: {
+        captchaToken: captchaToken || undefined
+      }
     });
     return { data, error: mapError(error) };
   }
 
-  async function signOut() {
+  async function signOut(options) {
     if (!client) return;
-    await client.auth.signOut();
+    if (typeof options === 'undefined') {
+      await client.auth.signOut();
+      return;
+    }
+    const { error } = await client.auth.signOut(options);
+    return { error: mapError(error) };
   }
 
-  async function requestPasswordReset(email) {
+  async function requestPasswordReset(email, captchaToken) {
     if (!client) return { error: 'Configuracao ausente.' };
     const safeEmail = normalizeEmail(email);
     if (!isValidEmail(safeEmail)) return { error: 'Informe um e-mail valido.' };
-    const { error } = await client.auth.resetPasswordForEmail(safeEmail, {
-      redirectTo: baseUrl() + 'redefinir-senha.html'
-    });
-    return { error: mapError(error) };
+    try {
+      await client.auth.resetPasswordForEmail(safeEmail, {
+        redirectTo: baseUrl() + 'redefinir-senha.html',
+        captchaToken: captchaToken || undefined
+      });
+    } catch (_) {
+      // O canal publico de recovery nunca diferencia conta, rede ou limite de envio.
+    }
+    return { error: null };
   }
 
   async function updatePassword(newPassword) {
@@ -287,9 +327,28 @@
     return session;
   }
 
+  function hasPasswordRecovery() {
+    return recoverySeen;
+  }
+
   function onAuthChange(callback) {
-    if (!client) return;
-    client.auth.onAuthStateChange((event, session) => callback(event, session));
+    if (!client || typeof callback !== 'function') return function () {};
+    authListeners.add(callback);
+    if (recoverySeen) callback('PASSWORD_RECOVERY', null);
+    return function () {
+      authListeners.delete(callback);
+    };
+  }
+
+  if (client) {
+    client.auth.onAuthStateChange(function (event, session) {
+      if (event === 'PASSWORD_RECOVERY') {
+        recoverySeen = true;
+      }
+      authListeners.forEach(function (listener) {
+        listener(event, session);
+      });
+    });
   }
 
   async function getProfile() {
@@ -427,7 +486,7 @@
     client,
     signUp, signIn, signOut,
     requestPasswordReset, updatePassword, updateEmail,
-    getSession, getUser, requireAuth, onAuthChange,
+    getSession, getUser, requireAuth, onAuthChange, hasPasswordRecovery,
     getProfile, updateProfile,
     listAddresses, createAddress, updateAddress, deleteAddress, setDefaultAddress,
     listOrders,
