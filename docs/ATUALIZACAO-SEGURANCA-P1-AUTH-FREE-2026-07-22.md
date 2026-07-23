@@ -2,8 +2,9 @@
 
 - Data: 22/07/2026
 - Projeto autorizado: `hqkpgghlbwincahfwkem`
-- Estado: implementação local validada e Site Key pública configurada;
-  publicação e ativação remota ainda bloqueadas pelos gates de release.
+- Estado: implementação local validada, Site Key pública configurada e URLs
+  remotas corrigidas; publicação do frontend e ativação do CAPTCHA ainda
+  bloqueadas pelos gates de release.
 
 ## Checklist concluído localmente
 
@@ -48,7 +49,7 @@
   - nenhuma falha de JavaScript foi observada;
   - cadastro e recovery foram inspecionados em desktop e emulação móvel.
 
-## Baseline remoto somente leitura
+## Baseline remoto e alterações autorizadas
 
 - Plano Supabase Free confirmado.
 - CAPTCHA remoto: desligado.
@@ -56,10 +57,14 @@
 - Classes fortes: maiúscula, minúscula, número e símbolo já habilitadas.
 - Cadastro/login: 30 requisições por cinco minutos por IP.
 - Proteção nativa contra senhas vazadas: indisponível no Free.
-- Site URL atual: `http://localhost:5002`.
-- Redirect URLs atuais: somente as duas rotas locais em `localhost:5002`.
-
-Nenhuma configuração remota foi alterada nesta fase.
+- Site URL encontrada: `http://localhost:5002`.
+- Redirect URLs encontradas: somente as duas rotas locais em `localhost:5002`.
+- Em 23/07/2026, o Site URL foi corrigido para
+  `https://brunocarreirocs.github.io/Druza_semi_joias_site/`.
+- Os redirects locais foram substituídos pelas duas rotas HTTPS exatas de login
+  e redefinição de senha no GitHub Pages; a persistência foi confirmada após
+  recarregar o Dashboard.
+- CAPTCHA permaneceu desligado; usuários, perfis e Auth logs não foram abertos.
 
 ## Divergência de publicação encontrada
 
@@ -85,7 +90,7 @@ Nenhuma configuração remota foi alterada nesta fase.
 
 ### P1 — publicação compatível
 
-- [ ] Corrigir o Site URL para o GitHub Pages enquanto esse for o único host do
+- [x] Corrigir o Site URL para o GitHub Pages enquanto esse for o único host do
   app e substituir as URLs locais pelos dois redirects publicados exatos.
 - [ ] Publicar o frontend com Site Key e CAPTCHA remoto ainda desligado.
 - [ ] Verificar visualmente os quatro widgets no GitHub Pages, sem credenciais.
