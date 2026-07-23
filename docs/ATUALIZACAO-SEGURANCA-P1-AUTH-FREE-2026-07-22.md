@@ -2,8 +2,8 @@
 
 - Data: 22/07/2026
 - Projeto autorizado: `hqkpgghlbwincahfwkem`
-- Estado: implementação local validada; ativação remota ainda bloqueada pelos
-  gates de release.
+- Estado: implementação local validada e Site Key pública configurada;
+  publicação e ativação remota ainda bloqueadas pelos gates de release.
 
 ## Checklist concluído localmente
 
@@ -18,8 +18,8 @@
   correspondência positiva bloqueia aquela nova senha.
 - [x] Controlador Turnstile compartilhado nos quatro pontos públicos de Auth:
   cadastro, login, login administrativo e solicitação de recovery.
-- [x] Site Key vazia mantém os formulários utilizáveis enquanto o CAPTCHA remoto
-  continua desligado.
+- [x] O fallback de Site Key vazia mantém os formulários utilizáveis enquanto o
+  CAPTCHA remoto continua desligado.
 - [x] Token Turnstile permanece apenas em memória e é invalidado em uso,
   expiração, erro e reset.
 - [x] Retry do loader é recuperável e não reaproveita promise rejeitada.
@@ -75,10 +75,11 @@ Nenhuma configuração remota foi alterada nesta fase.
 
 ### P1 — antes de publicar
 
-- [ ] Confirmar somente a **Site Key pública atual** do widget rotacionado.
+- [x] Confirmada e configurada somente a **Site Key pública atual** do widget
+  rotacionado; seu valor não é repetido neste relatório.
 - [ ] Manter a Secret Key exclusivamente no campo do Dashboard; ela não pode ser
   lida, copiada, enviada ao chat, versionada ou capturada em screenshot.
-- [ ] Criar o commit pré-deploy isolado e revisar seus arquivos.
+- [x] Criado e revisado o commit pré-deploy isolado `c7e3f83`.
 - [ ] Obter autorização explícita antes de qualquer push, pois a branch já tem
   commits locais anteriores ainda não publicados.
 
